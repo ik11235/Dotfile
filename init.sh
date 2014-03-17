@@ -1,7 +1,7 @@
 #!/bin/sh
 cd `dirname $0`
 #pwd
-for FILE in ".emacs" ".emacs.d"
+for FILE in ".emacs" ".emacs.d" ".zshrc"
 do
     ln -s `pwd`/${FILE} ${HOME}/${FILE}
 done

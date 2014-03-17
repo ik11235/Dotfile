@@ -2,8 +2,9 @@ dotfile
 ==================================
 
 # 導入予定
-* emacs.d
+* emacs
 * tmux
+* zsh
 * (ssh)
 
 # インストール方法
@@ -14,6 +15,8 @@ dotfile
 ## emacs
 
 ## tmux
+
+## zsh
 
 ## init.sh
  dotfileルート以下のファイルをチェックして全てをUSER_HOME以下にシンボリックリンクをはるスクリプト
