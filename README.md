@@ -7,12 +7,13 @@ dotfile
 * (ssh)
 
 # インストール方法
- git clone http:://github.com/ik11235/dotfile.git ./dotfile
- ./dotfile/init.sh
+    git clone http:://github.com/ik11235/dotfile.git ./dotfile
+    ./dotfile/init.sh
 
-# emacs
+# 各設定ファイルについて
+## emacs
 
-# tmux
+## tmux
 
-# init.sh(予定)
+## init.sh(予定)
  dotfileルート以下のファイルをチェックして全てをUSER_HOME以下にシンボリックリンクをはるスクリプト
