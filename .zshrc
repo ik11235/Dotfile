@@ -85,3 +85,15 @@ zstyle ':completion:*:default' menu select=1
 # ここではデフォルトのセットから / を抜いたものとする
 # こうすると、 Ctrl-W でカーソル前の1単語を削除したとき、 / までで削除が止まる
 WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
+
+# The next line updates PATH for the Google Cloud SDK.
+###source /Users/yuichi/google-cloud-sdk/path.bash.inc
+sdk_dir="${HOME}/google-cloud-sdk"
+bin_path="$sdk_dir/bin"
+export PATH=$bin_path:$PATH
+
+# The next line enables bash completion for gcloud.
+source ${HOME}/google-cloud-sdk/completion.zsh.inc
+
+##brew 補完
+#source /usr/local/Library/Contributions/brew_zsh_completion.zsh
