@@ -18,6 +18,7 @@
     init-loader
     helm
     markdown-mode
+    magit
     ))
 
 (let ((not-installed (loop for x in installing-package-list

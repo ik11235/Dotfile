@@ -24,6 +24,7 @@ dotfile
 - init-loader
 - helm
 - markdown-mode
+- magit
 
 ## tmux
 
