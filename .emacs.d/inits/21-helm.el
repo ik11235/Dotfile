@@ -5,5 +5,6 @@
 (define-key global-map (kbd "C-x C-b") 'helm-for-files)
 
 ;http://konbu13.hatenablog.com/entry/2014/01/15/223014
+;http://fukuyama.co/nonexpansion
 ;; TABで補完
-(define-key helm-read-file-map (kbd "<tab>") 'helm-execute-persistent-action)
+(define-key helm-c-read-file-map (kbd "TAB") 'helm-execute-persistent-action)
