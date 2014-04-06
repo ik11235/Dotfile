@@ -14,12 +14,14 @@ dotfile
 # 各設定ファイルについて
 ## emacs
 - 要 emacs 24以上
+
  emacsの各設定を拡張ごとにファイルを分割して記述
 
  基本的には、package.elで追加する
 
  以下のパッケージは20-package.elで自動インストールを記述
 - helm
+
 ## tmux
 
 ## zsh
