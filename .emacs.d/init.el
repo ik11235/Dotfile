@@ -17,6 +17,7 @@
     ;; ここに使っているパッケージを書く。
     init-loader
     helm
+    markdown-mode
     ))
 
 (let ((not-installed (loop for x in installing-package-list

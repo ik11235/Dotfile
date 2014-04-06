@@ -7,6 +7,7 @@ dotfile
 * zsh
 * (ssh)
 
+
 # インストール方法
     git clone https://github.com/ik11235/Dotfile.git ./dotfile
     ./dotfile/init.sh
@@ -19,8 +20,10 @@ dotfile
 
  基本的には、package.elで追加する
 
- 以下のパッケージは20-package.elで自動インストールを記述
+ 以下のパッケージを自動インストール
+- init-loader
 - helm
+- markdown-mode
 
 ## tmux
 
