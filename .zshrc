@@ -14,11 +14,19 @@ case "${OSTYPE}" in
 # Mac(Unix)
 darwin*)
     # ここに設定
+
+	# The next line updates PATH for the Google Cloud SDK.
+	###source /Users/yuichi/google-cloud-sdk/path.bash.inc
+	sdk_dir="${HOME}/google-cloud-sdk"
+	bin_path="$sdk_dir/bin"
+	export PATH=$bin_path:$PATH
+	
+	# The next line enables bash completion for gcloud.
+	source ${HOME}/google-cloud-sdk/completion.zsh.inc
     ;;  
 # Linux
 linux*)
 	alias ls='ls --color=auto'
-	alias rits='sudo pon dsl-provider'
 	source "/etc/zsh_command_not_found"
 	#Start tmux on every shell login
 	#https://wiki.archlinux.org/index.php/Tmux#Start_tmux_on_every_shell_login
@@ -86,14 +94,6 @@ zstyle ':completion:*:default' menu select=1
 # こうすると、 Ctrl-W でカーソル前の1単語を削除したとき、 / までで削除が止まる
 WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
 
-# The next line updates PATH for the Google Cloud SDK.
-###source /Users/yuichi/google-cloud-sdk/path.bash.inc
-sdk_dir="${HOME}/google-cloud-sdk"
-bin_path="$sdk_dir/bin"
-export PATH=$bin_path:$PATH
-
-# The next line enables bash completion for gcloud.
-source ${HOME}/google-cloud-sdk/completion.zsh.inc
 
 ##brew 補完
 #source /usr/local/Library/Contributions/brew_zsh_completion.zsh
