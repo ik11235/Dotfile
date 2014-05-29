@@ -1,0 +1,17 @@
+# The next line updates PATH for the Google Cloud SDK.
+###source /Users/yuichi/google-cloud-sdk/path.bash.inc
+sdk_dir="${HOME}/google-cloud-sdk"
+bin_path="$sdk_dir/bin"
+export PATH=$bin_path:$PATH
+
+# The next line enables bash completion for gcloud.
+source ${HOME}/google-cloud-sdk/completion.zsh.inc
+
+#brew 補完
+##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
+
+##go言語設定
+export GOROOT=$HOME/go
+export PATH=$PATH:$GOROOT/bin
+# The next line updates PATH for the Google Cloud SDK.
+export PATH=/home/yuichi/google-cloud-sdk/bin:$PATH
