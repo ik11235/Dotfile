@@ -19,6 +19,9 @@
     helm
     markdown-mode
     magit
+    popwin
+    google-translate
+
     ))
 
 (let ((not-installed (loop for x in installing-package-list
