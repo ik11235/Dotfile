@@ -12,7 +12,7 @@ for PAK in ${INSTALL_PAK[@]}
 do
     if [ `uname` = "Darwin" ]; then
 	#mac用のコード
-	brew install --with-lang-en ${PAK}
+	brew install ${PAK}
     elif [ `uname` = "Linux" ]; then
 	#Linux用のコード
 	#TODO ディストリビューションごとにyumとaptを制御する
