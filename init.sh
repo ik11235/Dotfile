@@ -1,18 +1,21 @@
 #!/bin/sh
 cd `dirname $0`
+LINKFILE=(".emacs.d" ".zshrc" ".zsh.d" ".aspell.conf")
+INSTALL_PAK=("aspell")
 
-for FILE in ".emacs.d" ".zshrc" ".zsh.d" ".aspell.conf"
+for LINK in ${LINKFILE[@]}
 do
-    ln -s `pwd`/${FILE} ${HOME}/${FILE}
+    ln -s `pwd`/${LINK} ${HOME}/${LINK}
 done
 
-if [ `uname` = "Darwin" ]; then
-   #mac用のコード
-   brew install --with-lang-en aspell
-elif [ `uname` = "Linux" ]; then
-   #Linux用のコード
-   #TODO ディストリビューションごとにyumとaptを制御する
-   sudo apt-get install aspell
-fi
-
-#$ find . -mindepth 1  -maxdepth 1 ! -name .git -a ! -name README.md -print0 |sed -e s/\.// |xargs -0 -I % echo "ln -s `pwd`/% ${HOME}/%"
+for PAK in ${INSTALL_PAK[@]}
+do
+    if [ `uname` = "Darwin" ]; then
+	#mac用のコード
+	brew install --with-lang-en ${PAK}
+    elif [ `uname` = "Linux" ]; then
+	#Linux用のコード
+	#TODO ディストリビューションごとにyumとaptを制御する
+	sudo apt-get install ${PAK}
+    fi
+done
