@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 cd `dirname $0`
 LINKFILE=(".emacs.d" ".zshrc" ".zsh.d" ".aspell.conf")
 INSTALL_PAK=("aspell")
