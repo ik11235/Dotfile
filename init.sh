@@ -19,3 +19,7 @@ elif [ `uname` = "Linux" ]; then
 	#TODO ディストリビューションごとにyumとaptを制御する
 	sudo apt-get install ${INSTALL_PAK[@]}
 fi
+
+#defalut shell change
+ZSHPATH=`which zsh`
+chsh -s ${ZSHPATH}
