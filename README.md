@@ -50,7 +50,13 @@ git clone https://github.com/ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfil
 - helm
 - markdown-mode
 - magit
+<<<<<<< HEAD
 - yasnippet
+=======
+- livedown
+
+## tmux
+>>>>>>> ead9c68 (livedownを追加)
 
 ## zsh
 
@@ -64,6 +70,7 @@ git clone https://github.com/ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfil
 - 起動シェルはzshにしつつ、zshから呼び出すことを想定している
 
 ## init.sh
+<<<<<<< HEAD
 
  以下を行うスクリプト
  
@@ -72,3 +79,8 @@ git clone https://github.com/ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfil
  
  - その後、必要な設定やソフトウェアのインストールを行う
      - (現在、ソフトウェアのインストールはmacのみ対応 / LinuxにもLinuxBrew等で対応を検討中)
+=======
+ dotfileルート以下のファイルをチェックして全てをUSER_HOME以下にシンボリックリンクをはるスクリプト
+
+ 現在は対象ファイルは直打ち(そのうち自動検査型に変更)
+>>>>>>> ead9c68 (livedownを追加)
