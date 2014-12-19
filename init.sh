@@ -5,7 +5,7 @@ INSTALL_PAK=("texlive-extra-utils" "texlive-lang-japanese" "zsh" "aspell" "tmux"
 
 for LINK in ${LINKFILE[@]}
 do
-    ln -s `pwd`/${LINK} ${HOME}/${LINK}
+    ln -s `pwd`/${LINK} ${HOME}/
 done
 
 echo "Do you want to install a package ? [Y/n]"
