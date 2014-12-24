@@ -1,13 +1,8 @@
 (require 'yasnippet)
-;yasnippetのインストールパスを取得
-;;http://gongo.hatenablog.com/entry/2013/02/05/232633
-;;http://yohshiy.blog.fc2.com/blog-entry-272.html
-(setq yas-install-dir (concat (file-name-directory (find-library-name "yasnippet")) "snippets"))
 
 (setq yas-snippet-dirs
       '("~/.emacs.d/snippets"
-	yas-install-dir
-	;;"~/.emacs.d/elpa/yasnippet-20141223.303/snippets/"
+        yas-installed-snippets-dir
 	))
 (yas-global-mode 1)
 

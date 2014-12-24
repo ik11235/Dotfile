@@ -30,7 +30,10 @@ dotfile
 ## tmux
 
 ## zsh
-
+ .zshrcでは以下のOSごとのファイル読み込みのみを行う
+- zshrc_global すべてのOS対象のファイル
+- zshrc_linux Linux用のファイル
+- zshrc_mac mac用のファイル
 ## init.sh
  dotfileルート以下のファイルをチェックして全てをUSER_HOME以下にシンボリックリンクをはるスクリプト
 
