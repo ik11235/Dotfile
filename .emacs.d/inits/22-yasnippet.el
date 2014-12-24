@@ -1,10 +1,8 @@
 (require 'yasnippet)
-(setq yas-install-dir (concat (file-name-directory (find-library-name "yasnippet")) "snippets"))
 
 (setq yas-snippet-dirs
       '("~/.emacs.d/snippets"
-	yas-install-dir
-	;;"~/.emacs.d/elpa/yasnippet-20141223.303/snippets/"
+        yas-installed-snippets-dir
 	))
 (yas-global-mode 1)
 
