@@ -1,10 +1,12 @@
 (require 'yasnippet)
+(setq yas-install-dir (concat (file-name-directory (find-library-name "yasnippet")) "snippets"))
+
 (setq yas-snippet-dirs
       '("~/.emacs.d/snippets"
-	"~/.emacs.d/elpa/yasnippet-20141223.303/snippets/"
+	yas-install-dir
+	;;"~/.emacs.d/elpa/yasnippet-20141223.303/snippets/"
 	))
 (yas-global-mode 1)
-
 
 ;; 単語展開キーバインド (ver8.0から明記しないと機能しない)
 (custom-set-variables '(yas-trigger-key "TAB"))
