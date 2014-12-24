@@ -25,6 +25,7 @@ dotfile
 - helm
 - markdown-mode
 - magit
+- yasnippet
 
 ## tmux
 
@@ -35,5 +36,5 @@ dotfile
 - zshrc_mac mac用のファイル
 ## init.sh
  dotfileルート以下のファイルをチェックして全てをUSER_HOME以下にシンボリックリンクをはるスクリプト
- 
+
  現在は対象ファイルは直打ち(そのうち自動検査型に変更)

@@ -21,7 +21,7 @@
     magit
     popwin
     google-translate
-
+    yasnippet
     ))
 
 (let ((not-installed (loop for x in installing-package-list
