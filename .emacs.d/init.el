@@ -22,6 +22,7 @@
     popwin
     google-translate
     yasnippet
+    enh-ruby-mode
     ))
 
 (let ((not-installed (loop for x in installing-package-list
