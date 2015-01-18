@@ -24,6 +24,7 @@
     yasnippet
     enh-ruby-mode
     ruby-block
+    smartparens
     ))
 
 (let ((not-installed (loop for x in installing-package-list
