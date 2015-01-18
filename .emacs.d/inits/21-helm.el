@@ -3,7 +3,6 @@
 
 (define-key global-map (kbd "C-x C-b") 'helm-for-files)
 
-<<<<<<< HEAD
 ;http://d.hatena.ne.jp/a_bicky/20140104/1388822688
 ;http://d.hatena.ne.jp/a_bicky/20140104/1388822688
 (define-key global-map (kbd "M-x")     'helm-M-x)
