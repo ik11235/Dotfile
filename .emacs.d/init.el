@@ -23,6 +23,7 @@
     google-translate
     yasnippet
     enh-ruby-mode
+    ruby-block
     ))
 
 (let ((not-installed (loop for x in installing-package-list
