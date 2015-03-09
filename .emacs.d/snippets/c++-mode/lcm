@@ -1,0 +1,12 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: lcm
+# key: lcm
+# binding: direct-keybinding
+# --
+long long int lcm(long long int a,long long int b)
+  {
+    if ( ( 0 == a ) || ( 0 == b ) )
+      return 0;
+
+    return ((a / gcd(a, b)) * b);
+  }
