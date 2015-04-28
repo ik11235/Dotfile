@@ -26,6 +26,7 @@
     ruby-block
     smartparens
     auto-complete
+    php-mode
     ))
 
 (let ((not-installed (loop for x in installing-package-list
