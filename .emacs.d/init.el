@@ -27,6 +27,7 @@
     smartparens
     auto-complete
     php-mode
+    flycheck
     ))
 
 (let ((not-installed (loop for x in installing-package-list
