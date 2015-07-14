@@ -28,6 +28,7 @@
     auto-complete
     php-mode
     flycheck
+    helm-flycheck
     ))
 
 (let ((not-installed (loop for x in installing-package-list
