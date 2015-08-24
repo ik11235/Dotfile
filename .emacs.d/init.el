@@ -29,6 +29,7 @@
     php-mode
     flycheck
     helm-flycheck
+    web-mode
     ))
 
 (let ((not-installed (loop for x in installing-package-list
