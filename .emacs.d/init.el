@@ -30,6 +30,7 @@
     flycheck
     helm-flycheck
     web-mode
+    org2blog
     ))
 
 (let ((not-installed (loop for x in installing-package-list
