@@ -7,9 +7,9 @@
 ;; http://minus9d.hatenablog.com/entry/20131103/1383475472
 
 ;; 英語
- (set-face-attribute 'default nil
-		     :family "Menlo" ;; font
-		     :height 140)    ;; font size
+(set-face-attribute 'default nil
+		    :family "Menlo" ;; font
+		    :height 140)    ;; font size
 ;; 日本語
 (set-fontset-font
  nil 'japanese-jisx0208
