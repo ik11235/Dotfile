@@ -11,3 +11,4 @@
 (add-to-list 'interpreter-mode-alist '("ruby" . enh-ruby-mode))
 
 (setq enh-ruby-add-encoding-comment-on-save nil)
+(setq enh-ruby-bounce-deep-indent t)
