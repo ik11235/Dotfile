@@ -9,3 +9,5 @@
 (add-to-list 'auto-mode-alist '("Gemfile$" . enh-ruby-mode))
 
 (add-to-list 'interpreter-mode-alist '("ruby" . enh-ruby-mode))
+
+(setq enh-ruby-add-encoding-comment-on-save nil)
