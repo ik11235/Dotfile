@@ -31,6 +31,8 @@
     helm-flycheck
     web-mode
     org2blog
+    editorconfig
+    editorconfig-core
     ))
 
 (let ((not-installed (loop for x in installing-package-list
