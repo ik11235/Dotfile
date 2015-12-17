@@ -30,3 +30,7 @@
 
 ;保存時に行末の空白を削除
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+; 保存時に末尾に改行を自動挿入
+; TODO: ファイルの種類ごとに挿入するか否かを自動判定したい
+(setq require-final-newline t)
