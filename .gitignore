@@ -1,3 +1,6 @@
 #emacs-tmpfile
 \#*#
 *~
+
+# Mac
+.DS_Store

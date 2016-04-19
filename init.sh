@@ -1,6 +1,6 @@
 #!/bin/bash
 cd `dirname $0`
-LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf")
+LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".gitignore")
 INSTALL_PAK=("texlive-extra-utils" "texlive-lang-japanese" "zsh" "aspell" "tmux" "make" "g++" "ruby-all-dev" "bundler")
 
 for LINK in ${LINKFILE[@]}
@@ -25,6 +25,9 @@ case $ANSWER in
 	;;
 esac
 exit
+
+#git global config
+git config --global core.excludesfile ~/.gitignore
 
 #defalut shell change
 ZSHPATH=`which zsh`
