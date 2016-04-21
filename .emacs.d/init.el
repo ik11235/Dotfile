@@ -32,6 +32,7 @@
     web-mode
     org2blog
     editorconfig
+    scss-mode
     ))
 
 (let ((not-installed (loop for x in installing-package-list
