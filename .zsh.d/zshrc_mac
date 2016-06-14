@@ -11,8 +11,12 @@ export PATH=$bin_path:$PATH
 ##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
 
 ##go言語設定
-export GOROOT=$HOME/go
-export PATH=$PATH:$GOROOT/bin
+if [ -x "`which go`" ]; then
+      export GOROOT=`go env GOROOT`
+      export GOPATH=$HOME/code/go-local
+      export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+fi
+
 # The next line updates PATH for the Google Cloud SDK.
 ##export PATH=/home/yuichi/google-cloud-sdk/bin:$PATH
 
