@@ -33,6 +33,7 @@
     org2blog
     editorconfig
     scss-mode
+    open-junk-file
     ))
 
 (let ((not-installed (loop for x in installing-package-list
