@@ -49,3 +49,21 @@
 (require 'init-loader)
 (setq init-loader-show-log-after-init nil)
 (init-loader-load "~/.emacs.d/inits")
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(google-translate-default-source-language "ja")
+ '(google-translate-default-target-language "en")
+ '(package-selected-packages
+   (quote
+    (open-junk-file yasnippet yaml-mode web-mode ssh-config-mode smartparens slim-mode scss-mode ruby-block popwin php-mode php-completion org2blog markdown-mode init-loader highlight-indentation helm-gtags helm-flycheck helm-ag google-translate git-rebase-mode git-commit-mode enh-ruby-mode editorconfig-core editorconfig coffee-mode auto-complete)))
+ '(yas-prompt-functions (quote (my-yas/prompt)))
+ '(yas-trigger-key "TAB"))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
