@@ -24,7 +24,6 @@ case $ANSWER in
 	echo "Don't install."
 	;;
 esac
-exit
 
 #git global config
 git config --global core.excludesfile ~/.gitignore
