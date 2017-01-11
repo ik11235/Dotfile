@@ -1,6 +1,6 @@
 #!/bin/bash
 cd `dirname $0`
-LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".gitignore")
+LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".gitignore" ".textlintrc")
 INSTALL_PAK=("texlive-extra-utils" "texlive-lang-japanese" "zsh" "aspell" "tmux" "make" "g++" "ruby-all-dev" "bundler" "command-not-found" "npm")
 
 for LINK in ${LINKFILE[@]}
