@@ -1,0 +1,6 @@
+{
+    "rules": {
+	"preset-japanese": true,
+    	"ja-no-redundant-expression": true
+    }
+}
