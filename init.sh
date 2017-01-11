@@ -1,7 +1,7 @@
 #!/bin/bash
 cd `dirname $0`
 LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".gitignore")
-INSTALL_PAK=("texlive-extra-utils" "texlive-lang-japanese" "zsh" "aspell" "tmux" "make" "g++" "ruby-all-dev" "bundler" "command-not-found")
+INSTALL_PAK=("texlive-extra-utils" "texlive-lang-japanese" "zsh" "aspell" "tmux" "make" "g++" "ruby-all-dev" "bundler" "command-not-found" "npm")
 
 for LINK in ${LINKFILE[@]}
 do
@@ -32,3 +32,6 @@ git config --global core.excludesfile ~/.gitignore
 #defalut shell change
 ZSHPATH=`which zsh`
 chsh -s ${ZSHPATH}
+
+# textlintのインストール
+npm i -g textlint textlint-rule-preset-japanese textlint-rule-prh textlint-rule-ja-no-redundant-expression
