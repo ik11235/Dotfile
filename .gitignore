@@ -7,3 +7,6 @@
 
 # 汎用tmpファイル置き場
 /usr_tmp
+
+# IntelliJ
+.idea/
