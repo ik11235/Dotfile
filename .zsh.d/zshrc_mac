@@ -38,3 +38,9 @@ export NVM_DIR="$HOME/.nvm"
 
 # mysql5.6
 export PATH="/usr/local/opt/mysql@5.6/bin:$PATH"
+
+# python
+eval "$(pyenv init -)"
+# brewコマンド実行の際のみpyevをPATHから外す
+## https://www.task-notes.com/entry/20141223/1419324649
+alias brew="env PATH=${PATH/\/Users\/ik\/\.pyenv\/shims:/} brew"
