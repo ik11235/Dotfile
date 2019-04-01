@@ -27,6 +27,7 @@ if which rbenv > /dev/null; then eval "$(rbenv init - zsh)"; fi
 
 # brew
 export PATH="/usr/local/bin:$PATH"
+export PATH="/usr/local/sbin:$PATH"
 
 #node
 export NVM_DIR="$HOME/.nvm"
