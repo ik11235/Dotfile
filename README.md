@@ -9,7 +9,7 @@ dotfile
 
 
 # インストール方法
-    git clone https://github.com/ik11235/Dotfile.git ./dotfile
+    git clone git@github.com:ik11235/Dotfile.git ./dotfile
     ./dotfile/init.sh
 
 # 各設定ファイルについて
