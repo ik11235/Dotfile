@@ -30,6 +30,7 @@ git config --global core.excludesfile ~/.gitignore
 
 #defalut shell change
 ZSHPATH=`which zsh`
+sudo sh -c "echo ${ZSHPATH} >> /etc/shells"
 chsh -s ${ZSHPATH}
 
 # textlintのインストール
