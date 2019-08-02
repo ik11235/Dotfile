@@ -44,3 +44,6 @@ brew tap homebrew/command-not-found
 RUBY_VER=`rbenv install -l | grep -v - | tail -1 | tr -d ' '`
 rbenv install $RUBY_VER
 rbenv global $RUBY_VER
+
+# gcloud install
+brew cask install google-cloud-sdk
