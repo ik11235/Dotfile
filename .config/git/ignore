@@ -1,0 +1,14 @@
+# https://qiita.com/anqooqie/items/110957797b3d5280c44f#thumbsdb%E3%82%84ds_store%E3%82%92gitignore%E3%81%AB%E5%85%A5%E3%82%8C%E3%82%8B%E3%81%AE%E3%81%AF%E3%82%88%E3%81%8F%E3%81%AA%E3%81%84%E3%81%A3%E3%81%A6%E6%9C%AC%E5%BD%93
+
+#emacs-tmpfile
+\#*#
+*~
+
+# Mac
+.DS_Store
+
+# 汎用tmpファイル置き場
+/usr_tmp
+
+# IntelliJ
+.idea/
