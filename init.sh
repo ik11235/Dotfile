@@ -1,6 +1,6 @@
 #!/bin/bash
 cd `dirname $0`
-LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".gitignore" ".textlintrc")
+LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".config" ".textlintrc")
 INSTALL_PAK=("zsh" "aspell" "tmux" "npm" "coreutils" "rbenv" "ruby-build")
 
 for LINK in ${LINKFILE[@]}
@@ -24,9 +24,6 @@ case $ANSWER in
 	echo "Don't install."
 	;;
 esac
-
-#git global config
-git config --global core.excludesfile ~/.gitignore
 
 #defalut shell change
 ZSHPATH=`which zsh`
