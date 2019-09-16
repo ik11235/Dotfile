@@ -80,3 +80,6 @@ if [[ -e "$HOME/.rbenv/bin" ]]; then
     export PATH="$HOME/.rbenv/bin:$PATH"
     eval "$(rbenv init -)"
 fi
+
+# direnv
+eval "$(direnv hook zsh)"
