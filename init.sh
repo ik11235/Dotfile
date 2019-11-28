@@ -44,3 +44,6 @@ rbenv global $RUBY_VER
 
 # gcloud install
 brew cask install google-cloud-sdk
+
+# private file作成
+touch ${HOME}/.zsh.d/zshrc_mac_private
