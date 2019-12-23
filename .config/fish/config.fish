@@ -14,3 +14,5 @@ set GHQ_SELECTOR peco
 
 # google cloud sdkのPATH
 source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
+
+eval (direnv hook fish)
