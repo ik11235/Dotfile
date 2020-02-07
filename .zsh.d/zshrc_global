@@ -83,3 +83,5 @@ fi
 
 # direnv
 eval "$(direnv hook zsh)"
+
+export EDITOR="nano"
