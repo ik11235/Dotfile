@@ -1,6 +1,6 @@
 #!/bin/bash
 cd `dirname $0`
-LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".config" ".textlintrc")
+LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".config" ".textlintrc" "Brewfile")
 INSTALL_PAK=("zsh" "aspell" "tmux" "npm" "coreutils" "rbenv" "ruby-build" "direnv")
 
 for LINK in ${LINKFILE[@]}
