@@ -1,3 +1,10 @@
 #emacs buf
 auto-save-list/
 eshell/
+url/
+elpa/
+transient/
+
+ac-comphist.dat
+network-security.data
+recentf
