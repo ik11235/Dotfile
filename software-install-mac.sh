@@ -11,7 +11,4 @@ if [ $? -ne 0 ]; then
   ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 fi
 
-for PAK in ${INSTALL_PAK[@]}
-do
-    brew install ${PAK}
-done
+brew bundle
