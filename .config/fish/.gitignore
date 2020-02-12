@@ -15,3 +15,7 @@ completions/ghq.fish
 conf.d/ghq_key_bindings.fish
 functions/peco_kill.fish
 functions/peco_select_history.fish
+
+# fishで自動生成されるファイルは一旦skip
+## このファイルに設定を書き込むようになったら外す
+functions/fish_mode_prompt.fish
