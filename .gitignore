@@ -1,1 +1,4 @@
 Brewfile.lock.json
+
+.config/fish/functions/fisher.fish
+.config/fisher/
