@@ -1,0 +1,13 @@
+[user]
+  name = ik-fib
+  email = ik11235@gmail.com
+
+[push]
+  default = simple
+
+[core]
+  excludesfile = /Users/yuichiikeda/.config/git/ignore
+  editor = nano
+
+[color]
+  ui = true
