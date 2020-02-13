@@ -1,11 +1,11 @@
 #!/bin/bash
-cd `dirname $0`
-LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".config" ".textlintrc" "Brewfile" ".gitconfig")
-INSTALL_PAK=("zsh" "aspell" "tmux" "npm" "coreutils" "rbenv" "ruby-build" "direnv")
 
-for LINK in ${LINKFILE[@]}
+cd "`dirname $0`" || exit
+LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".config" ".textlintrc" "Brewfile" ".gitconfig")
+
+for LINK in "${LINKFILE[@]}"
 do
-    ln -s `pwd`/${LINK} ${HOME}/
+    ln -s "`pwd`/${LINK}" ${HOME}
 done
 
 echo "Do you want to install a package ? [Y/n]"
@@ -14,9 +14,9 @@ read ANSWER
 ANSWER=`echo $ANSWER | tr y Y | tr -d '[\[\]]'`
 case $ANSWER in
     ""|Y* )
-	if [ `uname` = "Darwin" ]; then
+	if [ "`uname`" = "Darwin" ]; then
 	    source software-install-mac.sh
-	elif [ `uname` = "Linux" ]; then
+	elif [ "`uname`" = "Linux" ]; then
 	    source software-install-linux.sh
 	fi
 	;;
