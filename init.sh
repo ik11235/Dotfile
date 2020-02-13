@@ -1,12 +1,31 @@
 #!/bin/bash
 
 cd "`dirname $0`" || exit
-LINKFILE=(".emacs.d/" ".zshrc" ".zsh.d/" ".aspell.conf" ".config" ".textlintrc" "Brewfile" ".gitconfig")
 
-for LINK in "${LINKFILE[@]}"
+## 先頭に.をつけてリンクする対象一覧
+DOT_LINK_FILE_DIR="DOT_LINK_TARGET"
+
+cd $DOT_LINK_FILE_DIR || exit
+# SC2045
+for LINK in *
 do
-    ln -s "`pwd`/${LINK}" ${HOME}
+    [[ -e "$LINK" ]] || break
+    ## TODO: 既にリンク済みの場合、その階層の下に更にリンクされる　要修正
+    ln -sv "`pwd`/${LINK}" ${HOME}/.${LINK}
 done
+cd .. || exit
+
+## 先頭に.をつけず、そのままの名前でリンクする対象一覧
+LINK_FILE_DIR="LINK_TARGET"
+
+cd $LINK_FILE_DIR || exit
+
+for LINK in *
+do
+    [[ -e "$LINK" ]] || break
+    ln -sv "`pwd`/${LINK}" ${HOME}
+done
+cd .. || exit
 
 echo "Do you want to install a package ? [Y/n]"
 read ANSWER
