@@ -12,7 +12,12 @@ function link_dir_file() {
     for LINK in *
     do
       [[ -e "$LINK" ]] || break
-      ## TODO: 既にリンク済みの場合、その階層の下に更にリンクされる　要修正
+      # 既にリンク済みの場合、そのディレクトリの階層の下に更にリンクされるので事前にディレクトリの存在有無をチェックする
+      # ファイルの場合、ln側で自動的に重複で止まるのでチェックは不要
+      if [ -d "${LINK_TARGET_PREFIX}${LINK}" ]; then
+        echo "${LINK_TARGET_PREFIX}${LINK}: Directory exists."
+        continue;
+      fi
       ln -sv "`pwd`/${LINK}" ${LINK_TARGET_PREFIX}${LINK}
     done
 
