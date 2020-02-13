@@ -32,8 +32,6 @@ link_dir_file "${DOT_LINK_FILE_DIR}" "${HOME}/."
 LINK_FILE_DIR="LINK_TARGET"
 link_dir_file "${LINK_FILE_DIR}" "${HOME}/"
 
-exit
-
 echo "Do you want to install a package ? [Y/n]"
 read ANSWER
 
