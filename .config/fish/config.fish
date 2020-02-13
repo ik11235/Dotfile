@@ -16,3 +16,6 @@ set GHQ_SELECTOR peco
 source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
 
 eval (direnv hook fish)
+
+## homebrew-command-not-found
+brew command command-not-found-init > /dev/null 2>&1; and . (brew command-not-found-init)
