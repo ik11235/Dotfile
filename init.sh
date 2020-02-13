@@ -33,17 +33,11 @@ chsh -s ${ZSHPATH}
 # textlintのインストール
 npm i -g textlint textlint-rule-preset-japanese textlint-rule-prh textlint-rule-ja-no-redundant-expression
 
-# command-not-foundのインストール
-brew tap homebrew/command-not-found
-
 # rbenvで最新バージョンをインストール
 ## https://mawatari.jp/archives/install-latest-stable-version-of-ruby-using-rbenv
 RUBY_VER=`rbenv install -l | grep -v - | tail -1 | tr -d ' '`
 rbenv install $RUBY_VER
 rbenv global $RUBY_VER
-
-# gcloud install
-brew cask install google-cloud-sdk
 
 # private file作成
 touch ${HOME}/.zsh.d/zshrc_mac_private
