@@ -2,30 +2,32 @@
 
 cd "`dirname $0`" || exit
 
+function link_dir_file() {
+    TARGET_DIR=$1
+    LINK_TARGET_PREFIX=$2
+
+    cd $TARGET_DIR || exit
+
+    # SC2045
+    for LINK in *
+    do
+      [[ -e "$LINK" ]] || break
+      ## TODO: 既にリンク済みの場合、その階層の下に更にリンクされる　要修正
+      ln -sv "`pwd`/${LINK}" ${LINK_TARGET_PREFIX}${LINK}
+    done
+
+    cd .. || exit
+}
+
 ## 先頭に.をつけてリンクする対象一覧
 DOT_LINK_FILE_DIR="DOT_LINK_TARGET"
-
-cd $DOT_LINK_FILE_DIR || exit
-# SC2045
-for LINK in *
-do
-    [[ -e "$LINK" ]] || break
-    ## TODO: 既にリンク済みの場合、その階層の下に更にリンクされる　要修正
-    ln -sv "`pwd`/${LINK}" ${HOME}/.${LINK}
-done
-cd .. || exit
+link_dir_file "${DOT_LINK_FILE_DIR}" "${HOME}/."
 
 ## 先頭に.をつけず、そのままの名前でリンクする対象一覧
 LINK_FILE_DIR="LINK_TARGET"
+link_dir_file "${LINK_FILE_DIR}" "${HOME}/"
 
-cd $LINK_FILE_DIR || exit
-
-for LINK in *
-do
-    [[ -e "$LINK" ]] || break
-    ln -sv "`pwd`/${LINK}" ${HOME}
-done
-cd .. || exit
+exit
 
 echo "Do you want to install a package ? [Y/n]"
 read ANSWER
