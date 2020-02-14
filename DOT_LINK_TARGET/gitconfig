@@ -6,7 +6,7 @@
   default = simple
 
 [core]
-  excludesfile = /Users/yuichiikeda/.config/git/ignore
+  excludesfile = ~/.config/git/ignore
   editor = nano
 
 [color]
