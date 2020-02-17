@@ -42,3 +42,35 @@ do
   sed -i '' -e "$line"'s/ *$//' "$file"
   git add "$file"
 done
+
+# 禁止ワードが含まれていないかチェック
+prohibited_word_check=""
+prohibited_word_list=()
+
+## グローバルな単語リスト取得
+if [ -d "$(dirname ${0})/git_prohibited_words/" ]; then
+  while IFS='' read -r line; do prohibited_word_list+=("$line"); done < <(cat "$(dirname ${0})/git_prohibited_words/"*)
+fi
+
+## プライベートな単語リスト取得
+if [ -d "$(dirname ${0})/git_prohibited_words_private/" ]; then
+  while IFS='' read -r line; do prohibited_word_list+=("$line"); done < <(cat "$(dirname ${0})/git_prohibited_words_private/"*)
+fi
+
+for prohibited_word in "${prohibited_word_list[@]}"; do
+  # Skip comment or blank lines
+  echo $prohibited_word | grep ^# >/dev/null && continue
+  echo $prohibited_word | grep '^\s*$' >/dev/null && continue
+
+  for file in $(git diff --cached --name-only); do
+    result=$(git diff --cached -U0 -- $file | grep -i "${prohibited_word}")
+    if [ $? -eq 0 ]; then
+      prohibited_word_check=$(echo -e "${prohibited_word_check}\n${file}\n${result}\n")
+    fi
+  done
+done
+
+if [ -n "$prohibited_word_check" ]; then
+  echo -e "$prohibited_word_check"
+  exit 1
+fi
