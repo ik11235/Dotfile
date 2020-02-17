@@ -1,11 +1,11 @@
 #!/bin/bash
 
-source `dirname ${0}`/_local-hook-exec
+source $(dirname ${0})/_local-hook-exec
 
 # https://dev.classmethod.jp/etc/git_aws_access_key/
 ## AWSアクセスキーをgitに誤って登録しないようにする
 
-GREP_RESULT=`git diff --cached | grep KEY | grep AKIA`
+GREP_RESULT=$(git diff --cached | grep KEY | grep AKIA)
 if [ -n "${GREP_RESULT}" ]; then
   echo 'AWS_ACCESS_KEY might be in this index. Please check with git diff --cached'
   echo ${GREP_RESULT}
@@ -18,26 +18,24 @@ fi
 
 git grep -I $'[\x01-\x08\x0B\x0C\x0E-\x1F\x7F']
 if [ $? -eq 0 ]; then
-    echo "Hit control code."
-    exit 1
+  echo "Hit control code."
+  exit 1
 fi
 
 # git commit時に自動的に行末の空白を修正する
 ## https://qiita.com/k0kubun/items/8f6d7eded1d833187449
 
-if git-rev-parse --verify HEAD >/dev/null 2>&1
-then
+if git-rev-parse --verify HEAD >/dev/null 2>&1; then
   against=HEAD
 else
   # Initial commit: diff against an empty tree object
   against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
 fi
 
-for diff in `git diff-index --check --cached $against -- |
-  grep 'trailing whitespace' | sed 's/: trailing whitespace.//'`
-do
-  file=`echo "$diff" | sed 's/:[^:]*$//'`
-  line=`echo "$diff" | sed 's/^[^:]*://'`
+for diff in $(git diff-index --check --cached $against -- |
+  grep 'trailing whitespace' | sed 's/: trailing whitespace.//'); do
+  file=$(echo "$diff" | sed 's/:[^:]*$//')
+  line=$(echo "$diff" | sed 's/^[^:]*://')
 
   sed -i '' -e "$line"'s/ *$//' "$file"
   git add "$file"
