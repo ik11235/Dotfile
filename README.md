@@ -55,7 +55,7 @@ dotfile
 
  以下を行うスクリプト
  
- - DOT_LINK_TARGETディレクトリにあるファイルは.付きでUSER_HOME以下にシンボリックリンクを貼る(.configや.zsh.d￿等)
+ - DOT_LINK_TARGETディレクトリにあるファイルは.付きでUSER_HOME以下にシンボリックリンクを貼る(.configや.zsh.d等)
  - LINK_TARGETディレクトリにあるファイルはそのままの名前でUSER_HOME以下にシンボリックリンクを貼る(Brewfile等)
  
  - その後、必要な設定やソフトウェアのインストールを行う
