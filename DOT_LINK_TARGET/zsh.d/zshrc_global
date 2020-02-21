@@ -11,7 +11,9 @@ setopt PROMPT_SUBST #色つけ設定
 PROMPT="%n@%m%% "   #プロンプト設定
 
 ## TODO: function全体を取り込むようにする
+source $(dirname $0)/function/_setup_gnu_command.sh
 source $(dirname $0)/function/dateComp.sh
+source $(dirname $0)/function/git-diff-check.sh
 
 ###ここからhttp://qiita.com/uasi/items/c4288dd835a65eb9d709より引用
 # 自動補完を有効にする
@@ -153,3 +155,5 @@ export AVAILABLE_FUZZY_FINDER=`available-fuzzy-finder-find $AVAILABLE_FUZZY_FIND
 
 # .bin(DOT_LINK_TARGET/bin)をPATHに追加
 export PATH=$PATH:$HOME/.bin
+
+git_update_check "$0"

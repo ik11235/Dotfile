@@ -5,7 +5,6 @@ readonly local SCRIPT_DIR=$(
 # shellcheck source=./zshrc_mac_private
 source $SCRIPT_DIR/zshrc_mac_private
 
-<<<<<<< HEAD
 # anyenv
 eval "$(anyenv init - --no-rehash)"
 
