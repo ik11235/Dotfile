@@ -6,6 +6,7 @@ dotfile
 * emacs
 * tmux
 * zsh
+* fish
 * (ssh)
 
 
@@ -42,14 +43,17 @@ dotfile
 - magit
 - yasnippet
 
-## tmux
-
 ## zsh
 
  .zshrcでは以下のOSごとのファイル読み込みのみを行う
 - zshrc_global すべてのOS対象のファイル
 - zshrc_linux Linux用のファイル
 - zshrc_mac mac用のファイル
+
+## fish
+
+- 起動シェルはzshにしつつ、zshから呼び出すことを想定している
+    - 現在は自動起動するようにしていない
 
 ## init.sh
 
