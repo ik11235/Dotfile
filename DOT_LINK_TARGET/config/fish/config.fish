@@ -21,3 +21,11 @@ eval (direnv hook fish)
 brew command command-not-found-init > /dev/null 2>&1; and . (brew command-not-found-init)
 
 #source /usr/local/share/fish/vendor_completions.d/*.fish
+
+# history同期
+## https://github.com/fish-shell/fish-shell/issues/825#issuecomment-203021964
+function save_history --on-event fish_preexec
+    history --save
+    history --marge
+end
+
