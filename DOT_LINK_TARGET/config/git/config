@@ -9,6 +9,9 @@
   excludesfile = ~/.config/git/ignore
   editor = nano
   hooksPath = ~/.config/git/hooks
+  autocrlf = input
 
 [color]
   ui = true
+[pull]
+  rebase = true
