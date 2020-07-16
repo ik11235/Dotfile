@@ -1,6 +1,9 @@
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 source $SCRIPT_DIR/zshrc_mac_private
 
+# anyenv
+eval "$(anyenv init -)"
+
 #brew 補完
 ##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
 
@@ -10,10 +13,6 @@ if [ -x "`which go`" ]; then
       export GOPATH=$HOME/code/go-local
       export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 fi
-
-#rbenv
-export PATH="$HOME/.rbenv/bin:$PATH"
-if which rbenv > /dev/null; then eval "$(rbenv init - zsh)"; fi
 
 # brew
 export PATH="/usr/local/bin:$PATH"
@@ -27,14 +26,12 @@ export PATH="/usr/local/sbin:$PATH"
 export PATH="/usr/local/opt/mysql@5.6/bin:$PATH"
 
 # python
+## pyenvをbrew時のみ除外する設定
 if builtin command -v pyenv > /dev/null; then
-   # pyenv インストールされているときのみ処理
-   # https://yukidarake.hateblo.jp/entry/2013/12/10/195514
-
-   eval "$(pyenv init -)"
-   # brewコマンド実行の際のみpyevをPATHから外す
+   # brewコマンド実行の際のみpyenvをPATHから外す
    ## https://www.task-notes.com/entry/20141223/1419324649
-   alias brew="env PATH=${PATH/\/Users\/ik\/\.pyenv\/shims:/} brew"
+   EXCLUSION_PATH=`echo ~/.anyenv/envs/pyenv/shims`
+   alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
 fi
 
 if brew command command-not-found-init > /dev/null 2>&1; then eval "$(brew command-not-found-init)"; fi
@@ -42,8 +39,5 @@ if brew command command-not-found-init > /dev/null 2>&1; then eval "$(brew comma
 ## gcloud completion
 source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc'
 source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc'
-
-## nodebrew
-export PATH=$HOME/.nodebrew/current/bin:$PATH
 
 exec fish
