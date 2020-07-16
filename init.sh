@@ -77,6 +77,18 @@ RUBY_VER=`rbenv install -l | grep -v - | tail -1 | tr -d ' '`
 rbenv install $RUBY_VER
 rbenv global $RUBY_VER
 
+# nodenvで最新バージョンをインストール
+NODE_VER=`nodenv install -l | grep -v [a-z] | tail -1 | tr -d ' '`
+nodenv install $NODE_VER
+nodenv global $NODE_VER
+
+# pyenvで3.7.7をインストール
+## 3.7.7決め打ちなのは→対策　https://twitter.com/ik11235/status/1283723978985488385
+## TODO: ↑の問題が解消したら最新バージョンを入れるように変更
+PYTHON_VER="3.7.7"
+pyenv install $PYTHON_VER
+pyenv global $PYTHON_VER
+
 # private file作成
 touch ${HOME}/.zsh.d/zshrc_mac_private
 
