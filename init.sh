@@ -67,6 +67,10 @@ do
     anyenv install ${ANYENV_TARGET}
 done
 
+## anyenvのプラグインinstall
+mkdir -p $(anyenv root)/plugins
+git clone https://github.com/znz/anyenv-update.git $(anyenv root)/plugins/anyenv-update
+
 # rbenvで最新バージョンをインストール
 ## https://mawatari.jp/archives/install-latest-stable-version-of-ruby-using-rbenv
 RUBY_VER=`rbenv install -l | grep -v - | tail -1 | tr -d ' '`
