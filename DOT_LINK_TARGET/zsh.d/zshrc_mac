@@ -14,10 +14,6 @@ if [ -x "`which go`" ]; then
       export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 fi
 
-#rbenv
-export PATH="$HOME/.rbenv/bin:$PATH"
-if which rbenv > /dev/null; then eval "$(rbenv init - zsh)"; fi
-
 # brew
 export PATH="/usr/local/bin:$PATH"
 export PATH="/usr/local/sbin:$PATH"
@@ -45,11 +41,5 @@ if brew command command-not-found-init > /dev/null 2>&1; then eval "$(brew comma
 ## gcloud completion
 source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc'
 source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc'
-
-## nodebrew
-export PATH=$HOME/.nodebrew/current/bin:$PATH
-
-## anyenv
-eval "$(anyenv init -)"
 
 exec fish
