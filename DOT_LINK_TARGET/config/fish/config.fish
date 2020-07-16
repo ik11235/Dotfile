@@ -10,6 +10,19 @@ source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.in
 
 eval (direnv hook fish)
 
+# yarnを誤ってbrew等で入れないようにする警告
+function yarn_check
+  if which yarn
+    yarn $argv
+  else
+    echo "The program 'yarn' is currently not installed. You can install it by typing:"
+    echo "  npm install -g yarn"
+    return 1
+  end
+end
+
+alias yarn=yarn_check
+
 ## homebrew-command-not-found
 set HB_CNF_HANDLER (brew --prefix)"/Homebrew/Library/Taps/homebrew/homebrew-command-not-found/handler.fish"
 if test -f $HB_CNF_HANDLER
