@@ -1,6 +1,9 @@
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 source $SCRIPT_DIR/zshrc_mac_private
 
+# anyenv
+eval "$(anyenv init -)"
+
 #brew 補完
 ##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
 
