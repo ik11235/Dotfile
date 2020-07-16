@@ -57,6 +57,16 @@ chsh -s ${ZSHPATH}
 # textlintのインストール
 npm i -g textlint textlint-rule-preset-japanese textlint-rule-prh textlint-rule-ja-no-redundant-expression
 
+# anyenvのinit & installしたい*envのインストール
+eval "$(anyenv init -)"
+yes | anyenv install --init
+ANYENV_INSTALL_TARGET=("rbenv" "pyenv" "nodenv")
+
+for ANYENV_TARGET in "${ANYENV_INSTALL_TARGET[@]}"
+do
+    anyenv install ${ANYENV_TARGET}
+done
+
 # rbenvで最新バージョンをインストール
 ## https://mawatari.jp/archives/install-latest-stable-version-of-ruby-using-rbenv
 RUBY_VER=`rbenv install -l | grep -v - | tail -1 | tr -d ' '`
