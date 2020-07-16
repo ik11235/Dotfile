@@ -26,14 +26,12 @@ export PATH="/usr/local/sbin:$PATH"
 export PATH="/usr/local/opt/mysql@5.6/bin:$PATH"
 
 # python
+## pyenvをbrew時のみ除外する設定
 if builtin command -v pyenv > /dev/null; then
-   # pyenv インストールされているときのみ処理
-   # https://yukidarake.hateblo.jp/entry/2013/12/10/195514
-
-   eval "$(pyenv init -)"
-   # brewコマンド実行の際のみpyevをPATHから外す
+   # brewコマンド実行の際のみpyenvをPATHから外す
    ## https://www.task-notes.com/entry/20141223/1419324649
-   alias brew="env PATH=${PATH/\/Users\/ik\/\.pyenv\/shims:/} brew"
+   EXCLUSION_PATH=`echo ~/.anyenv/envs/pyenv/shims`
+   alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
 fi
 
 if brew command command-not-found-init > /dev/null 2>&1; then eval "$(brew command-not-found-init)"; fi
