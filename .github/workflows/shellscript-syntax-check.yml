@@ -23,4 +23,4 @@ jobs:
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
         with:
-          ignore: .gitignore zsh.d zshrc DOT_LINK_TARGET/config
+          ignore: .gitignore zsh.d DOT_LINK_TARGET/zshrc DOT_LINK_TARGET/config
