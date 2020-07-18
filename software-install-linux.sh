@@ -5,4 +5,4 @@
 
 #sudo apt-get install ${INSTALL_PAK[@]}
 echo "Linux sh"
-echo ${INSTALL_PAK[@]}
+echo "${INSTALL_PAK[@]}"
