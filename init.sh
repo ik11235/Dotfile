@@ -4,24 +4,7 @@ cd "$(dirname "$0")"
 
 /bin/bash .link_dir_and_file.sh
 
-echo "Do you want to install a package ? [Y/n]"
-read -r ANSWER
-
-ANSWER=$(echo "$ANSWER" | tr y Y)
-case $ANSWER in
-    ""|Y* )
-	if [ "$(uname)" = "Darwin" ]; then
-      # shellcheck source=software-install-mac.sh
-	    source software-install-mac.sh
-	elif [ "$(uname)" = "Linux" ]; then
-	    # shellcheck source=software-install-linux.sh
-	    source software-install-linux.sh
-	fi
-	;;
-    *  )
-	echo "Don't install."
-	;;
-esac
+/bin/bash .software-install.sh
 
 #defalut shell change
 ZSHPATH=$(which zsh)
