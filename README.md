@@ -1,6 +1,8 @@
 dotfile
 ==================================
 
+[![zsh-syntax-check](https://github.com/ik11235/Dotfile/workflows/zsh-syntax-check/badge.svg)](https://github.com/ik11235/Dotfile/actions?query=workflow%3Azsh-syntax-check)
+
 # 導入予定
 
 * emacs
