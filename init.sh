@@ -53,13 +53,4 @@ pyenv global "$PYTHON_VER"
 touch "${HOME}/.zsh.d/zshrc_mac_private"
 
 # powerline-fonts install
-(
-# clone
-git clone https://github.com/powerline/fonts.git --depth=1
-# install
-cd fonts
-./install.sh
-# clean-up a bit
-cd ..
-rm -rf fonts
-)
+/bin/bash .powerline-fonts-install.sh
