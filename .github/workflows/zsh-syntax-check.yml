@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: zsh-syntax-check
+name: shellscript-syntax-check
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
@@ -29,3 +29,6 @@ jobs:
     # Runs a single command using the runners shell
     - name: zsh syntax check
       run: zsh -n DOT_LINK_TARGET/zshrc
+
+    - name: init.sh syntax check
+      run: bash -n init.sh
