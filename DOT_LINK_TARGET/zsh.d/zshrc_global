@@ -1,13 +1,19 @@
+#!/bin/zsh
+
 bindkey -e
 HISTFILE=$HOME/.zsh-history           # 履歴をファイルに保存する
 HISTSIZE=100000                       # メモリ内の履歴の数
+# shellcheck disable=SC2034
 SAVEHIST=100000                       # 保存される履歴の数
 setopt extended_history               # 履歴ファイルに時刻を記録
-function history-all { history -E 1 } # 全履歴の一覧を出力する
+function history-all() {              # 全履歴の一覧を出力する
+  history -E 1
+  }
 setopt share_history                  # 履歴の共有
 
 setopt PROMPT_SUBST #色つけ設定
 #RPROMPT="[%d]"   #右プロンプト設定
+# shellcheck disable=SC2034
 PROMPT="%n@%m%% "   #プロンプト設定
 
 

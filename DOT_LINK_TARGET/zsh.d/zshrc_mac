@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 readonly local SCRIPT_DIR=$(cd "$(dirname $0)" || exit; pwd)
 # shellcheck source=./zshrc_mac_private
 source $SCRIPT_DIR/zshrc_mac_private

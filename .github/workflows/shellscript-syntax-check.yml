@@ -4,7 +4,7 @@ name: shellscript-syntax-check
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-on: 
+on:
   push:
     branches:
       - master
@@ -22,3 +22,6 @@ jobs:
       - uses: actions/checkout@master
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
+        with:
+          ignore: .gitignore
+
