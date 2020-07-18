@@ -17,6 +17,10 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
+    
+    # install zsh
+    - name: Install zsh
+      run: sudo apt-get install zsh
 
     # Runs a single command using the runners shell
     - name: zsh syntax check
