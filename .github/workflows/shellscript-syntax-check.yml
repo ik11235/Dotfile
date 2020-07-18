@@ -23,4 +23,4 @@ jobs:
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
         with:
-          ignore: .gitignore zshrc
+          ignore: .gitignore zsh.d
