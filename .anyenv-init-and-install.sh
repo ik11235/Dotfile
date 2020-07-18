@@ -30,6 +30,9 @@ nodenv global "$NODE_VER"
 ## yarnを誤ってhomebrew等で入れないように先にyarnを入れておく
 nodenv exec npm install -g yarn
 
+# textlintのインストール
+nodeenv exec npm i -g textlint textlint-rule-preset-japanese textlint-rule-prh textlint-rule-ja-no-redundant-expression
+
 # pyenvで3.7.7をインストール
 ## 3.7.7決め打ちなのは→対策　https://twitter.com/ik11235/status/1283723978985488385
 ## TODO: ↑の問題が解消したら最新バージョンを入れるように変更

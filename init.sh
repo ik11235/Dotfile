@@ -11,9 +11,6 @@ ZSHPATH=$(which zsh)
 sudo sh -c "echo ${ZSHPATH} >> /etc/shells"
 chsh -s "${ZSHPATH}"
 
-# textlintのインストール
-npm i -g textlint textlint-rule-preset-japanese textlint-rule-prh textlint-rule-ja-no-redundant-expression
-
 /bin/bash .anyenv-init-and-install.sh
 
 # private file作成
