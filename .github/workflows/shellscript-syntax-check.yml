@@ -31,7 +31,7 @@ jobs:
       run: zsh -n DOT_LINK_TARGET/zshrc DOT_LINK_TARGET/zsh.d/*
 
     - name: init.sh syntax check
-      run: bash -n init.sh
+      run: bash -n *.sh
 
     - name: run shellcheck
-      run: shellcheck init.sh
+      run: shellcheck *.sh
