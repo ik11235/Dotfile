@@ -31,7 +31,7 @@ nodenv global "$NODE_VER"
 nodenv exec npm install -g yarn
 
 # textlintのインストール
-nodeenv exec npm i -g textlint textlint-rule-preset-japanese textlint-rule-prh textlint-rule-ja-no-redundant-expression
+nodenv exec npm i -g textlint textlint-rule-preset-japanese textlint-rule-prh textlint-rule-ja-no-redundant-expression
 
 # pyenvで3.7.7をインストール
 ## 3.7.7決め打ちなのは→対策　https://twitter.com/ik11235/status/1283723978985488385
