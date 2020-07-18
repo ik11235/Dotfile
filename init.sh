@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/bin/bash -eu
 
-cd "$(dirname "$0")" || exit
+cd "$(dirname "$0")"
 
 function link_dir_file() {
     TARGET_DIR=$1
     LINK_TARGET_PREFIX=$2
 
-    cd "$TARGET_DIR" || exit
+    cd "$TARGET_DIR"
 
     # SC2045
     for LINK in *
@@ -21,7 +21,7 @@ function link_dir_file() {
       ln -sv "$(pwd)/${LINK}" "${LINK_TARGET_PREFIX}${LINK}"
     done
 
-    cd .. || exit
+    cd ..
 }
 
 ## 先頭に.をつけてリンクする対象一覧
@@ -102,7 +102,7 @@ touch "${HOME}/.zsh.d/zshrc_mac_private"
 # clone
 git clone https://github.com/powerline/fonts.git --depth=1
 # install
-cd fonts || exit
+cd fonts
 ./install.sh
 # clean-up a bit
 cd ..
