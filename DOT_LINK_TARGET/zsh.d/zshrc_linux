@@ -3,17 +3,3 @@
 if [[ -s '/etc/zsh_command_not_found' ]]; then
  source "/etc/zsh_command_not_found"
 fi
-
- #Start tmux on every shell login
- #https://wiki.archlinux.org/index.php/Tmux#Start_tmux_on_every_shell_login
- if which tmux 2>&1 >/dev/null; then
-     #if not inside a tmux session, and if no session is started, start a new session
-     test -z "$TMUX" && (tmux attach || tmux new-session)
- fi
- #tmux設定
- DISPLAY=`tmux show-environment |grep DISPLAY=|cut -d "=" -f 2`
- if [ -n "$DISPLAY" ]; then
-     export DISPLAY=${DISPLAY}
- else
-     echo "non DISPLAY number">>/dev/null
- fi
