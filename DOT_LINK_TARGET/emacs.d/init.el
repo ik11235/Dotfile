@@ -6,11 +6,14 @@
 
 ;;init-loaderをpackage経由でインストールするため、packageの設定、必要パッケージの自動インストール
 (require 'package)
-(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/"))
-(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+(setq package-archives
+      '(("melpa" . "https://melpa.org/packages/")
+        ("org" . "https://orgmode.org/elpa/")
+        ("gnu" . "https://elpa.gnu.org/packages/")))
 (package-initialize)
 
-(require 'cl)
+;; パッケージ情報の更新
+(package-refresh-contents)
 
 (defvar installing-package-list
   '(
@@ -23,7 +26,7 @@
     google-translate
     yasnippet
     enh-ruby-mode
-    ruby-block
+    ;;ruby-block
     smartparens
     auto-complete
     php-mode
@@ -36,14 +39,10 @@
     open-junk-file
     ))
 
-(let ((not-installed (loop for x in installing-package-list
-                            when (not (package-installed-p x))
-                            collect x)))
-  (when not-installed
-    (package-refresh-contents)
-    (dolist (pkg not-installed)
-        (package-install pkg))))
-
+;; installing-package-listからインストールしていないパッケージをインストール
+(dolist (package installing-package-list)
+  (unless (package-installed-p package)
+    (package-install package)))
 
 
 (require 'init-loader)
@@ -57,9 +56,8 @@
  '(google-translate-default-source-language "ja")
  '(google-translate-default-target-language "en")
  '(package-selected-packages
-   (quote
-    (nginx-mode js2-mode json-mode open-junk-file yasnippet yaml-mode web-mode ssh-config-mode smartparens slim-mode scss-mode ruby-block popwin php-mode php-completion org2blog markdown-mode init-loader highlight-indentation helm-gtags helm-flycheck helm-ag google-translate git-rebase-mode git-commit-mode enh-ruby-mode editorconfig-core editorconfig coffee-mode auto-complete)))
- '(yas-prompt-functions (quote (my-yas/prompt)))
+   '(nginx-mode js2-mode json-mode open-junk-file yasnippet yaml-mode web-mode ssh-config-mode smartparens slim-mode scss-mode ruby-block popwin php-mode php-completion org2blog markdown-mode init-loader highlight-indentation helm-gtags helm-flycheck helm-ag google-translate git-rebase-mode git-commit-mode enh-ruby-mode editorconfig-core editorconfig coffee-mode auto-complete))
+ '(yas-prompt-functions '(my-yas/prompt))
  '(yas-trigger-key "TAB"))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
