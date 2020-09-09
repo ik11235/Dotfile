@@ -12,9 +12,6 @@
         ("gnu" . "https://elpa.gnu.org/packages/")))
 (package-initialize)
 
-;; パッケージ情報の更新
-(package-refresh-contents)
-
 (defvar installing-package-list
   '(
     ;; ここに使っているパッケージを書く。
