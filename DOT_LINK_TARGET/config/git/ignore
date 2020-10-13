@@ -12,3 +12,6 @@
 
 # IntelliJ
 .idea/
+
+# direnv
+.envrc
