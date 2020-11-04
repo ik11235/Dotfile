@@ -5,6 +5,9 @@ source $SCRIPT_DIR/zshrc_mac_private
 # anyenv
 eval "$(anyenv init -)"
 
+## gcloudでanyenvのpythonを使うように(3.9未対応問題対策)
+export CLOUDSDK_PYTHON="$HOME/.anyenv/envs/pyenv/shims/python"
+
 #brew 補完
 ##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
 
