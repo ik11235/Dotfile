@@ -40,7 +40,7 @@ end
 set NOT_ANYENV_PATH ""
 
 for tmp_path in (string split : $PATH)
-    if ! string match '*/.anyenv/*' $tmp_path
+    if ! string match '*/.anyenv/*' $tmp_path >> /dev/null
         set NOT_ANYENV_PATH $NOT_ANYENV_PATH $tmp_path
     end
 end
