@@ -37,19 +37,12 @@ end
 ## phpenv等でも出るらしいので、anyenv管理のものは一律除外
 ## https://qiita.com/takc923/items/45386905f70fde9af0e7
 
-#set EXCLUSION_PATH (echo ~/.anyenv/envs/pyenv/shims)
-#alias brew="env PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/sbin brew"
-
-#echo $EXCLUSION_PATH
-#echo $PATH
-#echo (string replace -a $EXCLUSION_PATH "" $PATH)
-
 set NOT_ANYENV_PATH ""
 
 for tmp_path in (string split : $PATH)
-          if ! string match '*/.anyenv/*' $tmp_path
-           set NOT_ANYENV_PATH $NOT_ANYENV_PATH $tmp_path
-           end
-     end
+    if ! string match '*/.anyenv/*' $tmp_path
+        set NOT_ANYENV_PATH $NOT_ANYENV_PATH $tmp_path
+    end
+end
 
-     alias brew="env PATH=$NOT_ANYENV_PATH brew"
+alias brew="env PATH=$NOT_ANYENV_PATH brew"
