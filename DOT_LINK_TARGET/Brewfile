@@ -67,4 +67,12 @@ cask "slack-beta"
 cask "station"
 cask "steam"
 cask "vlc"
+mas "AmorphousDiskMark", id: 1168254295
+mas "Amphetamine", id: 937984704
+mas "AS Timer", id: 512464723
+mas "Display Menu", id: 549083868
+mas "KyPass", id: 555293879
+mas "LINE", id: 539883307
 mas "Microsoft Remote Desktop", id: 1295203466
+mas "The Unarchiver", id: 425424353
+mas "Xcode", id: 497799835
