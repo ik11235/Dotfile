@@ -75,12 +75,6 @@ precmd () {
 # バージョン管理されているディレクトリにいれば表示，そうでなければ非表示
 RPROMPT="%1(v|%F{green}%1v%f|)[%d]"
 
-# rbenvパス設定
-if [[ -e "$HOME/.rbenv/bin" ]]; then
-    export PATH="$HOME/.rbenv/bin:$PATH"
-    eval "$(rbenv init -)"
-fi
-
 # direnv
 eval "$(direnv hook zsh)"
 
