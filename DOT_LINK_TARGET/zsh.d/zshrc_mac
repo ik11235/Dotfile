@@ -1,4 +1,7 @@
-readonly local SCRIPT_DIR=$(cd "$(dirname $0)" || exit; pwd)
+readonly local SCRIPT_DIR=$(
+  cd "$(dirname $0)" || exit
+  pwd
+)
 # shellcheck source=./zshrc_mac_private
 source $SCRIPT_DIR/zshrc_mac_private
 
@@ -12,10 +15,10 @@ export CLOUDSDK_PYTHON="/usr/local/opt/python@3.8/bin/python3"
 ##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
 
 ##go言語設定
-if [ -x "`which go`" ]; then
-      export GOROOT=`go env GOROOT`
-      export GOPATH=$HOME/go
-      export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+if [ -x "$(which go)" ]; then
+  export GOROOT=$(go env GOROOT)
+  export GOPATH=$HOME/go
+  export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 fi
 
 # brew
@@ -31,16 +34,16 @@ export PATH="/usr/local/opt/mysql@5.6/bin:$PATH"
 
 # python
 ## pyenvをbrew時のみ除外する設定
-if builtin command -v pyenv > /dev/null; then
-   # brewコマンド実行の際のみpyenvをPATHから外す
-   ## https://www.task-notes.com/entry/20141223/1419324649
-   EXCLUSION_PATH=`echo ~/.anyenv/envs/pyenv/shims`
-   alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
+if builtin command -v pyenv >/dev/null; then
+  # brewコマンド実行の際のみpyenvをPATHから外す
+  ## https://www.task-notes.com/entry/20141223/1419324649
+  EXCLUSION_PATH=$(echo ~/.anyenv/envs/pyenv/shims)
+  alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
 fi
 
 HB_CNF_HANDLER="$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-command-not-found/handler.sh"
 if [ -f "$HB_CNF_HANDLER" ]; then
-source "$HB_CNF_HANDLER";
+  source "$HB_CNF_HANDLER"
 fi
 
 ## gcloud completion
@@ -50,7 +53,7 @@ source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.
 ## Android platform-tools
 ### Android Studioのパスがあればそれを使用する
 if [ -d "$HOME/Library/Android/sdk/platform-tools" ]; then
-    export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
+  export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
 fi
 
 exec fish
