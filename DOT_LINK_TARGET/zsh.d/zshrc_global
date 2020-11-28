@@ -126,3 +126,25 @@ if [ -f '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.i
 
 # The next line enables shell command completion for gcloud.
 if [ -f '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc' ]; then . '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc'; fi
+
+# 有効なfuzzy finderを自動選択
+## https://qiita.com/b4b4r07/items/9e1bbffb1be70b6ce033
+AVAILABLE_FUZZY_FINDER_LIST="fzf:/usr/local/bin/fzf:peco:/usr/local/bin/peco"
+available-fuzzy-finder-find () {
+    local x candidates
+    candidates="$1:"
+    while [ -n "$candidates" ]
+    do
+        x=${candidates%%:*}
+        candidates=${candidates#*:}
+        if type "$x" >/dev/null 2>&1; then
+            echo "$x"
+            return 0
+        else
+            continue
+        fi
+    done
+    return 1
+}
+
+export AVAILABLE_FUZZY_FINDER=`available-fuzzy-finder-find $AVAILABLE_FUZZY_FINDER_LIST`
