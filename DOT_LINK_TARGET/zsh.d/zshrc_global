@@ -148,3 +148,6 @@ available-fuzzy-finder-find () {
 }
 
 export AVAILABLE_FUZZY_FINDER=`available-fuzzy-finder-find $AVAILABLE_FUZZY_FINDER_LIST`
+
+# .bin(DOT_LINK_TARGET/bin)をPATHに追加
+export PATH=$PATH:$HOME/.bin
