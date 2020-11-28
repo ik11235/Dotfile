@@ -62,7 +62,6 @@ git clone git@github.com:ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfile
 ## fish
 
 - 起動シェルはzshにしつつ、zshから呼び出すことを想定している
-    - 現在は自動起動するようにしていない
 
 ## init.sh
 
