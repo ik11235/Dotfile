@@ -15,14 +15,14 @@ dotfile
 # インストール方法
 
 ```shell script
- git clone git@github.com:ik11235/Dotfile.git ./dotfile
+ git clone https://github.com/ik11235/Dotfile.git ./dotfile
  ./dotfile/init.sh
 ```
 
 ## use ghq
 
 ```shell script
- ghq get git@github.com:ik11235/Dotfile.git
+ ghq get https://github.com/ik11235/Dotfile.git
  cd "$( ghq list --full-path | grep ik11235/Dotfile)"
  ./init.sh
  cd -
@@ -31,7 +31,7 @@ dotfile
 OR
 
 ```shell script
-git clone git@github.com:ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfile
+git clone https://github.com/ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfile
 ~/ghq/github.com/ik11235/Dotfile/init.sh
 ```
 
