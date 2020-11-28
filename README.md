@@ -28,6 +28,13 @@ dotfile
  cd -
 ```
 
+OR
+
+```shell script
+git clone git@github.com:ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfile
+~/ghq/github.com/ik11235/Dotfile/init.sh
+```
+
 # 各設定ファイルについて
 
 ## emacs
