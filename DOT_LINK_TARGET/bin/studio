@@ -3,7 +3,7 @@
 
 TARGET_DIR="$HOME/Library/Application Support/JetBrains/Toolbox/apps/AndroidStudio/ch-0"
 if [ ! -d "$TARGET_DIR" ]; then
-  echo "$TARGET_DIR not found.\nNot installed Gorland?"
+  echo "$TARGET_DIR not found.\nNot installed Android Studio?"
   exit 1
 fi
 
