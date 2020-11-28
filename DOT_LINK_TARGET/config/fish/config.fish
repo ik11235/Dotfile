@@ -2,7 +2,7 @@
 
 # ~/.config/fish/config.fishに追加
 #fisherパッケージdecors/fish-ghqの設定
-set GHQ_SELECTOR fzf
+set GHQ_SELECTOR $AVAILABLE_FUZZY_FINDER
 
 
 # google cloud sdkのPATH
