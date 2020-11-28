@@ -1,0 +1,8 @@
+# 指定したファイル以外はすべて不許可
+*
+
+# JetBrain製品を開くためのシェルスクリプト
+!/goland
+!/idea
+!/studio
+!/webstorm

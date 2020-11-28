@@ -1,0 +1,12 @@
+#!/bin/sh -eu
+# JetBrains Toolboxが自動生成するシェルスクリプトをベースに自動的に最新バージョンで開くように改変
+
+TARGET_DIR="$HOME/Library/Application Support/JetBrains/Toolbox/apps/WebStorm/ch-0"
+if [ ! -d "$TARGET_DIR" ]; then
+  echo "$TARGET_DIR not found.\nNot installed Gorland?"
+  exit 1
+fi
+
+LATEST_DIR="$(find "$TARGET_DIR" -type d -maxdepth 1 | tail -1)"
+
+open -na "$LATEST_DIR/WebStorm.app/Contents/MacOS/webstorm" --args "$@"
