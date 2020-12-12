@@ -24,6 +24,8 @@ fi
 # brew
 export PATH="/usr/local/bin:$PATH"
 export PATH="/usr/local/sbin:$PATH"
+## M1 brew
+export PATH="/opt/homebrew/bin:$PATH"
 
 #coreutils path
 # export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
