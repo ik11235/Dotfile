@@ -6,7 +6,9 @@ set GHQ_SELECTOR $AVAILABLE_FUZZY_FINDER
 
 
 # google cloud sdkのPATH
-source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
+if test -d "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/"
+  source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
+end
 
 eval (direnv hook fish)
 

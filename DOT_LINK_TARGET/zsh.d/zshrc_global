@@ -10,6 +10,10 @@ setopt PROMPT_SUBST #色つけ設定
 #RPROMPT="[%d]"   #右プロンプト設定
 PROMPT="%n@%m%% "   #プロンプト設定
 
+# 各種PATHを通すために最初にM1 homebrewのチェックをする
+if [ -d "/opt/homebrew/bin/" ]; then
+  export PATH="/opt/homebrew/bin:$PATH"
+fi
 
 ###ここからhttp://qiita.com/uasi/items/c4288dd835a65eb9d709より引用
 # 自動補完を有効にする
