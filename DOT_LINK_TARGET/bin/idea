@@ -1,6 +1,12 @@
 #!/bin/sh -eu
 # JetBrains Toolboxが自動生成するシェルスクリプトをベースに自動的に最新バージョンで開くように改変
 
+# Arm版を手動で入れたことによる/Applications以下のintellJを先に見る処理
+if [[ -f "/Applications/IntelliJ IDEA.app/Contents/MacOS/idea" ]]; then
+  open -na "/Applications/IntelliJ IDEA.app/Contents/MacOS/idea" --args "$@"
+  exit 0
+fi
+
 TARGET_DIR="$HOME/Library/Application Support/JetBrains/Toolbox/apps/IDEA-U/ch-0"
 if [ ! -d "$TARGET_DIR" ]; then
   echo "$TARGET_DIR not found.\nNot installed IntelliJ IDEA?"
