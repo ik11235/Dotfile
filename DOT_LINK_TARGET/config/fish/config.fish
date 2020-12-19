@@ -13,7 +13,7 @@ end
 eval (direnv hook fish)
 
 ## homebrew-command-not-found
-set HB_CNF_HANDLER (brew --prefix)"/Homebrew/Library/Taps/homebrew/homebrew-command-not-found/handler.fish"
+set HB_CNF_HANDLER (brew --prefix)"/Library/Taps/homebrew/homebrew-command-not-found/handler.fish"
 if test -f $HB_CNF_HANDLER
    source $HB_CNF_HANDLER
 end

@@ -43,7 +43,7 @@ if builtin command -v pyenv >/dev/null; then
   alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
 fi
 
-HB_CNF_HANDLER="$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-command-not-found/handler.sh"
+HB_CNF_HANDLER="$(brew --prefix)/Library/Taps/homebrew/homebrew-command-not-found/handler.sh"
 if [ -f "$HB_CNF_HANDLER" ]; then
   source "$HB_CNF_HANDLER"
 fi
