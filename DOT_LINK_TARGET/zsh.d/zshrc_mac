@@ -21,20 +21,18 @@ if [ -x "$(which go)" ]; then
   export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 fi
 
-# PATHの設定
-typeset -U path PATH
-path=(
-# mysql5.6
-  /usr/local/opt/mysql@5.6/bin(N-/)
-  ## Android platform-tools
-  ### Android Studioのパスがあればそれを使用する
-  $HOME/Library/Android/sdk/platform-tools(N-/)
-	$PATH
-)
+# brew
+export PATH="/usr/local/bin:$PATH"
+export PATH="/usr/local/sbin:$PATH"
+## M1 brew
+export PATH="/opt/homebrew/bin:$PATH"
 
 #coreutils path
 # export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 # export MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
+
+# mysql5.6
+export PATH="/usr/local/opt/mysql@5.6/bin:$PATH"
 
 # python
 ## pyenvをbrew時のみ除外する設定
@@ -54,6 +52,12 @@ fi
 if [ -d "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/" ]; then
   source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc'
   source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc'
+fi
+
+## Android platform-tools
+### Android Studioのパスがあればそれを使用する
+if [ -d "$HOME/Library/Android/sdk/platform-tools" ]; then
+  export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
 fi
 
 exec fish
