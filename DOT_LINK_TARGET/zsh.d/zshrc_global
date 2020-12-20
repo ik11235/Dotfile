@@ -10,10 +10,26 @@ setopt PROMPT_SUBST #色つけ設定
 #RPROMPT="[%d]"   #右プロンプト設定
 PROMPT="%n@%m%% "   #プロンプト設定
 
-# 各種PATHを通すために最初にM1 homebrewのチェックをする
-if [ -d "/opt/homebrew/bin/" ]; then
-  export PATH="/opt/homebrew/bin:$PATH"
-fi
+# 各種PATHを最初に追加
+## (以降のPATH通ってる前提のスクリプト等を通すため)
+typeset -gU path PATH
+path=(
+  ## M1 brew
+  /opt/homebrew/bin(N-/)
+  /opt/homebrew/sbin(N-/)
+  ## x64 brew
+  /usr/local/bin(N-/)
+  /usr/local/sbin(N-/)
+  ## .bin(DOT_LINK_TARGET/bin)をPATHに追加
+  $HOME/.bin(N-/)
+  ## Android platform-tools
+  ### Android Studioのパスがあればそれを使用する
+  $HOME/Library/Android/sdk/platform-tools(N-/)
+  # mysql5.6
+  /usr/local/opt/mysql@5.6/bin(N-/)
+
+  $path
+)
 
 ###ここからhttp://qiita.com/uasi/items/c4288dd835a65eb9d709より引用
 # 自動補完を有効にする
@@ -146,6 +162,3 @@ available-fuzzy-finder-find () {
 }
 
 export AVAILABLE_FUZZY_FINDER=`available-fuzzy-finder-find $AVAILABLE_FUZZY_FINDER_LIST`
-
-# .bin(DOT_LINK_TARGET/bin)をPATHに追加
-export PATH=$PATH:$HOME/.bin
