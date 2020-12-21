@@ -40,4 +40,4 @@ for tmp_path in (string split : $PATH)
     end
 end
 
-alias brew="env PATH=$NOT_ANYENV_PATH /opt/homebrew/bin/brew"
+alias brew="env PATH=$NOT_ANYENV_PATH (which brew)"
