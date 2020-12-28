@@ -10,7 +10,9 @@ if test -d "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/"
   source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
 end
 
-eval (direnv hook fish)
+# direnv
+## https://github.com/direnv/direnv/blob/master/docs/hook.md#fish
+direnv hook fish | source
 
 ## homebrew-command-not-found
 set HB_CNF_HANDLER (brew --prefix)"/Library/Taps/homebrew/homebrew-command-not-found/handler.fish"
