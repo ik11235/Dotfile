@@ -1,10 +1,11 @@
 #!/bin/sh -eu
 # JetBrains Toolboxが自動生成するシェルスクリプトをベースに自動的に最新バージョンで開くように改変
 
-# Arm版を手動で入れたことによる/Applications以下のintellJを先に見る処理
-if [[ -f "/Applications/IntelliJ IDEA.app/Contents/MacOS/idea" ]]; then
-  open -na "/Applications/IntelliJ IDEA.app/Contents/MacOS/idea" --args "$@"
-  exit 0
+if [[ $(uname -m) == "arm64" ]]; then
+   ARM_TARGET_DIR="$HOME/Library/Application Support/JetBrains/Toolbox/apps/IDEA-ARM/ch-0"
+   ARM_LATEST_DIR="$(find "$ARM_TARGET_DIR" -type d -maxdepth 1 | tail -1)"
+   open -na "$ARM_LATEST_DIR/IntelliJ IDEA.app/Contents/MacOS/idea" --args "$@"
+   exit 0
 fi
 
 TARGET_DIR="$HOME/Library/Application Support/JetBrains/Toolbox/apps/IDEA-U/ch-0"
