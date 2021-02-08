@@ -46,7 +46,6 @@ alias brew="env PATH=$NOT_ANYENV_PATH (which brew)"
 
 ## M1関係の設定
 if test (uname -s) = "Darwin" && type arch > /dev/null
-    alias x64_brew="arch -arch x86_64 /usr/local/bin/brew"
     alias x64='exec arch -arch x86_64 "$SHELL"'
     alias a64='exec arch -arch arm64e "$SHELL"'
     function switch-arch
