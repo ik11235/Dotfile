@@ -11,8 +11,6 @@ ZSHPATH=$(which zsh)
 sudo sh -c "echo ${ZSHPATH} >> /etc/shells"
 chsh -s "${ZSHPATH}"
 
-/bin/bash .anyenv-init-and-install.sh
-
 # private file作成
 touch "${HOME}/.zsh.d/zshrc_mac_private"
 

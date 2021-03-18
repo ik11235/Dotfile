@@ -1,3 +1,0 @@
-# 現状anyenv-installはデフォルトのものしかない & init.sh(初期設定)側でgithubからcloneされる(anyenvのデフォルトの初期設定)ので一旦git管理から除外する
-## 管理する必要が出たらそれに合わせて修正する
-anyenv-install/
