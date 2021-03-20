@@ -65,3 +65,6 @@ if test (uname -s) = "Darwin" && type arch > /dev/null
         exec arch -arch $arch "$SHELL"
     end
 end
+
+# asdf x fishでrubyバージョン表示をOFFに
+set -g theme_display_ruby no
