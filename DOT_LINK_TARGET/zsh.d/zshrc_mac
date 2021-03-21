@@ -8,7 +8,7 @@ export CLOUDSDK_PYTHON="/usr/local/opt/python@3.8/bin/python3"
 ##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
 
 # asdf
-$(brew --prefix asdf)/asdf.sh
+source $(brew --prefix asdf)/asdf.sh
 
 ##go言語設定
 if [ -x "$(which go)" ]; then
