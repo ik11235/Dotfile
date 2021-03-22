@@ -162,3 +162,9 @@ available-fuzzy-finder-find () {
 }
 
 export AVAILABLE_FUZZY_FINDER=`available-fuzzy-finder-find $AVAILABLE_FUZZY_FINDER_LIST`
+
+# tmux使用時にホスト名から色指定
+## https://memo.sugyan.com/entry/20120306/1331009647
+if [ "$TMUX" != "" ]; then
+    tmux set-option status-bg colour$(($(echo -n $(whoami)@$(hostname) | sum | cut -f1 -d' ') % 8 + 8)) | cat > /dev/null
+fi
