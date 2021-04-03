@@ -6,8 +6,8 @@ set GHQ_SELECTOR $AVAILABLE_FUZZY_FINDER
 
 
 # google cloud sdkのPATH
-if test -d "/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/"
-  source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
+if test -d (brew --prefix)"/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/"
+  source (brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
 end
 
 # direnv
