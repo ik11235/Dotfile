@@ -65,4 +65,5 @@ cask "slack-beta"
 cask "station"
 cask "steam"
 cask "vlc"
+cask "xquartz"
 mas "Microsoft Remote Desktop", id: 1295203466
