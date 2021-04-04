@@ -21,12 +21,12 @@ fi
 # export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 # export MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
 
-# python
-## pyenvをbrew時のみ除外する設定
-if builtin command -v pyenv >/dev/null; then
-  # brewコマンド実行の際のみpyenvをPATHから外す
+# asdf
+## asdf系のファイルをbrew時のみ除外する設定
+if [ -d ~/.asdf/shims ]; then
+  # brewコマンド実行の際のみ.asdf/shimsをPATHから外す
   ## https://www.task-notes.com/entry/20141223/1419324649
-  EXCLUSION_PATH=$(echo ~/.anyenv/envs/pyenv/shims)
+  EXCLUSION_PATH=$(echo ~/.asdf/shims)
   alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
 fi
 
