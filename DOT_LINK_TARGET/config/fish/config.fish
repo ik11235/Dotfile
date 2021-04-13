@@ -4,6 +4,9 @@
 #fisherパッケージdecors/fish-ghqの設定
 set GHQ_SELECTOR $AVAILABLE_FUZZY_FINDER
 
+# jethrokuan/fzf のdefaultキーバインド無効化
+## https://github.com/jethrokuan/fzf/tree/8ee7cf502637a9dd7d0cd96ead67c631a25e49d9#quickstart
+set -U FZF_LEGACY_KEYBINDINGS 0
 
 # google cloud sdkのPATH
 if test -d (brew --prefix)"/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/"
