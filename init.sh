@@ -8,6 +8,8 @@ cd "$(dirname "$0")"
 
 /bin/bash .default-shell-change.sh
 
+/bin/bash .mac-init.sh
+
 # private file作成
 touch "${HOME}/.zsh.d/zshrc_mac_private"
 
