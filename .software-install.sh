@@ -8,7 +8,7 @@ OS_TYPE=$(uname)
 case $ANSWER in
 "" | Y*)
   if [ "${OS_TYPE}" = "Darwin" ]; then
-    # 実行環境がLinuxの場合のインストール処理
+    # 実行環境がMacOSの場合のインストール処理
 
     # brewのインストールの有無をチェック
     # インストールされていない場合インストール
