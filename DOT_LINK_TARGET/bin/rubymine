@@ -1,14 +1,6 @@
 #!/bin/sh -eu
 # JetBrains Toolboxが自動生成するシェルスクリプトをベースに自動的に最新バージョンで開くように改変
 
-# M1の判定をして、M1の時のみARM版を優先して探す
-if [[ $(uname -m) == "arm64" ]]; then
-   ARM_TARGET_DIR="$HOME/Library/Application Support/JetBrains/Toolbox/apps/RubyMine-ARM/ch-0"
-   ARM_LATEST_DIR="$(find "$ARM_TARGET_DIR" -type d -maxdepth 1 | tail -1)"
-   open -na "$ARM_LATEST_DIR/RubyMine.app/Contents/MacOS/rubymine" --args "$@"
-   exit 0
-fi
-
 TARGET_DIR="$HOME/Library/Application Support/JetBrains/Toolbox/apps/RubyMine/ch-0"
 if [ ! -d "$TARGET_DIR" ]; then
   echo "$TARGET_DIR not found.\nNot installed RubyMine?"
