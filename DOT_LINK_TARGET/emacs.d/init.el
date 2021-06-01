@@ -6,10 +6,9 @@
 
 ;;init-loaderをpackage経由でインストールするため、packageの設定、必要パッケージの自動インストール
 (require 'package)
-(setq package-archives
-      '(("melpa" . "https://melpa.org/packages/")
-        ("org" . "https://orgmode.org/elpa/")
-        ("gnu" . "https://elpa.gnu.org/packages/")))
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
+(add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/") t)
 (package-initialize)
 
 (defvar installing-package-list
