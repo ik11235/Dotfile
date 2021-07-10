@@ -1,6 +1,7 @@
 [user]
   name = ik-fib
   email = ik11235@gmail.com
+  signingkey = AE48B6BF80346792
 
 [push]
   default = simple
@@ -26,3 +27,7 @@
 [ghq]
 	root = ~/go/src
 	root = ~/ghq
+[gpg]
+	program = gpg
+[commit]
+	gpgsign = true
