@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source $(dirname ${0})/_local-hook-exec
+source "$(dirname "$0")/_local-hook-exec"
 
 # https://dev.classmethod.jp/etc/git_aws_access_key/
 ## AWSアクセスキーをgitに誤って登録しないようにする
@@ -8,7 +8,7 @@ source $(dirname ${0})/_local-hook-exec
 GREP_RESULT=$(git diff --cached | grep KEY | grep AKIA)
 if [ -n "${GREP_RESULT}" ]; then
   echo 'AWS_ACCESS_KEY might be in this index. Please check with git diff --cached'
-  echo ${GREP_RESULT}
+  echo "${GREP_RESULT}"
   exit 1
 fi
 
