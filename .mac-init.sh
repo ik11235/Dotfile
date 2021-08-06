@@ -18,8 +18,8 @@ if [ "$(uname)" = "Darwin" ]; then
   defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
 
   # Mission Control
-  ## 左下 → ディスプレイをスリープ
-  defaults write com.apple.dock wvous-bl-corner -int 10
+  ## 左下 → 画面ロック
+  defaults write com.apple.dock wvous-bl-corner -int 13
   defaults write com.apple.dock wvous-bl-modifier -int 0
 
   # 不可視ファイルを表示
