@@ -20,9 +20,6 @@
 [alias]
   delete-merged-branch = !git branch --merged | egrep -v '\\*|master|development|develop|main' | xargs git branch -d
   branch-search = !git branch -r|sed -e 's/origin\\///'| $AVAILABLE_FUZZY_FINDER | xargs git checkout
-[include]
-  # PCごと、あるいはdotfileで管理したくない設定を別個ファイルで定義→include
-  path = ~/.config/git/config_private
 
 [ghq]
 	root = ~/go/src
@@ -31,3 +28,7 @@
 	program = gpg
 [commit]
 	gpgsign = true
+
+[include]
+  # PCごと、あるいはdotfileで管理したくない設定を別個ファイルで定義→include
+  path = ~/.config/git/config_private
