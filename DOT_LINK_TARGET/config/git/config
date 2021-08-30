@@ -3,6 +3,9 @@
   email = ik11235@gmail.com
   signingkey = AE48B6BF80346792
 
+[fetch]
+  prune = true
+
 [push]
   default = simple
 
