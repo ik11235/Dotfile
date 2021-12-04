@@ -32,6 +32,9 @@
 [commit]
 	gpgsign = true
 
+[url "https://github.com/"]
+    insteadOf = "ssh://git@github.com/"
+
 [include]
   # PCごと、あるいはdotfileで管理したくない設定を別個ファイルで定義→include
   path = ~/.config/git/config_private
