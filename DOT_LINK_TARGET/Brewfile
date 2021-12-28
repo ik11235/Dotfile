@@ -67,6 +67,7 @@ cask "skitch"
 cask "slack-beta"
 cask "stack-stack"
 cask "steam"
+cask "vivaldi"
 cask "vlc"
 cask "xquartz"
 mas "Microsoft Remote Desktop", id: 1295203466
