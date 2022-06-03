@@ -32,6 +32,13 @@
 [commit]
 	gpgsign = true
 
+# asdf pluginのupdateにgitプロトコルを使っているので、ここ以降の設定でsshkeyを使う設定等があると、そちらに影響される
+# それを無視するために、事前にasdf-vm以下はhttpsプロトコルを強制しておく
+[url "https://github.com/asdf-vm/"]
+    insteadOf = "ssh://git@github.com/asdf-vm/"
+    insteadOf = "git@github.com:asdf-vm/"
+    insteadOf = "https://github.com/asdf-vm"
+
 [url "https://github.com/"]
     insteadOf = "ssh://git@github.com/"
     insteadOf = "git@github.com:"
