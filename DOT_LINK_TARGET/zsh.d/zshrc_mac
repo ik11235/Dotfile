@@ -27,6 +27,10 @@ if [ -d ~/.asdf/shims ]; then
   alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
 fi
 
+# asdfのupdate時にpathが変わるため、その対応にbrewのシンボリックリンクディレクトリを参照するように上書き
+export ASDF_DIR="$(brew --prefix asdf)/libexec"
+export asdf_cmd_dir="$(brew --prefix asdf)/libexec/bin"
+
 HB_CNF_HANDLER="$(brew --prefix)/Library/Taps/homebrew/homebrew-command-not-found/handler.sh"
 if [ -f "$HB_CNF_HANDLER" ]; then
   source "$HB_CNF_HANDLER"
