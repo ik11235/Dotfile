@@ -46,3 +46,5 @@
 [include]
   # PCごと、あるいはdotfileで管理したくない設定を別個ファイルで定義→include
   path = ~/.config/git/config_private
+[init]
+	defaultBranch = master
