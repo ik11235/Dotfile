@@ -2,7 +2,7 @@
 ##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
 
 # asdf
-source $(brew --prefix asdf)/asdf.sh
+source $(brew --prefix asdf)/libexec/asdf.sh
 
 ##go言語設定
 if [ -x "$(which go)" ]; then

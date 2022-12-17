@@ -33,7 +33,7 @@ function save_history --on-event fish_preexec
 end
 
 # asdf
-source (brew --prefix asdf)"/asdf.fish"
+source (brew --prefix asdf)"/libexec/asdf.fish"
 
 # anyenvのPATHをbrewの実行時の対象から除外する
 ## https://www.null-engineer.com/2019/02/08/anyenv%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E6%B8%88%E3%81%BF%E3%81%AEmac%E3%81%A7brew-doctor%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%9F%E3%82%89warning%E3%81%8C%E5%87%BA%E3%82%8B/
