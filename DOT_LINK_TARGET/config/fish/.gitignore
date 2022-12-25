@@ -26,6 +26,7 @@ functions/__fzf_open.fish
 functions/__fzf_parse_commandline.fish
 functions/__fzf_reverse_isearch.fish
 functions/__fzfcmd.fish
+functions/wakatime.fish
 
 ## fisherが自動生成されるファイルは一旦skip
 ### このファイルに設定を書き込むようになったら外す
