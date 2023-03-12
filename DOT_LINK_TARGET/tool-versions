@@ -2,3 +2,4 @@ golang 1.19.3
 python 3.9.6
 ruby 3.1.2
 nodejs 19.0.1
+direnv 2.32.2
