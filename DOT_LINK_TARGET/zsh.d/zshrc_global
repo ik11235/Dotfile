@@ -96,7 +96,7 @@ precmd () {
 RPROMPT="%1(v|%F{green}%1v%f|)[%d]"
 
 # direnv
-eval "$(direnv hook zsh)"
+eval "$(asdf exec direnv hook zsh)"
 
 export EDITOR="nano"
 
