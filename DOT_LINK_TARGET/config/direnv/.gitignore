@@ -1,2 +1,5 @@
 allow
 !.gitignore
+
+# `asdf direnv setup`で自動生成されるファイルは除外
+lib/use_asdf.sh
