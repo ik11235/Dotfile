@@ -45,7 +45,7 @@ if [ -f "${DOTHOME}/.zsh.d/zshrc_mac_private" ]; then
 fi
 
 ## pinentry-macをターミナルで使用する
-GPG_TTY="$(tty)"
+export GPG_TTY="$(tty)"
 
 if [ -z "$INTELLIJ_ENVIRONMENT_READER" ]; then
   exec fish
