@@ -3,6 +3,9 @@
 
 # asdf
 source $(brew --prefix asdf)/libexec/asdf.sh
+## asdf-golang
+### https://github.com/kennyp/asdf-golang#version-selection
+export ASDF_GOLANG_MOD_VERSION_ENABLED=true
 
 ##go言語設定
 if [ -x "$(which go)" ]; then
