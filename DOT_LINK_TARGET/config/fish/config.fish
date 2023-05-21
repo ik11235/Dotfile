@@ -71,3 +71,9 @@ end
 
 # asdf x fishでrubyバージョン表示をOFFに
 set -g theme_display_ruby no
+
+# Warpify SubShell
+## https://docs.warp.dev/features/subshells
+if set -q WARP_IS_LOCAL_SHELL_SESSION
+    printf '\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "fish"}}\x9c'
+end

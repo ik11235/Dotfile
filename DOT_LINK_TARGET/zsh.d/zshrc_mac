@@ -50,6 +50,6 @@ fi
 ## pinentry-macをターミナルで使用する
 export GPG_TTY="$(tty)"
 
-if [ -z "$INTELLIJ_ENVIRONMENT_READER" ]; then
+if [ -z "$INTELLIJ_ENVIRONMENT_READER" ] && [ -z "$WARP_IS_LOCAL_SHELL_SESSION" ]; then
   exec fish
 fi
