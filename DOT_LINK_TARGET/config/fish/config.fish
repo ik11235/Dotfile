@@ -78,3 +78,6 @@ set -g theme_display_ruby no
 if set -q WARP_IS_LOCAL_SHELL_SESSION
     printf '\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "fish"}}\x9c'
 end
+
+# fzf
+fzf --fish | source
