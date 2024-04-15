@@ -22,6 +22,11 @@ if [ -d ~/.asdf/shims ]; then
   alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
 fi
 
+## asdf-java
+if [ -f "~/.asdf/plugins/java/set-java-home.zsh" ]; then
+  . ~/.asdf/plugins/java/set-java-home.zsh
+fi
+
 # asdfのupdate時にpathが変わるため、その対応にbrewのシンボリックリンクディレクトリを参照するように上書き
 export ASDF_DIR="$(brew --prefix asdf)/libexec"
 export asdf_cmd_dir="$(brew --prefix asdf)/libexec/bin"
