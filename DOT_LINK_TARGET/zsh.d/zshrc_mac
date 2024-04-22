@@ -3,17 +3,7 @@
 
 # asdf
 source $(brew --prefix asdf)/libexec/asdf.sh
-## asdf-golang
-. ~/.asdf/plugins/golang/set-env.zsh
-### https://github.com/kennyp/asdf-golang#version-selection
-export ASDF_GOLANG_MOD_VERSION_ENABLED=true
 
-
-#coreutils path
-# export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
-# export MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
-
-# asdf
 ## asdf系のファイルをbrew時のみ除外する設定
 if [ -d ~/.asdf/shims ]; then
   # brewコマンド実行の際のみ.asdf/shimsをPATHから外す
@@ -22,14 +12,23 @@ if [ -d ~/.asdf/shims ]; then
   alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
 fi
 
+## asdf-golang
+. ~/.asdf/plugins/golang/set-env.zsh
+### https://github.com/kennyp/asdf-golang#version-selection
+export ASDF_GOLANG_MOD_VERSION_ENABLED=true
+
 ## asdf-java
 if [ -e ~/.asdf/plugins/java/set-java-home.zsh ]; then
   . ~/.asdf/plugins/java/set-java-home.zsh
 fi
 
-# asdfのupdate時にpathが変わるため、その対応にbrewのシンボリックリンクディレクトリを参照するように上書き
+## asdfのupdate時にpathが変わるため、その対応にbrewのシンボリックリンクディレクトリを参照するように上書き
 export ASDF_DIR="$(brew --prefix asdf)/libexec"
 export asdf_cmd_dir="$(brew --prefix asdf)/libexec/bin"
+
+#coreutils path
+# export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
+# export MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
 
 HB_CNF_HANDLER="$(brew --prefix)/Library/Taps/homebrew/homebrew-command-not-found/handler.sh"
 if [ -f "$HB_CNF_HANDLER" ]; then
