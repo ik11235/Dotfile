@@ -23,7 +23,7 @@ if [ -d ~/.asdf/shims ]; then
 fi
 
 ## asdf-java
-if [ -f "~/.asdf/plugins/java/set-java-home.zsh" ]; then
+if [ -e ~/.asdf/plugins/java/set-java-home.zsh ]; then
   . ~/.asdf/plugins/java/set-java-home.zsh
 fi
 
