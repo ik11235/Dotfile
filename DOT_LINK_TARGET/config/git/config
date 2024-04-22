@@ -47,6 +47,9 @@
   # PCごと、あるいはdotfileで管理したくない設定を別個ファイルで定義→include
   path = ~/.config/git/config.d/private/global
 
+[includeIf "gitdir:/opt/homebrew/Library/Taps/homebrew/"]
+  path = ~/.config/git/config.d/homebrew
+
 [init]
 	defaultBranch = master
 [credential "https://github.com"]

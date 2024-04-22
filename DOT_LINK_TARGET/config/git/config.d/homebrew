@@ -1,0 +1,4 @@
+## homebrew `brew bump --open-pr`利用時にgpgが読み込まれないようなので、一旦一律無効化
+
+[commit]
+       gpgsign = false
