@@ -45,4 +45,8 @@ if [ "$(uname)" = "Darwin" ]; then
 
   # デフォルトをplainTextに
   defaults write com.apple.TextEdit RichText -int 0
+
+  # Bluetoothイヤホンでミュージックが起動しないように
+  ## https://blue-bear.jp/kb/mac-bluetooth%E3%82%A4%E3%83%A4%E3%83%9B%E3%83%B3%E3%82%92%E6%8E%A5%E7%B6%9A%E3%81%99%E3%82%8B%E3%81%A8%E3%83%9F%E3%83%A5%E3%83%BC%E3%82%B8%E3%83%83%E3%82%AF%E3%81%8C%E8%B5%B7%E5%8B%95%E3%81%99/
+  launchctl unload -w /System/Library/LaunchAgents/com.apple.rcd.plist
 fi
