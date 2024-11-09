@@ -86,7 +86,6 @@ cask "steam"
 cask "sync"
 cask "vivaldi"
 cask "vlc"
-cask "vpn-by-google-one"
 cask "warp"
 cask "xquartz"
 mas "Microsoft Remote Desktop", id: 1295203466
