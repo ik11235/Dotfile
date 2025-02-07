@@ -33,7 +33,7 @@ function save_history --on-event fish_preexec
 end
 
 # asdf
-source (brew --prefix asdf)"/libexec/asdf.fish"
+#source (brew --prefix asdf)"/libexec/asdf.fish"
 . ~/.asdf/plugins/golang/set-env.fish
 
 # anyenvのPATHをbrewの実行時の対象から除外する

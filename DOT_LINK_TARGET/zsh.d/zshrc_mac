@@ -2,7 +2,7 @@
 ##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
 
 # asdf
-source $(brew --prefix asdf)/libexec/asdf.sh
+## source $(brew --prefix asdf)/libexec/asdf.sh
 
 ## asdf系のファイルをbrew時のみ除外する設定
 if [ -d ~/.asdf/shims ]; then
@@ -26,8 +26,8 @@ if [ -e ~/.asdf/plugins/java/set-java-home.zsh ]; then
 fi
 
 ## asdfのupdate時にpathが変わるため、その対応にbrewのシンボリックリンクディレクトリを参照するように上書き
-export ASDF_DIR="$(brew --prefix asdf)/libexec"
-export asdf_cmd_dir="$(brew --prefix asdf)/libexec/bin"
+export ASDF_DIR="$(brew --prefix asdf)"
+export asdf_cmd_dir="$(brew --prefix asdf)/bin"
 
 #coreutils path
 # export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
