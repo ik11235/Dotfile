@@ -95,9 +95,6 @@ precmd () {
 # バージョン管理されているディレクトリにいれば表示，そうでなければ非表示
 RPROMPT="%1(v|%F{green}%1v%f|)[%d]"
 
-# direnv
-eval "$(asdf exec direnv hook zsh)"
-
 export EDITOR="nano"
 
 ## ログイン時にtmux自動アタッチする関数
