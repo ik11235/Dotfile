@@ -1,35 +1,6 @@
 #brew 補完
 ##source /usr/local/Library/Contributions/brew_zsh_completion.zsh
 
-# asdf
-## source $(brew --prefix asdf)/libexec/asdf.sh
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
-
-## asdf系のファイルをbrew時のみ除外する設定
-if [ -d ~/.asdf/shims ]; then
-  # brewコマンド実行の際のみ.asdf/shimsをPATHから外す
-  ## https://www.task-notes.com/entry/20141223/1419324649
-  EXCLUSION_PATH=$(echo ~/.asdf/shims)
-  alias brew="env PATH=${PATH/$EXCLUSION_PATH:/} brew"
-fi
-
-## asdf-direnv
-source "${XDG_CONFIG_HOME:-$HOME/.config}/asdf-direnv/zshrc"
-
-## asdf-golang
-. ~/.asdf/plugins/golang/set-env.zsh
-### https://github.com/kennyp/asdf-golang#version-selection
-export ASDF_GOLANG_MOD_VERSION_ENABLED=true
-
-## asdf-java
-if [ -e ~/.asdf/plugins/java/set-java-home.zsh ]; then
-  . ~/.asdf/plugins/java/set-java-home.zsh
-fi
-
-## asdfのupdate時にpathが変わるため、その対応にbrewのシンボリックリンクディレクトリを参照するように上書き
-export ASDF_DIR="$(brew --prefix asdf)"
-export asdf_cmd_dir="$(brew --prefix asdf)/bin"
-
 #coreutils path
 # export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 # export MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
