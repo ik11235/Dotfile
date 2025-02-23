@@ -64,3 +64,6 @@ fzf --fish | source
 ### TODO: 常に出るの邪魔なので管理系のディレクトリに入ったときだけonにしたい
 set -g theme_display_k8s_context yes
 set -g theme_display_k8s_namespace yes
+
+# mise
+set -gx PATH ~/.local/share/mise/shims $PATH
