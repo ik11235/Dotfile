@@ -27,6 +27,9 @@ export GPG_TTY="$(tty)"
 # mise
 eval "$(/opt/homebrew/bin/mise activate zsh)"
 
+# direnv
+eval "$(direnv hook zsh)"
+
 if [[ -o interactive ]] && [ -z "$INTELLIJ_ENVIRONMENT_READER" ] && [ -z "$WARP_IS_LOCAL_SHELL_SESSION" ]; then
   exec fish
 fi

@@ -67,3 +67,6 @@ set -g theme_display_k8s_namespace yes
 
 # mise
 set -gx PATH ~/.local/share/mise/shims $PATH
+
+# direnv
+eval "$(direnv hook fish)"
