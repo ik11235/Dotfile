@@ -1,15 +1,25 @@
+tap "homebrew/bundle"
+tap "homebrew/cask"
+tap "homebrew/cask-fonts"
 tap "homebrew/command-not-found"
+tap "homebrew/core"
+tap "homebrew/services"
 tap "ynqa/tap"
 tap "yt-dlp/taps"
 brew "aria2"
 brew "aspell"
 brew "autossh"
 brew "awscli"
+brew "boost"
+brew "cairo"
 brew "cocoapods"
 brew "coreutils"
 brew "curl"
+brew "dos2unix"
+brew "dvdbackup"
 brew "f3"
 brew "fdupes"
+brew "flac"
 brew "ffmpeg"
 brew "findutils"
 brew "fish"
@@ -17,8 +27,10 @@ brew "fzf"
 brew "gh"
 brew "ghq"
 brew "git"
+brew "git-credential-libsecret"
 brew "git-crypt"
 brew "gnupg"
+brew "netpbm"
 brew "graphviz"
 brew "imagemagick"
 brew "jpegoptim"
@@ -35,13 +47,16 @@ brew "openjdk"
 brew "p7zip"
 brew "peco"
 brew "pinentry-mac"
+brew "pkgconf"
 brew "protobuf"
 brew "redpen"
 brew "rename"
+brew "rom-tools"
 brew "sbt"
 brew "scala"
 brew "scrcpy"
 brew "shellcheck"
+brew "smartmontools"
 brew "sshuttle"
 brew "telnet"
 brew "tig"
@@ -55,9 +70,10 @@ brew "ynqa/tap/jnv"
 cask "android-file-transfer"
 cask "android-platform-tools"
 cask "arc"
-cask "background-music"
 cask "battery"
+cask "burn"
 cask "calibre"
+cask "cursor"
 cask "discord"
 cask "docker"
 cask "emacs"
@@ -71,9 +87,9 @@ cask "keepassxc"
 cask "kindle"
 cask "loupedeck"
 cask "melonbooksviewer"
-cask "obs"
 cask "obsidian"
 cask "phantomjs"
+cask "qflipper"
 cask "raycast"
 cask "sequel-ace"
 cask "skitch"
@@ -86,4 +102,30 @@ cask "vlc"
 cask "warp"
 cask "windsurf"
 cask "xquartz"
-mas "Microsoft Remote Desktop", id: 1295203466
+cask "zen-browser"
+mas "AmorphousDiskMark", id: 1168254295
+mas "AS Timer", id: 512464723
+mas "Diffusers", id: 1666309574
+mas "Display Menu", id: 549083868
+mas "GarageBand", id: 682658836
+mas "Hotspot Shield", id: 771076721
+mas "Keynote", id: 409183694
+mas "Kindle", id: 302584613
+mas "KyPass", id: 555293879
+mas "LINE", id: 539883307
+mas "Meeter", id: 1510445899
+mas "Numbers", id: 409203825
+mas "Pages", id: 409201541
+mas "Skitch", id: 425955336
+mas "Structured", id: 1499198946
+mas "TestFlight", id: 899247664
+mas "The Unarchiver", id: 425424353
+mas "UpNote", id: 1398373917
+mas "Windows App", id: 1295203466
+mas "Xcode", id: 497799835
+vscode "elmtooling.elm-ls-vscode"
+vscode "github.copilot"
+vscode "github.copilot-chat"
+vscode "hbenl.vscode-test-explorer"
+vscode "ms-ceintl.vscode-language-pack-ja"
+vscode "ms-vscode.test-adapter-converter"
