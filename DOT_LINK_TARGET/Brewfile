@@ -87,4 +87,4 @@ cask "vlc"
 cask "warp"
 cask "windsurf"
 cask "xquartz"
-mas "Microsoft Remote Desktop", id: 1295203466
+mas "Windows App", id: 1295203466
