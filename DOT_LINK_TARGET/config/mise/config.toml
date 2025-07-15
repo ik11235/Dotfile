@@ -1,0 +1,3 @@
+[tools]
+claude-code = "latest"
+gemini-cli = "latest"
