@@ -1,3 +1,6 @@
 [tools]
 claude-code = "latest"
 gemini-cli = "latest"
+
+[settings]
+idiomatic_version_file_enable_tools = ["python", "ruby", "go", "node"]
