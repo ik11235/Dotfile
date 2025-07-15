@@ -1,5 +1,5 @@
-golang 1.21.0
-python 3.11.0
-ruby 3.2.2
-nodejs 22.14.0
-direnv 2.34.0
+golang 1.24.5
+python 3.13.5
+ruby   3.4.4
+nodejs 24.4.0
+direnv 2.37.0
