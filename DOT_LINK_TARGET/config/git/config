@@ -7,7 +7,7 @@
   prune = true
 
 [push]
-  default = current
+	default = current
 
 [core]
   excludesfile = ~/.config/git/ignore
