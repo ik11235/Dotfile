@@ -5,9 +5,10 @@
 # export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 # export MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
 
-HB_CNF_HANDLER="$(brew --prefix)/Library/Taps/homebrew/homebrew-command-not-found/handler.sh"
+# To enable homebrew-command-not-found
+HB_CNF_HANDLER="$(brew --repository)/Library/Taps/homebrew/homebrew-command-not-found/handler.sh"
 if [ -f "$HB_CNF_HANDLER" ]; then
-  source "$HB_CNF_HANDLER"
+  source "$HB_CNF_HANDLER";
 fi
 
 ## gcloud completion

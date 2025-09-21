@@ -13,10 +13,10 @@ if test -d (brew --prefix)"/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/"
   source (brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
 end
 
-## homebrew-command-not-found
-set HB_CNF_HANDLER (brew --prefix)"/Library/Taps/homebrew/homebrew-command-not-found/handler.fish"
+# To enable homebrew-command-not-found
+set HB_CNF_HANDLER (brew --repository)"/Library/Taps/homebrew/homebrew-command-not-found/handler.fish"
 if test -f $HB_CNF_HANDLER
-   source $HB_CNF_HANDLER
+  source $HB_CNF_HANDLER
 end
 
 #source /usr/local/share/fish/vendor_completions.d/*.fish
