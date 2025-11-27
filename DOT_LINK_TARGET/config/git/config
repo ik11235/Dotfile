@@ -8,6 +8,7 @@
 
 [push]
 	default = current
+	autoSetupRemote = true
 
 [core]
   excludesfile = ~/.config/git/ignore
