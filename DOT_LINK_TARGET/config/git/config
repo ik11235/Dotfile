@@ -60,3 +60,5 @@
 [credential "https://gist.github.com"]
 	helper =
 	helper = !gh auth git-credential
+[diff]
+	colorMoved = dimmed_zebra
