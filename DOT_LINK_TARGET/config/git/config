@@ -1,64 +1,112 @@
+########################################
+# User / Identity
+########################################
 [user]
   name = ik-fib
   email = ik11235@gmail.com
   signingkey = AE48B6BF80346792
 
+[gpg]
+  program = gpg
+
+[commit]
+  gpgsign = true
+
+
+########################################
+# Core Behavior
+########################################
+[core]
+  editor = nano
+  autocrlf = input
+  excludesfile = ~/.config/git/ignore
+  hooksPath = ~/.config/git/hooks
+
+[init]
+  defaultBranch = master
+
+
+########################################
+# Fetch / Pull / Push
+########################################
 [fetch]
   prune = true
 
-[push]
-	default = current
-	autoSetupRemote = true
-
-[core]
-  excludesfile = ~/.config/git/ignore
-  editor = nano
-  hooksPath = ~/.config/git/hooks
-  autocrlf = input
-
-[color]
-  ui = true
 [pull]
   rebase = true
 
+[push]
+  default = current
+  autoSetupRemote = true
+
+
+########################################
+# UI / Diff
+########################################
+[color]
+  ui = true
+
+[diff]
+  colorMoved = dimmed_zebra
+
+
+########################################
+# Alias
+########################################
 [alias]
-  delete-merged-branch = !git branch --merged | egrep -v '\\*|master|development|develop|main' | xargs git branch -d
-  branch-search = !git branch -r|sed -e 's/origin\\///'| $AVAILABLE_FUZZY_FINDER | xargs git checkout
+  delete-merged-branch = !git branch --merged \
+    | egrep -v '\\*|master|development|develop|main' \
+    | xargs git branch -d
 
+  branch-search = !git branch -r \
+    | sed -e 's/origin\\///' \
+    | $AVAILABLE_FUZZY_FINDER \
+    | xargs git checkout
+
+
+########################################
+# Repository Management
+########################################
 [ghq]
-	root = ~/go/src
-	root = ~/ghq
-[gpg]
-	program = gpg
-[commit]
-	gpgsign = true
+  root = ~/go/src
+  root = ~/ghq
 
-# asdf pluginのupdateにgitプロトコルを使っているので、ここ以降の設定でsshkeyを使う設定等があると、そちらに影響される
-# それを無視するために、事前にasdf-vm以下はhttpsプロトコルを強制しておく
+
+########################################
+# Credential (GitHub via gh)
+########################################
+[credential "https://github.com"]
+  helper =
+  helper = !gh auth git-credential
+
+[credential "https://gist.github.com"]
+  helper =
+  helper = !gh auth git-credential
+
+
+########################################
+# URL Rewrite
+########################################
+# asdf plugin update uses git protocol.
+# To avoid SSH key interference, force HTTPS for asdf-vm beforehand.
 [url "https://github.com/asdf-vm/"]
-    insteadOf = "ssh://git@github.com/asdf-vm/"
-    insteadOf = "git@github.com:asdf-vm/"
-    insteadOf = "https://github.com/asdf-vm"
+  insteadOf = ssh://git@github.com/asdf-vm/
+  insteadOf = git@github.com:asdf-vm/
+  insteadOf = https://github.com/asdf-vm
 
+# General GitHub SSH → HTTPS fallback
 [url "https://github.com/"]
-    insteadOf = "ssh://git@github.com/"
-    insteadOf = "git@github.com:"
+  insteadOf = ssh://git@github.com/
+  insteadOf = git@github.com:
 
+
+########################################
+# Include
+########################################
 [include]
-    # PCごと、あるいはdotfileで管理したくない設定を別個ファイルで定義→include
-    path = ~/.config/git/config.d/private/global
-    optional = true
+  # PC固有 / dotfiles 管理外の設定
+  path = ~/.config/git/config.d/private/global
+  optional = true
 
 [includeIf "gitdir:/opt/homebrew/Library/Taps/homebrew/"]
   path = ~/.config/git/config.d/homebrew
-
-[init]
-	defaultBranch = master
-[credential "https://github.com"]
-	helper =
-	helper = !gh auth git-credential
-[credential "https://gist.github.com"]
-	helper =
-	helper = !gh auth git-credential
-[diff]
-	colorMoved = dimmed_zebra
