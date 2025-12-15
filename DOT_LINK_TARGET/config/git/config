@@ -87,13 +87,6 @@
 ########################################
 # URL Rewrite
 ########################################
-# asdf plugin update uses git protocol.
-# To avoid SSH key interference, force HTTPS for asdf-vm beforehand.
-[url "https://github.com/asdf-vm/"]
-  insteadOf = ssh://git@github.com/asdf-vm/
-  insteadOf = git@github.com:asdf-vm/
-  insteadOf = https://github.com/asdf-vm
-
 # General GitHub SSH → HTTPS fallback
 [url "https://github.com/"]
   insteadOf = ssh://git@github.com/
