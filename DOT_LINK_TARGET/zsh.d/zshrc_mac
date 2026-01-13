@@ -17,6 +17,11 @@ if [ -d "/$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/" ]
   source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
 fi
 
+## gcloud sdk PATH
+if command -v gcloud >/dev/null 2>&1; then
+  export PATH="$(gcloud info --format='value(installation.sdk_root)')/bin:$PATH"
+fi
+
 if [ -f "${DOTHOME}/.zsh.d/zshrc_mac_private" ]; then
   # shellcheck source=./zshrc_mac_private
   source "${DOTHOME}/.zsh.d/zshrc_mac_private"
