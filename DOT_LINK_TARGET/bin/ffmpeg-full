@@ -1,0 +1,16 @@
+#!/bin/sh
+
+###
+## This is a wrapper that directly calls `ffmpeg-full` to coexist with the standard `brew ffmpeg`.
+## `ffmpeg-full` is a full-featured build that enables more video and audio codecs, subtitles, and streaming-related libraries than the standard `ffmpeg`.
+## https://formulae.brew.sh/formula/ffmpeg-full
+###
+
+BREW_PREFIX="$(brew --prefix ffmpeg-full 2>/dev/null)"
+
+if [ -z "$BREW_PREFIX" ]; then
+  echo "ffmpeg-full is not installed via Homebrew." >&2
+  exit 1
+fi
+
+exec "$BREW_PREFIX/bin/ffmpeg" "$@"
