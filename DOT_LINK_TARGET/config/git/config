@@ -4,7 +4,7 @@
 [user]
   name = ik-fib
   email = ik11235@gmail.com
-  signingkey = AE48B6BF80346792
+  signingkey = A736CE24F9726333
 
 [gpg]
   program = gpg
