@@ -70,3 +70,6 @@ set -gx PATH ~/.local/share/mise/shims $PATH
 
 # direnv
 eval "$(direnv hook fish)"
+
+# fish_key_bindings
+set --global fish_key_bindings fish_default_key_bindings
