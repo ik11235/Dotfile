@@ -1,6 +1,16 @@
 {
+  "model": "opus",
+  "enabledPlugins": {
+    "slack@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true
+  },
   "permissions": {
-    "allow": [],
+    "allow": [
+      "Bash(gh pr list*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh pr diff*)"
+    ],
     "deny": [
       "Bash(sudo:*)",
 
