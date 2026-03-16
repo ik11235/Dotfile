@@ -13,7 +13,11 @@ disable-model-invocation: true
 
 ### 1. 環境確認
 
-- ユーザーの実行シェルを判定する。Claude Codeはbash内でコマンドを実行するため `$$` は常にbashを返す。代わりに親プロセスチェーンを辿り、Claude Code（bash）より上位にある最初のシェルプロセス（fish, zsh, bash, nu等）を特定する。具体的には `ps -o ppid= -p $$` で親PIDを取得し、さらにその親を辿って既知のシェル名を探す。見つからない場合は `$SHELL` にフォールバックする
+- ユーザーの実行シェルを判定する。Claude CodeのBashツール内では `$$` が正しく展開されないため使用しない。代わりに `$PPID` を起点にプロセスツリーを上方向に辿り、既知のシェル名（fish, zsh, bash, nu, elvish等）に一致する最初のプロセスを探す。具体的には以下のワンライナーを実行する:
+  ```bash
+  pid=$PPID; found=""; while [ "$pid" != "1" ] && [ -n "$pid" ] && [ "$pid" != "0" ]; do comm=$(ps -o comm= -p "$pid" 2>/dev/null | xargs); case "$comm" in fish|zsh|bash|nu|elvish|nushell) found="$comm"; break ;; esac; pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' '); done; if [ -n "$found" ]; then echo "$found"; else echo "$SHELL"; fi
+  ```
+  見つからない場合のみ `$SHELL` にフォールバックする（`$SHELL` はログインシェルを返すため、`exec fish` のようにシェルを切り替えている場合は不正確になる）
 - 判定したシェルで動く構文でコマンドを出力する（特にfish はHEREDOC非対応のため注意）
 - `git status` で未コミットの変更一覧を取得する（`-uall`フラグは使わない）
 - `git diff` と `git diff --cached` でstaged/unstaged両方の差分を取得する
