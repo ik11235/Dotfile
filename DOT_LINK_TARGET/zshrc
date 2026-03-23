@@ -1,17 +1,15 @@
 DOTHOME=${HOME}
 # shellcheck source=./.zsh.d/zshrc_global
-source ${DOTHOME}/.zsh.d/zshrc_global
+source "${DOTHOME}/.zsh.d/zshrc_global"
 case "${OSTYPE}" in
 # Mac(Unix)
 darwin*)
-
-  # ここに設定
   # shellcheck source=./.zsh.d/zshrc_mac
-  source ${DOTHOME}/.zsh.d/zshrc_mac
+  source "${DOTHOME}/.zsh.d/zshrc_mac"
   ;;
 # Linux
 linux*)
   # shellcheck source=./.zsh.d/zshrc_linux
-  source ${DOTHOME}/.zsh.d/zshrc_linux
+  source "${DOTHOME}/.zsh.d/zshrc_linux"
   ;;
 esac
