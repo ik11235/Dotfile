@@ -1,20 +1,18 @@
 ---
 name: commit-draft
-description: 未コミットのdiffを分析し、コピペで実行できるgit commitコマンドを生成する
+description: 未コミットのdiffを分析し、Claude Code内で「!」付きで即実行できるgit commitコマンドを生成する
 user-invocable: true
 disable-model-invocation: true
 ---
 
 # commit-draft — diffからコミットコマンドを生成
 
-未コミットの変更を分析し、そのままターミナルに貼り付けて実行できるコミットコマンドを出力する。
+未コミットの変更を分析し、Claude Codeのプロンプトに `!` 付きで貼り付けて即実行できるコミットコマンドを出力する。
 
 ## 手順
 
-### 1. 環境確認
+### 1. 状態の取得
 
-- ユーザーの実行シェルを判定する。SessionStart フックが `/tmp/claude-user-shell` にシェル名を書き出しているので、Read ツールでこのファイルを読む。ファイルが存在しない場合のフォールバックとして `$SHELL` 環境変数を使用する
-- 判定したシェルで動く構文でコマンドを出力する（特にfish はHEREDOC非対応のため注意）
 - `git status` で未コミットの変更一覧を取得する（`-uall`フラグは使わない）
 - `git diff` と `git diff --cached` でstaged/unstaged両方の差分を取得する
 - `git log --oneline -5` で直近のコミットメッセージのスタイルを確認する
@@ -86,48 +84,40 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 - **複数コミットの場合は番号付きで順序を明示する**
 - **コマンド以外の説明は最小限にする** — 何をコミットするかの1行説明のみ
 - **.env、credentials等の機密ファイルが含まれている場合は警告する**
+- **出力するコマンドには先頭に `!` を付ける** — ユーザーがClaude Codeのプロンプトにそのまま貼り付けて実行できるようにするため
 
-#### シェル別のフォーマット
+#### フォーマット
 
-**bash/zsh — 1行メッセージ:**
-````
-```sh
-git add file1 file2
-git commit -m "要約行"
+Claude Codeの `!` プレフィックスで実行する前提のため、bash/zsh構文で統一する。
+
+**1行メッセージ:**
 ```
-````
+! git add file1 file2 && git commit -m "要約行"
+```
 
-**bash/zsh — 複数行メッセージ:**
-````
-```sh
-git add file1 file2
-git commit -m "$(cat <<'EOF'
+**複数行メッセージ:**
+```
+! git add file1 file2 && git commit -m "$(cat <<'EOF'
 要約行
 
 本文: なぜこの変更をしたか、補足事項など
 EOF
 )"
 ```
-````
 
-**bash/zsh — Co-Authored-By付き（1行要約 + トレーラー）:**
-````
-```sh
-git add file1 file2
-git commit -m "$(cat <<'EOF'
+**Co-Authored-By付き（1行要約 + トレーラー）:**
+```
+! git add file1 file2 && git commit -m "$(cat <<'EOF'
 要約行
 
 Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 EOF
 )"
 ```
-````
 
-**bash/zsh — Co-Authored-By付き（複数行メッセージ + トレーラー）:**
-````
-```sh
-git add file1 file2
-git commit -m "$(cat <<'EOF'
+**Co-Authored-By付き（複数行メッセージ + トレーラー）:**
+```
+! git add file1 file2 && git commit -m "$(cat <<'EOF'
 要約行
 
 本文: なぜこの変更をしたか、補足事項など
@@ -136,49 +126,10 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 EOF
 )"
 ```
-````
-
-**fish — 1行メッセージ:**
-````
-```fish
-git add file1 file2
-git commit -m "要約行"
-```
-````
-
-**fish — 複数行メッセージ（HEREDOC非対応）:**
-````
-```fish
-git add file1 file2
-git commit -m "要約行
-
-本文: なぜこの変更をしたか、補足事項など"
-```
-````
-
-**fish — Co-Authored-By付き（1行要約 + トレーラー）:**
-````
-```fish
-git add file1 file2
-git commit -m "要約行
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
-```
-````
-
-**fish — Co-Authored-By付き（複数行メッセージ + トレーラー）:**
-````
-```fish
-git add file1 file2
-git commit -m "要約行
-
-本文: なぜこの変更をしたか、補足事項など
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
-```
-````
 
 複数行メッセージでは、要約行と本文の間に必ず空行を1つ入れる（gitの慣習）。
+
+複数コミットの場合は、各コミットを別々の `!` コマンドとして出力する（1つずつ実行できるように）。
 
 ### 5. 変更がない場合
 

@@ -4,9 +4,7 @@
       "Bash(gh pr list*)",
       "Bash(gh pr view*)",
       "Bash(gh pr checks*)",
-      "Bash(gh pr diff*)",
-      "Bash(cat /tmp/claude-user-shell:*)",
-      "Read(/tmp/claude-user-shell)"
+      "Bash(gh pr diff*)"
     ],
     "deny": [
       "Bash(sudo:*)",
@@ -35,20 +33,7 @@
     ]
   },
   "model": "opus[1m]",
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "pid=$PPID; found=''; while [ \"$pid\" != '1' ] && [ -n \"$pid\" ] && [ \"$pid\" != '0' ]; do comm=$(ps -o comm= -p \"$pid\" 2>/dev/null | xargs); case \"$comm\" in fish|zsh|bash|nu|elvish|nushell) found=\"$comm\"; break ;; esac; pid=$(ps -o ppid= -p \"$pid\" 2>/dev/null | tr -d ' '); done; if [ -n \"$found\" ]; then echo \"$found\" > /tmp/claude-user-shell; else echo \"$SHELL\" > /tmp/claude-user-shell; fi",
-            "timeout": 5,
-            "statusMessage": "シェル検出: commit-draftがfish/zsh/bash等に応じた構文でコマンドを出力するため、セッション開始時に実行シェルを /tmp/claude-user-shell に記録する"
-          }
-        ]
-      }
-    ]
-  },
+  "hooks": {},
   "enabledPlugins": {
     "slack@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
