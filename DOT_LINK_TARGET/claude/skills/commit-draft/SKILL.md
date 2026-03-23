@@ -108,13 +108,17 @@ git add file1 file2
 git commit -m "要約行"
 ```
 
-**複数行メッセージの例:**
+**複数行メッセージの例（heredoc）:**
 ```bash
 #!/bin/bash
 set -e
 cd "$(git rev-parse --show-toplevel)"
 git add file1 file2
-git commit -m "要約行" -m "本文: なぜこの変更をしたか、補足事項など"
+git commit -F - <<'EOF'
+要約行
+
+本文: なぜこの変更をしたか、補足事項など
+EOF
 ```
 
 **Co-Authored-By付きの例:**
@@ -123,10 +127,29 @@ git commit -m "要約行" -m "本文: なぜこの変更をしたか、補足事
 set -e
 cd "$(git rev-parse --show-toplevel)"
 git add file1 file2
-git commit -m "要約行" -m "Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+git commit -F - <<'EOF'
+要約行
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+EOF
 ```
 
-複数行コミットメッセージには `-m` フラグを複数回使う。gitは各 `-m` の値を空行で区切って連結するため、要約行と本文の分離が自然にできる。
+**複数行 + Co-Authored-By付きの例:**
+```bash
+#!/bin/bash
+set -e
+cd "$(git rev-parse --show-toplevel)"
+git add file1 file2
+git commit -F - <<'EOF'
+要約行
+
+本文: なぜこの変更をしたか、補足事項など
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+EOF
+```
+
+シェルスクリプト内ではheredoc（`<<'EOF'`）が使えるため、`git commit -F -` でstdinからメッセージを読み取る形式にする。`-m` 連結より見やすく、改行や空行の制御も自然にできる。1行メッセージの場合のみ `-m` を使う。
 
 #### その他のルール
 
