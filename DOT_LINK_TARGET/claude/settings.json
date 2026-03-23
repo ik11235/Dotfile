@@ -5,6 +5,10 @@
       "Bash(gh pr view*)",
       "Bash(gh pr checks*)",
       "Bash(gh pr diff*)",
+      "Bash(git -C * status*)",
+      "Bash(git -C * diff*)",
+      "Bash(git -C * log*)",
+      "Bash(git rev-parse*)",
       "Read(/tmp/commit-draft*)",
       "Write(/tmp/commit-draft*)",
       "Create(/tmp/commit-draft*)"

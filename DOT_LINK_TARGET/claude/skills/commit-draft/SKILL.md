@@ -13,9 +13,11 @@ disable-model-invocation: true
 
 ### 1. 状態の取得
 
-- `git status` で未コミットの変更一覧を取得する（`-uall`フラグは使わない）
-- `git diff` と `git diff --cached` でstaged/unstaged両方の差分を取得する
-- `git log --oneline -5` で直近のコミットメッセージのスタイルを確認する
+まず `git rev-parse --show-toplevel` でリポジトリルートのパスを取得する。以降のgitコマンドはすべて `git -C <repo-root>` を使い、`cd` は使わない（Bashツールの不要な権限プロンプトを避けるため）。
+
+- `git -C <repo-root> status` で未コミットの変更一覧を取得する（`-uall`フラグは使わない）
+- `git -C <repo-root> diff` と `git -C <repo-root> diff --cached` でstaged/unstaged両方の差分を取得する
+- `git -C <repo-root> log --oneline -5` で直近のコミットメッセージのスタイルを確認する
 
 ### 2. 変更の分析
 
