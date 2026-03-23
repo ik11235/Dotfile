@@ -89,9 +89,11 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 
 #### フォーマット
 
-Claude Codeの `!` プレフィックスで実行する前提のため、bash/zsh構文で統一する。
+Claude Codeの `!` プレフィックスは内部で `(eval)` を使うため、heredocや複数行の入力は動作しない。**コマンドは必ず1行で完結させる。**
 
 `git add` と `git commit` は必ず `&&` で1行に連結する。ユーザーが1回の貼り付けで実行できることが重要。分けて出力してはいけない。
+
+複数行コミットメッセージには `-m` フラグを複数回使う。gitは各 `-m` の値を空行で区切って連結するため、要約行と本文の分離が自然にできる。
 
 **1行メッセージ:**
 ```
@@ -100,37 +102,18 @@ Claude Codeの `!` プレフィックスで実行する前提のため、bash/zs
 
 **複数行メッセージ:**
 ```
-! git add file1 file2 && git commit -m "$(cat <<'EOF'
-要約行
-
-本文: なぜこの変更をしたか、補足事項など
-EOF
-)"
+! git add file1 file2 && git commit -m "要約行" -m "本文: なぜこの変更をしたか、補足事項など"
 ```
 
 **Co-Authored-By付き（1行要約 + トレーラー）:**
 ```
-! git add file1 file2 && git commit -m "$(cat <<'EOF'
-要約行
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
-EOF
-)"
+! git add file1 file2 && git commit -m "要約行" -m "Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 ```
 
 **Co-Authored-By付き（複数行メッセージ + トレーラー）:**
 ```
-! git add file1 file2 && git commit -m "$(cat <<'EOF'
-要約行
-
-本文: なぜこの変更をしたか、補足事項など
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
-EOF
-)"
+! git add file1 file2 && git commit -m "要約行" -m "本文: なぜこの変更をしたか、補足事項など" -m "Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 ```
-
-複数行メッセージでは、要約行と本文の間に必ず空行を1つ入れる（gitの慣習）。
 
 複数コミットの場合は、各コミットを別々の `!` コマンドとして出力する（1つずつ実行できるように）。
 
