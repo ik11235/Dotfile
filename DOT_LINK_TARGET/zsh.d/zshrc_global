@@ -165,3 +165,6 @@ export AVAILABLE_FUZZY_FINDER=`available-fuzzy-finder-find $AVAILABLE_FUZZY_FIND
 if [ "$TMUX" != "" ]; then
     tmux set-option status-bg colour$(($(echo -n $(whoami)@$(hostname) | sum | cut -f1 -d' ') % 8 + 8)) | cat > /dev/null
 fi
+
+## https://x.com/suna_gaku/status/2035852481872429447
+export CLAUDE_CODE_NEW_INIT=1
