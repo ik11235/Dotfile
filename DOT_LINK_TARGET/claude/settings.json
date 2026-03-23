@@ -4,7 +4,9 @@
       "Bash(gh pr list*)",
       "Bash(gh pr view*)",
       "Bash(gh pr checks*)",
-      "Bash(gh pr diff*)"
+      "Bash(gh pr diff*)",
+      "Read(/tmp/commit-draft*)",
+      "Write(/tmp/commit-draft*)"
     ],
     "deny": [
       "Bash(sudo:*)",

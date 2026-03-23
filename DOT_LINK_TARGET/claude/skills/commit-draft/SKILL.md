@@ -78,44 +78,66 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 
 ### 4. 出力
 
-#### 出力ルール
+#### 出力方式
 
+Claude Codeの `!` プレフィックスは内部で `(eval)` を使うため、heredocや複数行の入力は動作しない。また、長い1行コマンドを直接表示すると、ターミナル幅で折り返し＋インデントが入りコピペが壊れる。
+
+この問題を回避するため、**コマンドをシェルスクリプトに書き出し、短い実行コマンドを提示する**方式を取る。
+
+**手順:**
+
+1. Writeツールで `/tmp/commit-draft.sh` にシェルスクリプトを書き出す
+2. スクリプトの中身をコードブロックでユーザーに表示する（何が実行されるか確認できるようにするため）
+3. 実行用の短いコマンドを提示する:
+```
+! bash /tmp/commit-draft.sh
+```
+
+#### スクリプトの書き方
+
+- **先頭で必ずgitリポジトリのルートに移動する** — ユーザーがサブディレクトリにいても動作するようにするため
 - **`git add .` や `git add -A` は使わない** — 必ずファイル名を個別指定する
+- **`set -e` を付ける** — エラー時に即停止するため
+
+**1行メッセージの例:**
+```bash
+#!/bin/bash
+set -e
+cd "$(git rev-parse --show-toplevel)"
+git add file1 file2
+git commit -m "要約行"
+```
+
+**複数行メッセージの例:**
+```bash
+#!/bin/bash
+set -e
+cd "$(git rev-parse --show-toplevel)"
+git add file1 file2
+git commit -m "要約行" -m "本文: なぜこの変更をしたか、補足事項など"
+```
+
+**Co-Authored-By付きの例:**
+```bash
+#!/bin/bash
+set -e
+cd "$(git rev-parse --show-toplevel)"
+git add file1 file2
+git commit -m "要約行" -m "Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+```
+
+複数行コミットメッセージには `-m` フラグを複数回使う。gitは各 `-m` の値を空行で区切って連結するため、要約行と本文の分離が自然にできる。
+
+#### その他のルール
+
 - **コミットメッセージは直近のコミットのスタイルに合わせる**（日本語/英語、prefixの有無など）
 - **複数コミットの場合は番号付きで順序を明示する**
 - **コマンド以外の説明は最小限にする** — 何をコミットするかの1行説明のみ
 - **.env、credentials等の機密ファイルが含まれている場合は警告する**
-- **出力するコマンドには先頭に `!` を付ける** — ユーザーがClaude Codeのプロンプトにそのまま貼り付けて実行できるようにするため
 
-#### フォーマット
+#### 複数コミットの場合
 
-Claude Codeの `!` プレフィックスは内部で `(eval)` を使うため、heredocや複数行の入力は動作しない。**コマンドは必ず1行で完結させる。**
-
-`git add` と `git commit` は必ず `&&` で1行に連結する。ユーザーが1回の貼り付けで実行できることが重要。分けて出力してはいけない。
-
-複数行コミットメッセージには `-m` フラグを複数回使う。gitは各 `-m` の値を空行で区切って連結するため、要約行と本文の分離が自然にできる。
-
-**1行メッセージ:**
-```
-! git add file1 file2 && git commit -m "要約行"
-```
-
-**複数行メッセージ:**
-```
-! git add file1 file2 && git commit -m "要約行" -m "本文: なぜこの変更をしたか、補足事項など"
-```
-
-**Co-Authored-By付き（1行要約 + トレーラー）:**
-```
-! git add file1 file2 && git commit -m "要約行" -m "Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
-```
-
-**Co-Authored-By付き（複数行メッセージ + トレーラー）:**
-```
-! git add file1 file2 && git commit -m "要約行" -m "本文: なぜこの変更をしたか、補足事項など" -m "Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
-```
-
-複数コミットの場合は、各コミットを別々の `!` コマンドとして出力する（1つずつ実行できるように）。
+複数コミットに分割する場合は、各コミットを別々のスクリプトファイルとして書き出す（`/tmp/commit-draft-1.sh`, `/tmp/commit-draft-2.sh`, ...）。実行コマンドもそれぞれ提示し、1つずつ順番に実行できるようにする。
 
 ### 5. 変更がない場合
 
