@@ -18,6 +18,7 @@ disable-model-invocation: true
 - `git -C <repo-root> status` で未コミットの変更一覧を取得する（`-uall`フラグは使わない）
 - `git -C <repo-root> diff` と `git -C <repo-root> diff --cached` でstaged/unstaged両方の差分を取得する
 - `git -C <repo-root> log --oneline -5` で直近のコミットメッセージのスタイルを確認する
+- `lefthook.yml` や `.husky/prepare-commit-msg` 等を確認し、`prepare-commit-msg` hookがプレフィックスを自動付与するか調べる
 
 ### 2. 変更の分析
 
@@ -88,7 +89,7 @@ Claude Codeの `!` プレフィックスは内部で `(eval)` を使うため、
 
 **手順:**
 
-1. Writeツールで `/tmp/commit-draft.sh` にシェルスクリプトを書き出す
+1. まずReadツールで `/tmp/commit-draft.sh` を読み込む（存在しなくてもエラーが返るだけでよい。Writeツールは事前にReadが必要なため）。その後Writeツールでシェルスクリプトを書き出す
 2. スクリプトの中身をコードブロックでユーザーに表示する（何が実行されるか確認できるようにするため）
 3. 実行用の短いコマンドを提示する:
 ```
@@ -152,6 +153,14 @@ EOF
 ```
 
 シェルスクリプト内ではheredoc（`<<'EOF'`）が使えるため、`git commit -F -` でstdinからメッセージを読み取る形式にする。`-m` 連結より見やすく、改行や空行の制御も自然にできる。1行メッセージの場合のみ `-m` を使う。
+
+#### prepare-commit-msg hookへの対応
+
+`lefthook.yml` や `.husky/prepare-commit-msg` 等の設定を確認し、`prepare-commit-msg` hookがコミットメッセージにプレフィックス（例: `feat(TICKET-123): `）を自動付与するか調べる。自動付与される場合、スクリプト内のコミットメッセージにはプレフィックスを含めず、本文のみを記述する。
+
+例えば、ブランチ名 `feat/TICKET-456_add_feature` から hookが `feat(TICKET-456): ` を自動付与する場合:
+- **正しい**: `git commit -m "ユーザー一覧にフィルタ機能を追加"`
+- **誤り**: `git commit -m "fix(TICKET-456): ユーザー一覧にフィルタ機能を追加"` → `feat(TICKET-456): fix(TICKET-456): ...` と重複する
 
 #### その他のルール
 
