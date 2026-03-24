@@ -8,7 +8,7 @@
       "Bash(git -C * status*)",
       "Bash(git -C * diff*)",
       "Bash(git -C * log*)",
-      "Bash(git rev-parse*)",
+      "Bash(git -C * rev-parse*)",
       "Read(/tmp/commit-draft*)",
       "Write(/tmp/commit-draft*)",
       "Create(/tmp/commit-draft*)"
