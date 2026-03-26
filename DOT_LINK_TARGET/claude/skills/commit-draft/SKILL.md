@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 ### 1. 状態の取得
 
-まず `git rev-parse --show-toplevel` でリポジトリルートのパスを取得する。以降のgitコマンドはすべて `git -C <repo-root>` を使い、`cd` は使わない（Bashツールの不要な権限プロンプトを避けるため）。
+まず `git rev-parse --show-toplevel` でリポジトリルートの絶対パスを取得する。この値は以降のgitコマンド（`git -C <repo-root>`）だけでなく、**出力するシェルスクリプトにも絶対パスとしてハードコードする**（後述）。`cd` は使わない（Bashツールの不要な権限プロンプトを避けるため）。
 
 - `git -C <repo-root> status` で未コミットの変更一覧を取得する（`-uall`フラグは使わない）
 - `git -C <repo-root> diff` と `git -C <repo-root> diff --cached` でstaged/unstaged両方の差分を取得する
@@ -98,7 +98,7 @@ Claude Codeの `!` プレフィックスは内部で `(eval)` を使うため、
 
 #### スクリプトの書き方
 
-- **先頭で必ずgitリポジトリのルートに移動する** — ユーザーがサブディレクトリにいても動作するようにするため
+- **先頭で必ずgitリポジトリのルートに `cd` する** — 手順1で取得した絶対パスをハードコードする（`git rev-parse` を実行時に呼ばない）。スクリプトがどのディレクトリから実行されても、常に正しいリポジトリで動作するようにするため
 - **`git add .` や `git add -A` は使わない** — 必ずファイル名を個別指定する
 - **`set -e` を付ける** — エラー時に即停止するため
 
@@ -106,7 +106,7 @@ Claude Codeの `!` プレフィックスは内部で `(eval)` を使うため、
 ```bash
 #!/bin/bash
 set -e
-cd "$(git rev-parse --show-toplevel)"
+cd "/absolute/path/to/repo-root"
 git add file1 file2
 git commit -m "要約行"
 ```
@@ -115,7 +115,7 @@ git commit -m "要約行"
 ```bash
 #!/bin/bash
 set -e
-cd "$(git rev-parse --show-toplevel)"
+cd "/absolute/path/to/repo-root"
 git add file1 file2
 git commit -F - <<'EOF'
 要約行
@@ -128,7 +128,7 @@ EOF
 ```bash
 #!/bin/bash
 set -e
-cd "$(git rev-parse --show-toplevel)"
+cd "/absolute/path/to/repo-root"
 git add file1 file2
 git commit -F - <<'EOF'
 要約行
@@ -141,7 +141,7 @@ EOF
 ```bash
 #!/bin/bash
 set -e
-cd "$(git rev-parse --show-toplevel)"
+cd "/absolute/path/to/repo-root"
 git add file1 file2
 git commit -F - <<'EOF'
 要約行
