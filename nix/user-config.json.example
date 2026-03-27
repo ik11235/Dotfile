@@ -1,0 +1,7 @@
+{
+  "username": "your-username",
+  "hostname": "your-hostname",
+  "system": "aarch64-darwin",
+  "linuxUsername": "your-username",
+  "linuxHomeDirectory": "/home/your-username"
+}
