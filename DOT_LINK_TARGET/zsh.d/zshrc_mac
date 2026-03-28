@@ -1,13 +1,17 @@
 # To enable homebrew-command-not-found
-HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$(brew --repository)/Library/Homebrew/command-not-found/handler.sh"
-if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
-  source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
+if command -v brew >/dev/null 2>&1; then
+  HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$(brew --repository)/Library/Homebrew/command-not-found/handler.sh"
+  if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
+    source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
+  fi
 fi
 
 ## gcloud completion
-if [ -d "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/" ]; then
-  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc"
-  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
+# google-cloud-sdk is installed via brew cask
+GCLOUD_SDK_DIR="/opt/homebrew/Caskroom/google-cloud-sdk/latest/google-cloud-sdk"
+if [ -d "$GCLOUD_SDK_DIR" ]; then
+  source "$GCLOUD_SDK_DIR/path.zsh.inc"
+  source "$GCLOUD_SDK_DIR/completion.zsh.inc"
 fi
 
 ## gcloud sdk PATH
@@ -23,8 +27,8 @@ fi
 ## pinentry-macをターミナルで使用する
 export GPG_TTY="$(tty)"
 
-# mise
-eval "$($(brew --prefix mise)/bin/mise activate zsh)"
+# mise (installed via Nix, available on PATH)
+eval "$(mise activate zsh)"
 
 # direnv
 eval "$(direnv hook zsh)"
