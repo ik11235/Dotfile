@@ -5,15 +5,18 @@ set -gx PATH ~/.local/share/mise/shims $PATH
 
 # === 外部ツール連携 ===
 
-# google cloud sdkのPATH
-if test -d (brew --prefix)"/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/"
-  source (brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
+# google cloud sdkのPATH (installed via brew cask)
+set GCLOUD_SDK_DIR /opt/homebrew/Caskroom/google-cloud-sdk/latest/google-cloud-sdk
+if test -d $GCLOUD_SDK_DIR
+  source $GCLOUD_SDK_DIR/path.fish.inc
 end
 
 # To enable homebrew-command-not-found
-set HOMEBREW_COMMAND_NOT_FOUND_HANDLER (brew --repository)/Library/Homebrew/command-not-found/handler.fish
-if test -f $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
-  source $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
+if type -q brew
+  set HOMEBREW_COMMAND_NOT_FOUND_HANDLER (brew --repository)/Library/Homebrew/command-not-found/handler.fish
+  if test -f $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
+    source $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
+  end
 end
 
 # fzf
