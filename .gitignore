@@ -3,7 +3,6 @@ Brewfile.lock.json
 # Nix
 result
 result-*
-nix/user-config.json
 
 DOT_LINK_TARGET/config/fish/functions/fisher.fish
 DOT_LINK_TARGET/config/fisher/
