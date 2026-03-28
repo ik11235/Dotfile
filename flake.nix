@@ -34,6 +34,7 @@
           home-manager.users.${username} = import ./nix/home.nix;
         }
         {
+          system.primaryUser = username;
           users.users.${username} = {
             name = username;
             home = "/Users/${username}";

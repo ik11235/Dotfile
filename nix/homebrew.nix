@@ -13,13 +13,16 @@
 
     taps = [
       "homebrew/command-not-found"
-      "ynqa/tap"
-      "yt-dlp/taps"
     ];
 
-    # CLI tools that are not available in nixpkgs or have issues on macOS via Nix
-    # Most CLI tools are in home.nix via Nix packages
+    # CLI tools not available in nixpkgs
     brews = [
+      "codex"        # OpenAI Codex CLI (npm package, not in nixpkgs)
+      "mas"          # Mac App Store CLI (macOS-only, not in nixpkgs)
+      "mysql"        # MySQL (nixpkgs only has mariadb)
+      "pinentry-mac" # macOS-specific pinentry (not in nixpkgs)
+      "redpen"       # Document proofreader (not in nixpkgs)
+      "f3"           # USB flash drive tester
     ];
 
     # GUI applications (macOS only)
