@@ -3,6 +3,16 @@ name: commit-draft
 description: 未コミットのdiffを分析し、Claude Code内で「!」付きで即実行できるgit commitコマンドを生成する
 user-invocable: true
 disable-model-invocation: true
+allowed-tools:
+  - "Bash(git -C * status*)"
+  - "Bash(git -C * diff*)"
+  - "Bash(git -C * log*)"
+  - "Bash(git -C * rev-parse*)"
+  - "Read(/tmp/commit-draft*)"
+  - "Read(**/lefthook.yml)"
+  - "Read(**/.husky/*)"
+  - "Write(/tmp/commit-draft*)"
+  - "Glob"
 ---
 
 # commit-draft — diffからコミットコマンドを生成
