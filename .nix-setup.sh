@@ -43,10 +43,20 @@ JSONEOF
 fi
 
 # Apply Nix configuration
+# On first run, darwin-rebuild/home-manager are not yet installed.
+# Use `nix run` to bootstrap, then subsequent runs can use the direct commands.
 if [ "${OS_TYPE}" = "Darwin" ]; then
-  # macOS: nix-darwin manages system config, packages, and homebrew casks
-  darwin-rebuild switch --flake .
+  if command -v darwin-rebuild >/dev/null 2>&1; then
+    darwin-rebuild switch --flake .
+  else
+    echo "Bootstrapping nix-darwin (first run)..."
+    nix run nix-darwin -- switch --flake .
+  fi
 else
-  # Linux: standalone home-manager
-  home-manager switch --flake .#linux
+  if command -v home-manager >/dev/null 2>&1; then
+    home-manager switch --flake .#linux
+  else
+    echo "Bootstrapping home-manager (first run)..."
+    nix run home-manager -- switch --flake .#linux
+  fi
 fi
