@@ -2,17 +2,28 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
+      "Edit(*)",
+      "Write(*)",
       "Bash(gh pr list*)",
       "Bash(gh pr view*)",
       "Bash(gh pr checks*)",
       "Bash(gh pr diff*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git rev-parse*)",
+      "Bash(git branch*)",
       "Bash(git -C * status*)",
       "Bash(git -C * diff*)",
       "Bash(git -C * log*)",
       "Bash(git -C * rev-parse*)",
+      "Bash(nix *)",
+      "Bash(home-manager *)",
       "Read(/tmp/commit-draft*)",
       "Write(/tmp/commit-draft*)",
-      "Create(/tmp/commit-draft*)"
+      "Create(/tmp/commit-draft*)",
+      "mcp__notion__*",
+      "mcp__slack__*"
     ],
     "deny": [
       "Bash(sudo:*)",
