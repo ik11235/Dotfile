@@ -1,11 +1,8 @@
 # macOS-specific configuration (nix-darwin)
 { pkgs, ... }: {
-  # Nix settings
-  nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
-    # https://github.com/NixOS/nix/issues/7273
-    auto-optimise-store = false;
-  };
+  # Determinate Systems版Nixインストーラーが独自デーモンでNixを管理するため、
+  # nix-darwinのNix管理を無効化する
+  nix.enable = false;
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
