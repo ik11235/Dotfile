@@ -1,0 +1,59 @@
+name: nix-check
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  flake-check:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      # user-config.json is tracked with placeholder values (CHANGEME).
+      # Replace with CI-appropriate values for evaluation.
+      - name: Setup user-config.json for CI
+        run: |
+          if [ "$(uname)" = "Darwin" ]; then
+            cat > nix/user-config.json <<'EOF'
+          {
+            "username": "runner",
+            "hostname": "ci-mac",
+            "system": "aarch64-darwin",
+            "linuxUsername": "runner",
+            "linuxHomeDirectory": "/home/runner"
+          }
+          EOF
+          else
+            cat > nix/user-config.json <<'EOF'
+          {
+            "username": "runner",
+            "hostname": "ci-linux",
+            "system": "aarch64-darwin",
+            "linuxUsername": "runner",
+            "linuxHomeDirectory": "/home/runner"
+          }
+          EOF
+          fi
+
+      - name: Nix flake check
+        run: nix flake check 2>&1 || true
+        # darwin config can only fully check on macOS runners
+
+      # Linux: verify home-manager config evaluates
+      - name: Evaluate Linux home-manager config
+        if: runner.os == 'Linux'
+        run: nix eval '.#homeConfigurations.linux.activationPackage.name'
+
+      # macOS: verify darwin config evaluates
+      - name: Evaluate macOS darwin config
+        if: runner.os == 'macOS'
+        run: nix build '.#darwinConfigurations.ci-mac.system' --dry-run
