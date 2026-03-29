@@ -13,12 +13,17 @@ if [ -n "$HOMEBREW_REPOSITORY" ]; then
 fi
 
 ## gcloud completion (installed via brew cask)
+## cask名がgoogle-cloud-sdkからgcloud-cliに改名されたため両方を探す
 if [ -n "$HOMEBREW_PREFIX" ]; then
-  GCLOUD_SDK_DIR="$HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk"
-  if [ -d "$GCLOUD_SDK_DIR" ]; then
-    source "$GCLOUD_SDK_DIR/path.zsh.inc"
-    source "$GCLOUD_SDK_DIR/completion.zsh.inc"
-  fi
+  for _gcloud_dir in "$HOMEBREW_PREFIX/Caskroom/gcloud-cli/latest/google-cloud-sdk" \
+                      "$HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk"; do
+    if [ -d "$_gcloud_dir" ]; then
+      source "$_gcloud_dir/path.zsh.inc"
+      source "$_gcloud_dir/completion.zsh.inc"
+      break
+    fi
+  done
+  unset _gcloud_dir
 fi
 
 ## gcloud sdk PATH
