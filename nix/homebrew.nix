@@ -23,6 +23,7 @@
       "mysql"        # MySQL (nixpkgs only has mariadb)
       "pinentry-mac" # macOS-specific pinentry (not in nixpkgs)
       "redpen"       # Document proofreader (not in nixpkgs)
+      "watchman"     # File watcher (nixpkgs build fails due to edencommon)
       "f3"           # USB flash drive tester
     ];
 

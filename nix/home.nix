@@ -59,7 +59,6 @@
     gnupg
     fdupes
     minio-client # minio-mc
-    watchman
     awscli2
 
     # macOS-only packages
