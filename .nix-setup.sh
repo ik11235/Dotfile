@@ -40,6 +40,9 @@ if [ ! -f nix/user-config.json ] || grep -q "CHANGEME" nix/user-config.json; the
 JSONEOF
   echo "Generated nix/user-config.json:"
   cat nix/user-config.json
+
+  # Prevent git from showing diff for user-specific values
+  git update-index --skip-worktree nix/user-config.json
 fi
 
 # Apply Nix configuration
@@ -50,13 +53,13 @@ if [ "${OS_TYPE}" = "Darwin" ]; then
     darwin-rebuild switch --flake .
   else
     echo "Bootstrapping nix-darwin (first run)..."
-    nix run nix-darwin -- switch --flake .
+    sudo nix run nix-darwin#darwin-rebuild -- switch --flake .
   fi
 else
   if command -v home-manager >/dev/null 2>&1; then
     home-manager switch --flake .#linux
   else
     echo "Bootstrapping home-manager (first run)..."
-    nix run home-manager -- switch --flake .#linux
+    nix run home-manager#home-manager -- switch --flake .#linux
   fi
 fi
