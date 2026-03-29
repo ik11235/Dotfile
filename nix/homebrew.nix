@@ -56,7 +56,7 @@
       # "phantomjs"   # discontinued
       "raycast"
       "sequel-ace"
-      "skitch"
+      # "skitch"      # no longer available in Homebrew
       "slack@beta"
       "steam"
       "sync"
