@@ -48,18 +48,21 @@ fi
 # Apply Nix configuration
 # On first run, darwin-rebuild/home-manager are not yet installed.
 # Use `nix run` to bootstrap, then subsequent runs can use the direct commands.
+# Use absolute path for --flake because sudo changes $HOME to /var/root
+FLAKE_DIR="$(pwd)"
+
 if [ "${OS_TYPE}" = "Darwin" ]; then
   if command -v darwin-rebuild >/dev/null 2>&1; then
-    darwin-rebuild switch --flake .
+    darwin-rebuild switch --flake "${FLAKE_DIR}"
   else
     echo "Bootstrapping nix-darwin (first run)..."
-    sudo nix run nix-darwin#darwin-rebuild -- switch --flake .
+    sudo nix run nix-darwin#darwin-rebuild -- switch --flake "${FLAKE_DIR}"
   fi
 else
   if command -v home-manager >/dev/null 2>&1; then
-    home-manager switch --flake .#linux
+    home-manager switch --flake "${FLAKE_DIR}#linux"
   else
     echo "Bootstrapping home-manager (first run)..."
-    nix run home-manager#home-manager -- switch --flake .#linux
+    nix run home-manager#home-manager -- switch --flake "${FLAKE_DIR}#linux"
   fi
 fi

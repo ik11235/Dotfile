@@ -19,6 +19,7 @@
     brews = [
       "codex"        # OpenAI Codex CLI (npm package, not in nixpkgs)
       "mas"          # Mac App Store CLI (macOS-only, not in nixpkgs)
+      "mise"         # Version manager (nixpkgs build has cgo issues on some environments)
       "mysql"        # MySQL (nixpkgs only has mariadb)
       "pinentry-mac" # macOS-specific pinentry (not in nixpkgs)
       "redpen"       # Document proofreader (not in nixpkgs)
