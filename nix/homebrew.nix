@@ -50,7 +50,7 @@
       "keepassxc"
       # "kindle"      # discontinued
       "loupedeck"
-      "melonbooksviewer"
+      # "melonbooksviewer" # no longer available in Homebrew
       "obs"
       "obsidian"
       # "phantomjs"   # discontinued
