@@ -8,7 +8,8 @@
     onActivation = {
       autoUpdate = true;
       cleanup = "zap";
-      upgrade = true;
+      # upgradeはinstaller manualタイプのcask(loupedeckなど)で失敗するため手動管理
+      # brew upgrade --cask で任意のタイミングで実行
     };
 
     taps = [
