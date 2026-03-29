@@ -7,10 +7,14 @@ if type -q brew
 end
 
 # google cloud sdkのPATH (installed via brew cask)
+# cask名がgoogle-cloud-sdkからgcloud-cliに改名されたため両方を探す
 if set -q HOMEBREW_PREFIX
-  set GCLOUD_SDK_DIR $HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk
-  if test -d $GCLOUD_SDK_DIR
-    source $GCLOUD_SDK_DIR/path.fish.inc
+  for _gcloud_dir in $HOMEBREW_PREFIX/Caskroom/gcloud-cli/latest/google-cloud-sdk \
+                      $HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk
+    if test -d $_gcloud_dir
+      source $_gcloud_dir/path.fish.inc
+      break
+    end
   end
 end
 
