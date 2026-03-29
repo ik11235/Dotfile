@@ -58,7 +58,6 @@
     fish
     gnupg
     fdupes
-    mise
     minio-client # minio-mc
     watchman
     awscli2
