@@ -48,6 +48,7 @@
     # Network
     aria2
     autossh
+    cloudflared
     nmap
     sshuttle
     inetutils # telnet
