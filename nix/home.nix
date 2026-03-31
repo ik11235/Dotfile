@@ -30,6 +30,7 @@
     shellcheck
     protobuf
     jnv
+    alejandra # Nix code formatter
 
     # Languages / runtimes
     openjdk
