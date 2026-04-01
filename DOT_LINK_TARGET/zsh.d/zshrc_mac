@@ -1,13 +1,29 @@
-# To enable homebrew-command-not-found
-HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$(brew --repository)/Library/Homebrew/command-not-found/handler.sh"
-if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
-  source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
+# Homebrew prefix/repositoryを1回だけ取得してキャッシュ
+if command -v brew >/dev/null 2>&1; then
+  HOMEBREW_PREFIX="$(brew --prefix)"
+  HOMEBREW_REPOSITORY="$(brew --repository)"
 fi
 
-## gcloud completion
-if [ -d "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/" ]; then
-  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc"
-  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
+# To enable homebrew-command-not-found
+if [ -n "$HOMEBREW_REPOSITORY" ]; then
+  HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$HOMEBREW_REPOSITORY/Library/Homebrew/command-not-found/handler.sh"
+  if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
+    source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
+  fi
+fi
+
+## gcloud completion (installed via brew cask)
+## cask名がgoogle-cloud-sdkからgcloud-cliに改名されたため両方を探す
+if [ -n "$HOMEBREW_PREFIX" ]; then
+  for _gcloud_dir in "$HOMEBREW_PREFIX/Caskroom/gcloud-cli/latest/google-cloud-sdk" \
+                      "$HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk"; do
+    if [ -d "$_gcloud_dir" ]; then
+      source "$_gcloud_dir/path.zsh.inc"
+      source "$_gcloud_dir/completion.zsh.inc"
+      break
+    fi
+  done
+  unset _gcloud_dir
 fi
 
 ## gcloud sdk PATH
@@ -23,8 +39,8 @@ fi
 ## pinentry-macをターミナルで使用する
 export GPG_TTY="$(tty)"
 
-# mise
-eval "$($(brew --prefix mise)/bin/mise activate zsh)"
+# mise (installed via Nix, available on PATH)
+eval "$(mise activate zsh)"
 
 # direnv
 eval "$(direnv hook zsh)"
