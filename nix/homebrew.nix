@@ -35,7 +35,6 @@
       "arc"
       "background-music"
       "battery"
-      "calibre"
       "claude-code"
       "cursor"
       "discord"
@@ -50,16 +49,13 @@
       "jordanbaird-ice"
       "keepassxc"
       # "kindle"      # discontinued
-      "loupedeck"
       # "melonbooksviewer" # no longer available in Homebrew
-      "obs"
       "obsidian"
       # "phantomjs"   # discontinued
       "raycast"
       "sequel-ace"
       # "skitch"      # no longer available in Homebrew
       "slack@beta"
-      "steam"
       "sync"
       "visual-studio-code@insiders"
       "vivaldi"
