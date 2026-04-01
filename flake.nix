@@ -21,8 +21,11 @@
     username = userConfig.username;
     hostname = userConfig.hostname;
     system = userConfig.system;
-  in {
-    darwinConfigurations.${hostname} = nix-darwin.lib.darwinSystem {
+
+    configName = userConfig.configName;
+
+    # Helper to create a Darwin configuration with host-specific modules
+    mkDarwinConfig = hostModules: nix-darwin.lib.darwinSystem {
       inherit system;
       modules = [
         ./nix/darwin.nix
@@ -41,8 +44,14 @@
           };
           networking.hostName = hostname;
         }
-      ];
+      ] ++ hostModules;
     };
+  in {
+    # configName is a short alias defined in user-config.json (skip-worktree).
+    # Use `darwin-rebuild switch --flake .#<configName>` to apply.
+    darwinConfigurations.${configName} = mkDarwinConfig [
+      (./nix/hosts + "/${configName}.nix")
+    ];
 
     # Linux: standalone home-manager configuration
     homeConfigurations.linux = home-manager.lib.homeManagerConfiguration {

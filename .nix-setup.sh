@@ -29,10 +29,20 @@ if [ ! -f nix/user-config.json ] || grep -q "CHANGEME" nix/user-config.json; the
     aarch64-linux) CURRENT_SYSTEM="aarch64-linux" ;;
   esac
 
+  # configName: short alias for darwinConfigurations key (hide full hostname from git)
+  # Must be set via NIX_CONFIG_NAME env var to match an existing nix/hosts/<configName>.nix
+  CURRENT_CONFIG_NAME="${NIX_CONFIG_NAME:-}"
+  if [ -z "${CURRENT_CONFIG_NAME}" ]; then
+    echo "Error: NIX_CONFIG_NAME is not set. Set it to match a nix/hosts/<configName>.nix file."
+    echo "Example: NIX_CONFIG_NAME=YD-macbookair bash .nix-setup.sh"
+    exit 1
+  fi
+
   cat > nix/user-config.json <<JSONEOF
 {
   "username": "${CURRENT_USER}",
   "hostname": "${CURRENT_HOST}",
+  "configName": "${CURRENT_CONFIG_NAME}",
   "system": "${CURRENT_SYSTEM}",
   "linuxUsername": "${CURRENT_USER}",
   "linuxHomeDirectory": "/home/${CURRENT_USER}"
@@ -50,13 +60,14 @@ fi
 # Use `nix run` to bootstrap, then subsequent runs can use the direct commands.
 # Use absolute path for --flake because sudo changes $HOME to /var/root
 FLAKE_DIR="$(pwd)"
+CONFIG_NAME="$(jq -r '.configName' nix/user-config.json)"
 
 if [ "${OS_TYPE}" = "Darwin" ]; then
   if command -v darwin-rebuild >/dev/null 2>&1; then
-    darwin-rebuild switch --flake "${FLAKE_DIR}"
+    darwin-rebuild switch --flake "${FLAKE_DIR}#${CONFIG_NAME}"
   else
     echo "Bootstrapping nix-darwin (first run)..."
-    sudo nix run nix-darwin#darwin-rebuild -- switch --flake "${FLAKE_DIR}"
+    sudo nix run nix-darwin#darwin-rebuild -- switch --flake "${FLAKE_DIR}#${CONFIG_NAME}"
   fi
 else
   if command -v home-manager >/dev/null 2>&1; then
