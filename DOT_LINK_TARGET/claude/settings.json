@@ -51,12 +51,15 @@
       "mcp__supabase__execute_sql"
     ]
   },
+  "language": "ja",
   "model": "opus[1m]",
   "hooks": {},
   "enabledPlugins": {
     "slack@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true
+    "skill-creator@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true
   },
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true
 }
