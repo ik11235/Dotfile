@@ -64,7 +64,7 @@ CONFIG_NAME="$(jq -r '.configName' nix/user-config.json)"
 
 if [ "${OS_TYPE}" = "Darwin" ]; then
   if command -v darwin-rebuild >/dev/null 2>&1; then
-    darwin-rebuild switch --flake "${FLAKE_DIR}#${CONFIG_NAME}"
+    sudo darwin-rebuild switch --flake "${FLAKE_DIR}#${CONFIG_NAME}"
   else
     echo "Bootstrapping nix-darwin (first run)..."
     sudo nix run nix-darwin#darwin-rebuild -- switch --flake "${FLAKE_DIR}#${CONFIG_NAME}"
