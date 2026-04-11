@@ -6,8 +6,8 @@ description: Save conversation logs with summary and hard links to raw session l
 ## Context
 
 - Current working directory: !`pwd`
-- Claude config project dir: !`echo "$HOME/.claude/projects/$(pwd | sed 's/[\/\.]/-/g' | sed 's/^-//')"`
-- Available session logs: !`ls -t "$HOME/.claude/projects/$(pwd | sed 's/[\/\.]/-/g' | sed 's/^-//')"/*.jsonl 2>/dev/null | head -5`
+- Claude config project dir: !`echo "$HOME/.claude/projects/$(pwd | sed 's/[\/\.\_]/-/g')"`
+- Available session logs: !`ls -t "$HOME/.claude/projects/$(pwd | sed 's/[\/\.\_]/-/g')"/*.jsonl 2>/dev/null | head -5`
 
 ## Your task
 
