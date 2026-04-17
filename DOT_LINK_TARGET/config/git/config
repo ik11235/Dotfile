@@ -94,7 +94,7 @@
 [alias]
 	delete-merged-branch = !git branch --merged=origin/HEAD \
 		| grep -E -v '\\*|master|development|develop|main' \
-		| xargs git branch -d
+		| xargs -r git branch -d
 
 	branch-search = !git branch -r \
 		| sed -e 's/origin\\///' \
