@@ -11,6 +11,7 @@
 
 [commit]
   gpgsign = true
+  verbose = true
 
 
 ########################################
@@ -26,12 +27,16 @@
 [init]
   defaultBranch = master
 
+[help]
+  autocorrect = prompt
+
 
 ########################################
 # Fetch / Pull / Push
 ########################################
 [fetch]
   prune = true
+  fsckobjects = true
 
 [pull]
   rebase = true
@@ -39,6 +44,25 @@
 [push]
   default = current
   autoSetupRemote = true
+  followTags = true
+
+[transfer]
+  fsckobjects = true
+
+
+########################################
+# Merge / Rebase / Rerere
+########################################
+[merge]
+  conflictStyle = zdiff3
+
+[rebase]
+  autoStash = true
+  autoSquash = true
+  updateRefs = true
+
+[rerere]
+  enabled = true
 
 
 ########################################
@@ -48,7 +72,19 @@
   ui = true
 
 [diff]
+  algorithm = histogram
   colorMoved = dimmed_zebra
+  renames = copies
+  mnemonicPrefix = true
+
+[branch]
+  sort = -committerdate
+
+[tag]
+  sort = version:refname
+
+[column]
+  ui = auto
 
 
 ########################################
