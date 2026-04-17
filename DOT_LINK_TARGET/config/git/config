@@ -45,6 +45,7 @@
   default = current
   autoSetupRemote = true
   followTags = true
+  useForceIfIncludes = true
 
 [transfer]
   fsckobjects = true
