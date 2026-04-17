@@ -91,13 +91,13 @@
 # Alias
 ########################################
 [alias]
-  delete-merged-branch = !git branch --merged \
-    | egrep -v '\\*|master|development|develop|main' \
+  delete-merged-branch = !git branch --merged=origin/HEAD \
+    | grep -E -v '\\*|master|development|develop|main' \
     | xargs git branch -d
 
   branch-search = !git branch -r \
     | sed -e 's/origin\\///' \
-    | $AVAILABLE_FUZZY_FINDER \
+    | "${AVAILABLE_FUZZY_FINDER:-$(command -v fzf || command -v peco)}" \
     | xargs git checkout
 
 
