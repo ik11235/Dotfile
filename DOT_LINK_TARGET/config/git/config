@@ -97,7 +97,7 @@
 
   branch-search = !git branch -r \
     | sed -e 's/origin\\///' \
-    | "${AVAILABLE_FUZZY_FINDER:-$(command -v fzf || command -v peco)}" \
+    | "${AVAILABLE_FUZZY_FINDER:?set AVAILABLE_FUZZY_FINDER env var (e.g. fzf, peco)}" \
     | xargs git checkout
 
 
