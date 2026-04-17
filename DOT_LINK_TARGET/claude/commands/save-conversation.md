@@ -40,7 +40,7 @@ fi
 
 ### Step 4: Generate the summary markdown file
 
-Determine a short, descriptive title for this conversation (in the language used in the conversation, max 50 characters, filesystem-safe: no `/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|`). Use this title as the filename.
+Determine a short, descriptive title for this conversation (in the language used in the conversation, max 50 characters, filesystem-safe: no `/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|`). Use this title as the filename. This same title will be used in Step 5 for session rename.
 
 Write the file `${CWD}/${SESSION_UUID}/${title}.md` with the following structure:
 
@@ -69,6 +69,18 @@ date: <today's date in YYYY-MM-DD format>
 
 <Repeat for all messages in the conversation>
 ```
+
+### Step 5: Rename the session
+
+`/rename` はビルトインコマンドであり、スキルからツールとして直接呼び出せない。そのため、Step 4で決定したタイトルを使って、ユーザーが実行できるrenameコマンドを提示する。
+
+出力例:
+```
+セッション名を変更するには以下を実行してください:
+/rename <title>
+```
+
+タイトルにスペースが含まれていてもそのまま記載してよい（`/rename` はスペース含む引数を受け付ける）。
 
 ### Important notes
 
