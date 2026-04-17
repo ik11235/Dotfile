@@ -10,3 +10,7 @@ insert_final_newline = true
 
 [*.md]
 trim_trailing_whitespace = false
+
+# git config files use tabs (git config command writes tabs)
+[**/git/{config,config.d/**}]
+indent_style = tab

@@ -2,124 +2,124 @@
 # User / Identity
 ########################################
 [user]
-  name = ik-fib
-  email = ik11235@gmail.com
-  signingkey = A736CE24F9726333
+	name = ik-fib
+	email = ik11235@gmail.com
+	signingkey = A736CE24F9726333
 
 [gpg]
-  program = gpg
+	program = gpg
 
 [commit]
-  gpgsign = true
-  verbose = true
+	gpgsign = true
+	verbose = true
 
 
 ########################################
 # Core Behavior
 ########################################
 [core]
-  editor = nano
-  autocrlf = input
-  excludesfile = ~/.config/git/ignore
-  hooksPath = ~/.config/git/hooks
-  quotepath = false
+	editor = nano
+	autocrlf = input
+	excludesfile = ~/.config/git/ignore
+	hooksPath = ~/.config/git/hooks
+	quotepath = false
 
 [init]
-  defaultBranch = master
+	defaultBranch = master
 
 [help]
-  autocorrect = prompt
+	autocorrect = prompt
 
 
 ########################################
 # Fetch / Pull / Push
 ########################################
 [fetch]
-  prune = true
-  fsckobjects = true
+	prune = true
+	fsckobjects = true
 
 [pull]
-  rebase = true
+	rebase = true
 
 [push]
-  default = current
-  autoSetupRemote = true
-  followTags = true
-  useForceIfIncludes = true
+	default = current
+	autoSetupRemote = true
+	followTags = true
+	useForceIfIncludes = true
 
 [transfer]
-  fsckobjects = true
+	fsckobjects = true
 
 
 ########################################
 # Merge / Rebase / Rerere
 ########################################
 [merge]
-  conflictStyle = zdiff3
+	conflictStyle = zdiff3
 
 [rebase]
-  autoStash = true
-  autoSquash = true
-  updateRefs = true
+	autoStash = true
+	autoSquash = true
+	updateRefs = true
 
 [rerere]
-  enabled = true
+	enabled = true
 
 
 ########################################
 # UI / Diff
 ########################################
 [color]
-  ui = true
+	ui = true
 
 [diff]
-  algorithm = histogram
-  colorMoved = dimmed_zebra
-  renames = copies
-  mnemonicPrefix = true
+	algorithm = histogram
+	colorMoved = dimmed_zebra
+	renames = copies
+	mnemonicPrefix = true
 
 [branch]
-  sort = -committerdate
+	sort = -committerdate
 
 [tag]
-  sort = version:refname
+	sort = version:refname
 
 [column]
-  ui = auto
+	ui = auto
 
 
 ########################################
 # Alias
 ########################################
 [alias]
-  delete-merged-branch = !git branch --merged=origin/HEAD \
-    | grep -E -v '\\*|master|development|develop|main' \
-    | xargs git branch -d
+	delete-merged-branch = !git branch --merged=origin/HEAD \
+		| grep -E -v '\\*|master|development|develop|main' \
+		| xargs git branch -d
 
-  branch-search = !git branch -r \
-    | sed -e 's/origin\\///' \
-    | "${AVAILABLE_FUZZY_FINDER:?set AVAILABLE_FUZZY_FINDER env var (e.g. fzf, peco)}" \
-    | xargs git checkout
+	branch-search = !git branch -r \
+		| sed -e 's/origin\\///' \
+		| "${AVAILABLE_FUZZY_FINDER:?set AVAILABLE_FUZZY_FINDER env var (e.g. fzf, peco)}" \
+		| xargs git checkout
 
 
 ########################################
 # Repository Management
 ########################################
 [ghq]
-  root = ~/go/src
-  root = ~/ghq
+	root = ~/go/src
+	root = ~/ghq
 
 
 ########################################
 # Credential (GitHub via gh)
 ########################################
 [credential "https://github.com"]
-  helper =
-  helper = !gh auth git-credential
+	helper =
+	helper = !gh auth git-credential
 
 [credential "https://gist.github.com"]
-  helper =
-  helper = !gh auth git-credential
+	helper =
+	helper = !gh auth git-credential
 
 
 ########################################
@@ -127,17 +127,17 @@
 ########################################
 # General GitHub SSH → HTTPS fallback
 [url "https://github.com/"]
-  insteadOf = ssh://git@github.com/
-  insteadOf = git@github.com:
+	insteadOf = ssh://git@github.com/
+	insteadOf = git@github.com:
 
 
 ########################################
 # Include
 ########################################
 [include]
-  # PC固有 / dotfiles 管理外の設定
-  path = ~/.config/git/config.d/private/global
-  optional = true
+	# PC固有 / dotfiles 管理外の設定
+	path = ~/.config/git/config.d/private/global
+	optional = true
 
 [includeIf "gitdir:/opt/homebrew/Library/Taps/homebrew/"]
-  path = ~/.config/git/config.d/homebrew
+	path = ~/.config/git/config.d/homebrew
