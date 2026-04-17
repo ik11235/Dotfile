@@ -51,8 +51,7 @@
       "mcp__supabase__execute_sql"
     ]
   },
-  "language": "ja",
-  "model": "opus[1m]",
+  "model": "claude-opus-4-7",
   "hooks": {},
   "enabledPlugins": {
     "slack@claude-plugins-official": true,
@@ -60,6 +59,13 @@
     "skill-creator@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true
   },
+  "language": "ja",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
   "skipDangerousModePermissionPrompt": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "voiceEnabled": true,
+  "effortLevel": "xhigh"
 }
