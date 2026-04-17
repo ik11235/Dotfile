@@ -21,6 +21,7 @@
   autocrlf = input
   excludesfile = ~/.config/git/ignore
   hooksPath = ~/.config/git/hooks
+  quotepath = false
 
 [init]
   defaultBranch = master
