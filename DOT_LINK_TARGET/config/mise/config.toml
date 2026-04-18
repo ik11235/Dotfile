@@ -6,3 +6,6 @@ idiomatic_version_file_enable_tools = ["python", "ruby", "go", "node", "java"]
 
 [settings.ruby]
 compile = false
+
+[settings.python]
+compile = false
