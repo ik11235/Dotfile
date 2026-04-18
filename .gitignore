@@ -1,4 +1,8 @@
 Brewfile.lock.json
 
+# Nix
+result
+result-*
+
 DOT_LINK_TARGET/config/fish/functions/fisher.fish
 DOT_LINK_TARGET/config/fisher/
