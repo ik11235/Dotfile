@@ -1,5 +1,10 @@
 #!/bin/bash -eu
 
+if [ "$(uname)" != "Darwin" ]; then
+  echo "Warning: .powerline-fonts-install.sh は現状macOSのみ対応。Linux対応は今後実装予定のためskipします。" >&2
+  exit 0
+fi
+
 # powerline
 # clone
 git clone https://github.com/powerline/fonts.git --depth=1

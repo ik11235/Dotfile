@@ -8,7 +8,9 @@ cd "$(dirname "$0")"
 
 /bin/bash .default-shell-change.sh
 
-/bin/bash .mac-init.sh
+if [ "$(uname)" = "Darwin" ]; then
+  /bin/bash .mac-init.sh
+fi
 
 # powerline-fonts install
 /bin/bash .powerline-fonts-install.sh
