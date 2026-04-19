@@ -33,7 +33,7 @@
       "Bash(git push:*)",
       "Bash(git reset:*)",
       "Bash(git rebase:*)",
-      "Read(.env.*)",
+      "Read(.env*)",
       "Read(id_rsa)",
       "Read(id_ed25519)",
       "Read(**/*token*)",
