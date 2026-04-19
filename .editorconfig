@@ -14,3 +14,10 @@ trim_trailing_whitespace = false
 # git config files use tabs (git config command writes tabs)
 [**/git/{config,config.d/**}]
 indent_style = tab
+
+# shfmt integration
+[*.sh]
+switch_case_indent = true
+
+[Makefile]
+indent_style = tab
