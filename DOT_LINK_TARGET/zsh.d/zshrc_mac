@@ -34,6 +34,21 @@ if [ -d "${HOME}/.codeium/windsurf/bin" ]; then
   export PATH="${HOME}/.codeium/windsurf/bin:$PATH"
 fi
 
-if [[ -o interactive ]] && [ -z "$INTELLIJ_ENVIRONMENT_READER" ] && [ -z "$WARP_IS_LOCAL_SHELL_SESSION" ] && [ "$VSCODE_PID" = "" ] && [ "$TERM_PROGRAM" != "vscode" ]; then
+# fish に対応していない、もしくは fish を起動すると動作が不安定になるツールは
+# 個別に判定して zsh のまま使う
+should_exec_fish() {
+  [[ -o interactive ]] || return 1
+
+  case "$TERM_PROGRAM" in
+    vscode) return 1 ;;  # VS Code / Cursor
+  esac
+  [[ -n "$VSCODE_PID" ]] && return 1                  # VS Code (TERM_PROGRAM 未設定時のフォールバック)
+  [[ -n "$WARP_IS_LOCAL_SHELL_SESSION" ]] && return 1 # Warp
+  [[ -n "$INTELLIJ_ENVIRONMENT_READER" ]] && return 1 # IntelliJ 系 (JetBrains)
+
+  return 0
+}
+
+if should_exec_fish; then
   exec fish
 fi
