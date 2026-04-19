@@ -1,8 +1,9 @@
-alias ls='ls --color=auto'
-
 if [[ -s '/etc/zsh_command_not_found' ]]; then
   source "/etc/zsh_command_not_found"
 fi
 
 ## mise
 eval "$(mise activate zsh)"
+
+## direnv
+eval "$(direnv hook zsh)"
