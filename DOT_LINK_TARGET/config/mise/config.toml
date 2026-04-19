@@ -8,6 +8,7 @@ gemini-cli = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["python", "ruby", "go", "node", "java"]
+pin = true
 
 [settings.ruby]
 compile = false
