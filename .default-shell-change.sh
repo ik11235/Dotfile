@@ -1,10 +1,9 @@
 #!/bin/bash -eu
 
 ZSH_PATH=$(command -v zsh)
-result=0
-grep "${ZSH_PATH}" /etc/shells >/dev/null || result=$?
-if [ ! "${result}" = "0" ]; then
-  sudo sh -c "echo ${ZSH_PATH} >> /etc/shells"
+
+if ! grep -qx "$ZSH_PATH" /etc/shells; then
+  printf '%s\n' "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
 fi
 
-chsh -s "${ZSH_PATH}"
+chsh -s "$ZSH_PATH"
