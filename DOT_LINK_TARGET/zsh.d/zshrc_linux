@@ -4,5 +4,5 @@ if [[ -s '/etc/zsh_command_not_found' ]]; then
   source "/etc/zsh_command_not_found"
 fi
 
-## asdf
-source ~/.asdf/asdf.sh
+## mise
+eval "$(mise activate zsh)"
