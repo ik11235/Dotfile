@@ -10,6 +10,9 @@
 # 汎用tmpファイル置き場
 /usr_tmp
 
+# バックアップファイル
+*.bak
+
 # IntelliJ
 .idea/
 
@@ -18,3 +21,4 @@
 .env
 
 **/.claude/settings.local.json
+**/.claude.json
