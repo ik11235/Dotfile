@@ -1,4 +1,5 @@
 #!/bin/bash -eu
+set -o pipefail
 
 if [ "$(uname)" != "Darwin" ]; then
   echo "Warning: .powerline-fonts-install.sh は現状macOSのみ対応。Linux対応は今後実装予定のためskipします。" >&2
@@ -26,7 +27,8 @@ json=$(curl -fsSL --retry 3 "$UDEV_GITHUB_API_URL")
 
 # JSON の中から "browser_download_url" の行を抽出し、
 # UDEVGothic_NF を含み、拡張子が .zip の URL を取り出す
-download_url=$(echo "$json" | grep -o '"browser_download_url": "[^"]*"' | grep "UDEVGothic_NF" | grep "\.zip" | sed 's/.*"browser_download_url": "\(.*\)".*/\1/')
+# (pipefail 下でも grep 未マッチを下の if でエラー表示できるよう `|| true` で吸収)
+download_url=$(echo "$json" | grep -o '"browser_download_url": "[^"]*"' | grep "UDEVGothic_NF" | grep "\.zip" | sed 's/.*"browser_download_url": "\(.*\)".*/\1/' || true)
 
 # URL が見つからなかった場合はエラーメッセージを表示して終了
 if [ -z "$download_url" ]; then

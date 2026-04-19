@@ -1,4 +1,5 @@
 #!/bin/bash -eu
+set -o pipefail
 
 echo "[*] running .default-shell-change.sh"
 

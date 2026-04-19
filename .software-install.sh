@@ -1,4 +1,5 @@
 #!/bin/bash -eu
+set -o pipefail
 
 echo "[*] running .software-install.sh"
 

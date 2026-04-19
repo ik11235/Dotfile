@@ -1,4 +1,5 @@
 #!/bin/bash -eu
+set -o pipefail
 
 echo "[*] running .link_dir_and_file.sh"
 
