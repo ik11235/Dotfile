@@ -1,0 +1,12 @@
+---
+extends: default
+
+rules:
+  # 自動生成されたコメントや GitHub Actions の長い run 行などを許容
+  line-length: disable
+  # `---` を全 YAML に強制するほどではない
+  document-start: disable
+  # GitHub Actions の `on:` キーを許可
+  truthy:
+    allowed-values: ['true', 'false', 'on', 'off']
+    check-keys: true

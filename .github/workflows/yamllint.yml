@@ -1,0 +1,19 @@
+name: yamllint
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: yamllint
+        uses: reviewdog/action-yamllint@v1
+        with:
+          fail_on_error: true
+          yamllint_flags: '.github/workflows/ DOT_LINK_TARGET/config/gh/config.yml .yamllint.yml'

@@ -4,7 +4,7 @@ name: shellscript-syntax-check
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-on: 
+on:
   push:
     branches:
       - master
@@ -19,21 +19,21 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v4
-    
-    # install zsh
-    - name: Install zsh and shellcheck
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y zsh shellcheck
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
 
-    # Runs a single command using the runners shell
-    - name: zsh syntax check
-      run: zsh -n DOT_LINK_TARGET/zshrc DOT_LINK_TARGET/zsh.d/zshrc_* DOT_LINK_TARGET/zsh.d/global/*.zsh
+      # install zsh
+      - name: Install zsh and shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh shellcheck
 
-    - name: init.sh syntax check
-      run: bash -n *.sh
+      # Runs a single command using the runners shell
+      - name: zsh syntax check
+        run: zsh -n DOT_LINK_TARGET/zshrc DOT_LINK_TARGET/zsh.d/zshrc_* DOT_LINK_TARGET/zsh.d/global/*.zsh
 
-    - name: run shellcheck
-      run: shellcheck *.sh DOT_LINK_TARGET/bin/*
+      - name: init.sh syntax check
+        run: bash -n *.sh
+
+      - name: run shellcheck
+        run: shellcheck *.sh DOT_LINK_TARGET/bin/*
