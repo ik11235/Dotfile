@@ -52,7 +52,6 @@
     ]
   },
   "model": "claude-opus-4-7",
-  "hooks": {},
   "enabledPlugins": {
     "slack@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
@@ -66,6 +65,5 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
-  "voiceEnabled": true,
   "effortLevel": "xhigh"
 }
