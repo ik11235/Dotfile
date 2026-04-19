@@ -24,14 +24,16 @@ jobs:
     
     # install zsh
     - name: Install zsh and shellcheck
-      run: sudo apt-get install zsh shellcheck
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y zsh shellcheck
 
     # Runs a single command using the runners shell
     - name: zsh syntax check
-      run: zsh -n DOT_LINK_TARGET/zshrc DOT_LINK_TARGET/zsh.d/*
+      run: zsh -n DOT_LINK_TARGET/zshrc DOT_LINK_TARGET/zsh.d/zshrc_* DOT_LINK_TARGET/zsh.d/global/*.zsh
 
     - name: init.sh syntax check
       run: bash -n *.sh
 
     - name: run shellcheck
-      run: shellcheck *.sh
+      run: shellcheck *.sh DOT_LINK_TARGET/bin/*
