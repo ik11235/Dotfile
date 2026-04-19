@@ -1,5 +1,7 @@
 #!/bin/bash -eu
 
+echo "[*] running .software-install.sh"
+
 echo "Do you want to install a package ? [Y/n]"
 read -r ANSWER
 ANSWER=$(echo "$ANSWER" | tr y Y)

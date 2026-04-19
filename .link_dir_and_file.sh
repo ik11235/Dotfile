@@ -1,5 +1,7 @@
 #!/bin/bash -eu
 
+echo "[*] running .link_dir_and_file.sh"
+
 function link_dir_file() {
   (
     TARGET_DIR=$1

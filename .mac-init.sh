@@ -5,6 +5,8 @@ if [ "$(uname)" != "Darwin" ]; then
   exit 1
 fi
 
+echo "[*] running .mac-init.sh"
+
 # ネットワークドライブで.DS_Store 等の作成を抑制する
 ## https://support.apple.com/ja-jp/HT208209
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool TRUE

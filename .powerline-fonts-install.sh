@@ -5,6 +5,8 @@ if [ "$(uname)" != "Darwin" ]; then
   exit 0
 fi
 
+echo "[*] running .powerline-fonts-install.sh"
+
 # powerline
 # 既存 fonts ディレクトリが残っていれば削除（前回の実行中断に備える）
 rm -rf fonts

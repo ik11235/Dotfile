@@ -1,5 +1,7 @@
 #!/bin/bash -eu
 
+echo "[*] running .default-shell-change.sh"
+
 ZSH_PATH=$(command -v zsh)
 
 if ! grep -qx "$ZSH_PATH" /etc/shells; then
