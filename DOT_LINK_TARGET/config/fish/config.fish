@@ -1,8 +1,3 @@
-# === PATH・環境変数 ===
-
-# mise
-set -gx PATH ~/.local/share/mise/shims $PATH
-
 # === 外部ツール連携 ===
 
 # google cloud sdkのPATH
