@@ -1,18 +1,13 @@
-# To enable homebrew-command-not-found
-HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$(brew --repository)/Library/Homebrew/command-not-found/handler.sh"
-if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
-  source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
-fi
+# ============================================================
+# fish へ exec しても引き継がれる設定（環境変数等）
+# ============================================================
 
-## gcloud completion
-if [ -d "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/" ]; then
-  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc"
-  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
-fi
+## pinentry-macをターミナルで使用する
+export GPG_TTY="$(tty)"
 
-## gcloud sdk PATH
-if command -v gcloud >/dev/null 2>&1; then
-  export PATH="$(gcloud info --format='value(installation.sdk_root)')/bin:$PATH"
+# Added by Windsurf
+if [ -d "${HOME}/.codeium/windsurf/bin" ]; then
+  export PATH="${HOME}/.codeium/windsurf/bin:$PATH"
 fi
 
 if [ -f "${DOTHOME}/.zsh.d/zshrc_mac_private" ]; then
@@ -20,19 +15,11 @@ if [ -f "${DOTHOME}/.zsh.d/zshrc_mac_private" ]; then
   source "${DOTHOME}/.zsh.d/zshrc_mac_private"
 fi
 
-## pinentry-macをターミナルで使用する
-export GPG_TTY="$(tty)"
-
-# mise
-eval "$($(brew --prefix mise)/bin/mise activate zsh)"
-
-# direnv
-eval "$(direnv hook zsh)"
-
-# Added by Windsurf
-if [ -d "${HOME}/.codeium/windsurf/bin" ]; then
-  export PATH="${HOME}/.codeium/windsurf/bin:$PATH"
-fi
+# ============================================================
+# fish へ切り替える場合はここで exec して以降の zsh 専用初期化をスキップ
+# （関数/補完/プロンプトフックは exec 先の fish に引き継がれないため、
+#  zsh 側で実行しても無駄になる）
+# ============================================================
 
 # fish に対応していない、もしくは fish を起動すると動作が不安定になるツールは
 # 個別に判定して zsh のまま使う
@@ -51,4 +38,33 @@ should_exec_fish() {
 
 if should_exec_fish; then
   exec fish
+  exit
 fi
+
+# ============================================================
+# 以降は fish へ exec しない場合の zsh 専用初期化
+# （同等の初期化は fish 側の config.fish / conf.d で行われる）
+# ============================================================
+
+# To enable homebrew-command-not-found
+HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$(brew --repository)/Library/Homebrew/command-not-found/handler.sh"
+if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
+  source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
+fi
+
+## gcloud completion
+if [ -d "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/" ]; then
+  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc"
+  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
+fi
+
+## gcloud sdk PATH
+if command -v gcloud >/dev/null 2>&1; then
+  export PATH="$(gcloud info --format='value(installation.sdk_root)')/bin:$PATH"
+fi
+
+# mise
+eval "$($(brew --prefix mise)/bin/mise activate zsh)"
+
+# direnv
+eval "$(direnv hook zsh)"
