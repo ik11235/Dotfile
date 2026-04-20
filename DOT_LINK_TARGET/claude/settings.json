@@ -71,5 +71,10 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
-  "effortLevel": "xhigh"
+  "effortLevel": "xhigh",
+  "statusLine": {
+    "type": "command",
+    "command": "$HOME/.claude/statusline-command.sh",
+    "padding": 1
+  }
 }
