@@ -20,11 +20,14 @@ if test -f $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
   source $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
 end
 
-# fzf
-fzf --fish | source
+# interactive shell 以外では不要なフック類をスキップして起動を高速化する
+if status is-interactive
+  # fzf
+  fzf --fish | source
 
-# direnv
-eval "$(direnv hook fish)"
+  # direnv
+  eval "$(direnv hook fish)"
+end
 
 # === キーバインド ===
 
