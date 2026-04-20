@@ -52,16 +52,14 @@ if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
   source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
 fi
 
-## gcloud completion
-if [ -d "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/" ]; then
-  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc"
-  source "$(brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc"
+## gcloud SDK (PATH & completion)
+## brew cask `gcloud-cli` が share 配下に成果物を配置する
+GCLOUD_SDK_ROOT="$(brew --prefix)/share/google-cloud-sdk"
+if [ -d "$GCLOUD_SDK_ROOT" ]; then
+  source "$GCLOUD_SDK_ROOT/path.zsh.inc"
+  source "$GCLOUD_SDK_ROOT/completion.zsh.inc"
 fi
-
-## gcloud sdk PATH
-if command -v gcloud >/dev/null 2>&1; then
-  export PATH="$(gcloud info --format='value(installation.sdk_root)')/bin:$PATH"
-fi
+unset GCLOUD_SDK_ROOT
 
 # mise
 eval "$($(brew --prefix mise)/bin/mise activate zsh)"

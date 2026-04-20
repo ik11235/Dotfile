@@ -1,8 +1,10 @@
 # === 外部ツール連携 ===
 
 # google cloud sdkのPATH
-if test -d (brew --prefix)"/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/"
-  source (brew --prefix)/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.fish.inc
+## brew cask `gcloud-cli` が share 配下に成果物を配置する
+set -l gcloud_sdk_root (brew --prefix)/share/google-cloud-sdk
+if test -d $gcloud_sdk_root
+  source $gcloud_sdk_root/path.fish.inc
 end
 
 # To enable homebrew-command-not-found
