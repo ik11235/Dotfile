@@ -41,30 +41,47 @@ fi
 # （同等の初期化は fish 側の config.fish / conf.d で行われる）
 # ============================================================
 
-# ~/.zprofile の `brew shellenv` で HOMEBREW_PREFIX / HOMEBREW_REPOSITORY が
-# export されているため、`brew --prefix` / `brew --repository` の
-# サブプロセス起動（各 50〜100ms）を避けてそれらを直接参照する。
-# 万一未定義な場合のみフォールバックする。
-: "${HOMEBREW_PREFIX:=$(brew --prefix)}"
-: "${HOMEBREW_REPOSITORY:=$(brew --repository)}"
+# zprofile_mac の `brew shellenv` で HOMEBREW_PREFIX / HOMEBREW_REPOSITORY が
+# export されていればそれを使う。未定義なら brew が存在する場合のみフォールバック。
+# Nix 環境など brew が無いケースでは未定義のまま、以降の brew 依存処理は個別に
+# 分岐する。
+if [ -z "$HOMEBREW_PREFIX" ] && command -v brew >/dev/null 2>&1; then
+  HOMEBREW_PREFIX="$(brew --prefix)"
+  HOMEBREW_REPOSITORY="$(brew --repository)"
+fi
 
 # To enable homebrew-command-not-found
-HOMEBREW_COMMAND_NOT_FOUND_HANDLER="${HOMEBREW_REPOSITORY}/Library/Homebrew/command-not-found/handler.sh"
-if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
-  source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
+if [ -n "$HOMEBREW_REPOSITORY" ]; then
+  HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$HOMEBREW_REPOSITORY/Library/Homebrew/command-not-found/handler.sh"
+  if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
+    source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
+  fi
 fi
 
 ## gcloud SDK の completion
-## （PATH は zprofile_mac 側で設定済み。completion は interactive shell 用にここで source）
-## brew cask `gcloud-cli` が share 配下に成果物を配置する
-GCLOUD_SDK_COMPLETION="${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc"
-if [ -f "$GCLOUD_SDK_COMPLETION" ]; then
-  source "$GCLOUD_SDK_COMPLETION"
+## （PATH は zprofile_mac 側で path.zsh.inc 経由で設定済み。completion は
+##   interactive shell 用なのでここで source する）
+## brew cask `gcloud-cli` が share 配下に配置する。
+## 古い cask 名 `google-cloud-sdk` / `gcloud-cli` でも動くようフォールバックする。
+if [ -n "$HOMEBREW_PREFIX" ]; then
+  for _gcloud_dir in "$HOMEBREW_PREFIX/share/google-cloud-sdk" \
+                     "$HOMEBREW_PREFIX/Caskroom/gcloud-cli/latest/google-cloud-sdk" \
+                     "$HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk"; do
+    if [ -f "$_gcloud_dir/completion.zsh.inc" ]; then
+      source "$_gcloud_dir/completion.zsh.inc"
+      break
+    fi
+  done
+  unset _gcloud_dir
 fi
-unset GCLOUD_SDK_COMPLETION
 
-# mise
-eval "$(${HOMEBREW_PREFIX}/opt/mise/bin/mise activate zsh)"
+# mise (Nix 経由でインストールされていれば PATH に入っている前提。
+#       brew 経由の場合も PATH に入るようにしているので `mise` を直接呼ぶ)
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+fi
 
 # direnv
-eval "$(direnv hook zsh)"
+if command -v direnv >/dev/null 2>&1; then
+  eval "$(direnv hook zsh)"
+fi

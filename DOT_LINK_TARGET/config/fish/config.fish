@@ -1,23 +1,35 @@
 # === 外部ツール連携 ===
 
 # ~/.zprofile の `brew shellenv` で HOMEBREW_PREFIX / HOMEBREW_REPOSITORY が
-# export されているため、`brew --prefix` / `brew --repository` の
-# サブプロセス起動（各 50〜100ms）を避けてそれらを直接参照する。
-# 万一未定義な場合のみフォールバックする。
-set -q HOMEBREW_PREFIX; or set -x HOMEBREW_PREFIX (brew --prefix)
-set -q HOMEBREW_REPOSITORY; or set -x HOMEBREW_REPOSITORY (brew --repository)
+# export されていればそれを使う。未定義なら brew が存在する場合のみフォールバック。
+# Nix 環境など brew が無いケースでは未定義のまま、以降の brew 依存処理は個別に
+# 分岐する。
+if not set -q HOMEBREW_PREFIX; and type -q brew
+  set -gx HOMEBREW_PREFIX (brew --prefix)
+  set -gx HOMEBREW_REPOSITORY (brew --repository)
+end
 
 # google cloud sdkのPATH
-## brew cask `gcloud-cli` が share 配下に成果物を配置する
-set -l gcloud_sdk_root $HOMEBREW_PREFIX/share/google-cloud-sdk
-if test -d $gcloud_sdk_root
-  source $gcloud_sdk_root/path.fish.inc
+## brew cask `gcloud-cli` が share 配下に配置する。
+## 古い cask 名 `google-cloud-sdk` / `gcloud-cli` でも動くようフォールバックする。
+if set -q HOMEBREW_PREFIX
+  for _gcloud_dir in $HOMEBREW_PREFIX/share/google-cloud-sdk \
+                      $HOMEBREW_PREFIX/Caskroom/gcloud-cli/latest/google-cloud-sdk \
+                      $HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk
+    if test -f $_gcloud_dir/path.fish.inc
+      source $_gcloud_dir/path.fish.inc
+      break
+    end
+  end
+  set -e _gcloud_dir
 end
 
 # To enable homebrew-command-not-found
-set HOMEBREW_COMMAND_NOT_FOUND_HANDLER $HOMEBREW_REPOSITORY/Library/Homebrew/command-not-found/handler.fish
-if test -f $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
-  source $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
+if set -q HOMEBREW_REPOSITORY
+  set HOMEBREW_COMMAND_NOT_FOUND_HANDLER $HOMEBREW_REPOSITORY/Library/Homebrew/command-not-found/handler.fish
+  if test -f $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
+    source $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
+  end
 end
 
 # interactive shell 以外では不要なフック類をスキップして起動を高速化する
