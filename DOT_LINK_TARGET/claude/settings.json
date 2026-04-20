@@ -51,6 +51,9 @@
       "mcp__supabase__execute_sql"
     ]
   },
+  "env": {
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "70"
+  },
   "model": "claude-opus-4-7",
   "enabledPlugins": {
     "slack@claude-plugins-official": true,
