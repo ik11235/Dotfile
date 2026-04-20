@@ -1,21 +1,27 @@
 # === 外部ツール連携 ===
 
-# Homebrew prefix/repositoryを1回だけ取得してキャッシュ
-if type -q brew
-  set -g HOMEBREW_PREFIX (brew --prefix)
-  set -g HOMEBREW_REPOSITORY (brew --repository)
+# ~/.zprofile の `brew shellenv` で HOMEBREW_PREFIX / HOMEBREW_REPOSITORY が
+# export されていればそれを使う。未定義なら brew が存在する場合のみフォールバック。
+# Nix 環境など brew が無いケースでは未定義のまま、以降の brew 依存処理は個別に
+# 分岐する。
+if not set -q HOMEBREW_PREFIX; and type -q brew
+  set -gx HOMEBREW_PREFIX (brew --prefix)
+  set -gx HOMEBREW_REPOSITORY (brew --repository)
 end
 
-# google cloud sdkのPATH (installed via brew cask)
-# cask名がgoogle-cloud-sdkからgcloud-cliに改名されたため両方を探す
+# google cloud sdkのPATH
+## brew cask `gcloud-cli` が share 配下に配置する。
+## 古い cask 名 `google-cloud-sdk` / `gcloud-cli` でも動くようフォールバックする。
 if set -q HOMEBREW_PREFIX
-  for _gcloud_dir in $HOMEBREW_PREFIX/Caskroom/gcloud-cli/latest/google-cloud-sdk \
+  for _gcloud_dir in $HOMEBREW_PREFIX/share/google-cloud-sdk \
+                      $HOMEBREW_PREFIX/Caskroom/gcloud-cli/latest/google-cloud-sdk \
                       $HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk
-    if test -d $_gcloud_dir
+    if test -f $_gcloud_dir/path.fish.inc
       source $_gcloud_dir/path.fish.inc
       break
     end
   end
+  set -e _gcloud_dir
 end
 
 # To enable homebrew-command-not-found
@@ -26,11 +32,14 @@ if set -q HOMEBREW_REPOSITORY
   end
 end
 
-# fzf
-fzf --fish | source
+# interactive shell 以外では不要なフック類をスキップして起動を高速化する
+if status is-interactive
+  # fzf
+  fzf --fish | source
 
-# direnv
-eval "$(direnv hook fish)"
+  # direnv
+  eval "$(direnv hook fish)"
+end
 
 # === キーバインド ===
 

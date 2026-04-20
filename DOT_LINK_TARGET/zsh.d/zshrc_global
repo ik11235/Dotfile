@@ -6,3 +6,16 @@ source "${DOTHOME}/.zsh.d/global/core.zsh"
 source "${DOTHOME}/.zsh.d/global/prompt.zsh"
 # 外部ツール連携
 source "${DOTHOME}/.zsh.d/global/tools.zsh"
+
+case "${OSTYPE}" in
+# Mac(Unix)
+darwin*)
+  # shellcheck source=./zshrc_mac
+  source "${DOTHOME}/.zsh.d/zshrc_mac"
+  ;;
+# Linux
+linux*)
+  # shellcheck source=./zshrc_linux
+  source "${DOTHOME}/.zsh.d/zshrc_linux"
+  ;;
+esac

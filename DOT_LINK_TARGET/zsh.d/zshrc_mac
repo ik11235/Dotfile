@@ -1,54 +1,20 @@
-# Homebrew prefix/repositoryを1回だけ取得してキャッシュ
-if command -v brew >/dev/null 2>&1; then
-  HOMEBREW_PREFIX="$(brew --prefix)"
-  HOMEBREW_REPOSITORY="$(brew --repository)"
-fi
+# ============================================================
+# fish へ exec しても引き継がれる設定（環境変数等）
+# ============================================================
 
-# To enable homebrew-command-not-found
-if [ -n "$HOMEBREW_REPOSITORY" ]; then
-  HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$HOMEBREW_REPOSITORY/Library/Homebrew/command-not-found/handler.sh"
-  if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
-    source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
-  fi
-fi
-
-## gcloud completion (installed via brew cask)
-## cask名がgoogle-cloud-sdkからgcloud-cliに改名されたため両方を探す
-if [ -n "$HOMEBREW_PREFIX" ]; then
-  for _gcloud_dir in "$HOMEBREW_PREFIX/Caskroom/gcloud-cli/latest/google-cloud-sdk" \
-                      "$HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk"; do
-    if [ -d "$_gcloud_dir" ]; then
-      source "$_gcloud_dir/path.zsh.inc"
-      source "$_gcloud_dir/completion.zsh.inc"
-      break
-    fi
-  done
-  unset _gcloud_dir
-fi
-
-## gcloud sdk PATH
-if command -v gcloud >/dev/null 2>&1; then
-  export PATH="$(gcloud info --format='value(installation.sdk_root)')/bin:$PATH"
-fi
+## pinentry-macをターミナルで使用する
+export GPG_TTY="$(tty)"
 
 if [ -f "${DOTHOME}/.zsh.d/zshrc_mac_private" ]; then
   # shellcheck source=./zshrc_mac_private
   source "${DOTHOME}/.zsh.d/zshrc_mac_private"
 fi
 
-## pinentry-macをターミナルで使用する
-export GPG_TTY="$(tty)"
-
-# mise (installed via Nix, available on PATH)
-eval "$(mise activate zsh)"
-
-# direnv
-eval "$(direnv hook zsh)"
-
-# Added by Windsurf
-if [ -d "${HOME}/.codeium/windsurf/bin" ]; then
-  export PATH="${HOME}/.codeium/windsurf/bin:$PATH"
-fi
+# ============================================================
+# fish へ切り替える場合はここで exec して以降の zsh 専用初期化をスキップ
+# （関数/補完/プロンプトフックは exec 先の fish に引き継がれないため、
+#  zsh 側で実行しても無駄になる）
+# ============================================================
 
 # fish に対応していない、もしくは fish を起動すると動作が不安定になるツールは
 # 個別に判定して zsh のまま使う
@@ -67,4 +33,55 @@ should_exec_fish() {
 
 if should_exec_fish; then
   exec fish
+  exit
+fi
+
+# ============================================================
+# 以降は fish へ exec しない場合の zsh 専用初期化
+# （同等の初期化は fish 側の config.fish / conf.d で行われる）
+# ============================================================
+
+# zprofile_mac の `brew shellenv` で HOMEBREW_PREFIX / HOMEBREW_REPOSITORY が
+# export されていればそれを使う。未定義なら brew が存在する場合のみフォールバック。
+# Nix 環境など brew が無いケースでは未定義のまま、以降の brew 依存処理は個別に
+# 分岐する。
+if [ -z "$HOMEBREW_PREFIX" ] && command -v brew >/dev/null 2>&1; then
+  HOMEBREW_PREFIX="$(brew --prefix)"
+  HOMEBREW_REPOSITORY="$(brew --repository)"
+fi
+
+# To enable homebrew-command-not-found
+if [ -n "$HOMEBREW_REPOSITORY" ]; then
+  HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$HOMEBREW_REPOSITORY/Library/Homebrew/command-not-found/handler.sh"
+  if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
+    source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
+  fi
+fi
+
+## gcloud SDK の completion
+## （PATH は zprofile_mac 側で path.zsh.inc 経由で設定済み。completion は
+##   interactive shell 用なのでここで source する）
+## brew cask `gcloud-cli` が share 配下に配置する。
+## 古い cask 名 `google-cloud-sdk` / `gcloud-cli` でも動くようフォールバックする。
+if [ -n "$HOMEBREW_PREFIX" ]; then
+  for _gcloud_dir in "$HOMEBREW_PREFIX/share/google-cloud-sdk" \
+                     "$HOMEBREW_PREFIX/Caskroom/gcloud-cli/latest/google-cloud-sdk" \
+                     "$HOMEBREW_PREFIX/Caskroom/google-cloud-sdk/latest/google-cloud-sdk"; do
+    if [ -f "$_gcloud_dir/completion.zsh.inc" ]; then
+      source "$_gcloud_dir/completion.zsh.inc"
+      break
+    fi
+  done
+  unset _gcloud_dir
+fi
+
+# mise (Nix 経由でインストールされていれば PATH に入っている前提。
+#       brew 経由の場合も PATH に入るようにしているので `mise` を直接呼ぶ)
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+fi
+
+# direnv
+if command -v direnv >/dev/null 2>&1; then
+  eval "$(direnv hook zsh)"
 fi

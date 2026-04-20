@@ -1,0 +1,17 @@
+# PATH 設定を最初に読み込み、`typeset -gU path PATH` による
+# 重複排除を以降の export PATH にも効かせる。
+# shellcheck source=./global/path.zsh
+source "${DOTHOME}/.zsh.d/global/path.zsh"
+
+case "${OSTYPE}" in
+# Mac(Unix)
+darwin*)
+  # shellcheck source=./zprofile_mac
+  source "${DOTHOME}/.zsh.d/zprofile_mac"
+  ;;
+# Linux
+linux*)
+  # shellcheck source=./zprofile_linux
+  source "${DOTHOME}/.zsh.d/zprofile_linux"
+  ;;
+esac
