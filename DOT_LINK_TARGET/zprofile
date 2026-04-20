@@ -1,1 +1,3 @@
-eval "$(/opt/homebrew/bin/brew shellenv)"
+DOTHOME=${HOME}
+# shellcheck source=./.zsh.d/zprofile_global
+source "${DOTHOME}/.zsh.d/zprofile_global"

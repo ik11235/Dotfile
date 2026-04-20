@@ -1,0 +1,12 @@
+case "${OSTYPE}" in
+# Mac(Unix)
+darwin*)
+  # shellcheck source=./zprofile_mac
+  source "${DOTHOME}/.zsh.d/zprofile_mac"
+  ;;
+# Linux
+linux*)
+  # shellcheck source=./zprofile_linux
+  source "${DOTHOME}/.zsh.d/zprofile_linux"
+  ;;
+esac
