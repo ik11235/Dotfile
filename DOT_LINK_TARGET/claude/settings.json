@@ -2,6 +2,10 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 90,
   "autoUpdatesChannel": "stable",
+  "attribution": {
+    "commit": "Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>",
+    "pr": "Generated with Claude Code"
+  },
   "permissions": {
     "defaultMode": "auto",
     "allow": [
