@@ -5,11 +5,6 @@
 ## pinentry-macをターミナルで使用する
 export GPG_TTY="$(tty)"
 
-# Added by Windsurf
-if [ -d "${HOME}/.codeium/windsurf/bin" ]; then
-  export PATH="${HOME}/.codeium/windsurf/bin:$PATH"
-fi
-
 if [ -f "${DOTHOME}/.zsh.d/zshrc_mac_private" ]; then
   # shellcheck source=./zshrc_mac_private
   source "${DOTHOME}/.zsh.d/zshrc_mac_private"
@@ -59,14 +54,14 @@ if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
   source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
 fi
 
-## gcloud SDK (PATH & completion)
+## gcloud SDK の completion
+## （PATH は zprofile_mac 側で設定済み。completion は interactive shell 用にここで source）
 ## brew cask `gcloud-cli` が share 配下に成果物を配置する
-GCLOUD_SDK_ROOT="${HOMEBREW_PREFIX}/share/google-cloud-sdk"
-if [ -d "$GCLOUD_SDK_ROOT" ]; then
-  source "$GCLOUD_SDK_ROOT/path.zsh.inc"
-  source "$GCLOUD_SDK_ROOT/completion.zsh.inc"
+GCLOUD_SDK_COMPLETION="${HOMEBREW_PREFIX}/share/google-cloud-sdk/completion.zsh.inc"
+if [ -f "$GCLOUD_SDK_COMPLETION" ]; then
+  source "$GCLOUD_SDK_COMPLETION"
 fi
-unset GCLOUD_SDK_ROOT
+unset GCLOUD_SDK_COMPLETION
 
 # mise
 eval "$(${HOMEBREW_PREFIX}/opt/mise/bin/mise activate zsh)"

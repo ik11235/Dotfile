@@ -1,1 +1,15 @@
 eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# gcloud SDK の PATH 設定（completion は interactive shell 用に zshrc_mac 側で source）
+# brew cask `gcloud-cli` が share 配下に成果物を配置する
+GCLOUD_SDK_ROOT="${HOMEBREW_PREFIX}/share/google-cloud-sdk"
+if [ -f "${GCLOUD_SDK_ROOT}/path.zsh.inc" ]; then
+  # shellcheck source=/dev/null
+  source "${GCLOUD_SDK_ROOT}/path.zsh.inc"
+fi
+unset GCLOUD_SDK_ROOT
+
+# Windsurf (IDE) の CLI
+if [ -d "${HOME}/.codeium/windsurf/bin" ]; then
+  export PATH="${HOME}/.codeium/windsurf/bin:$PATH"
+fi
