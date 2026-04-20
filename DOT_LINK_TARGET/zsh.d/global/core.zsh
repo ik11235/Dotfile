@@ -12,7 +12,14 @@ setopt share_history                  # 履歴の共有
 # 自動補完を有効にする
 # コマンドの引数やパス名を途中まで入力して <Tab> を押すといい感じに補完してくれる
 # 例： `cd path/to/<Tab>`, `ls -<Tab>`
-autoload -U compinit; compinit
+# 24 時間以内に更新された ~/.zcompdump があれば `-C` で compaudit を省略して高速化。
+# 24 時間以上経過 or 初回起動は通常の compinit を走らせてキャッシュを更新する。
+autoload -Uz compinit
+if [[ -n ${ZDOTDIR:-${HOME}}/.zcompdump(#qN.mh-24) ]]; then
+  compinit -C
+else
+  compinit
+fi
 # 入力したコマンドが存在せず、かつディレクトリ名と一致するなら、ディレクトリに cd する
 # 例： /usr/bin と入力すると /usr/bin ディレクトリに移動
 setopt auto_cd
