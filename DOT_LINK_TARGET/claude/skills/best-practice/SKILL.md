@@ -1,7 +1,7 @@
 ---
 name: best-practice
 description: claude-code-best-practiceリポジトリを最新化し、現在のClaude Code設定に対してベストプラクティスに基づく改善提案を行う。「ベストプラクティス」「best practice」「設定改善」「スキル改善」「Claude Code最適化」「設定見直し」などのリクエストで使用する。引数にglobal/projectを指定して適用先を選べる。
-allowed-tools: Read, Bash(git pull*), Bash(git -C * pull*), Bash(ghq get*), Bash(ls *), Glob, Grep
+allowed-tools: Read, Bash(git pull*), Bash(git -C * pull*), Bash(ghq get*), Bash(ls *), Bash(touch *), Glob, Grep
 ---
 
 claude-code-best-practiceリポジトリ（https://github.com/shanraisshan/claude-code-best-practice）を参照し、現在の設定に対する改善提案を行う。
@@ -18,7 +18,15 @@ claude-code-best-practiceリポジトリ（https://github.com/shanraisshan/claud
 
 ## 実行手順
 
-### Step 1: リポジトリの最新化
+### Step 1: リポジトリの最新化と実行記録
+
+まず実行タイムスタンプを更新する（放置警告用）：
+
+```bash
+touch ~/.claude/skills/best-practice/.last-run
+```
+
+続いてリポジトリを最新化する：
 
 ```bash
 REPO=~/ghq/github.com/shanraisshan/claude-code-best-practice

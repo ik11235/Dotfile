@@ -1,6 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "cleanupPeriodDays": 90,
+  "autoUpdatesChannel": "stable",
+  "attribution": {
+    "commit": "Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>",
+    "pr": "Generated with Claude Code"
+  },
   "permissions": {
+    "defaultMode": "auto",
     "allow": [
       "Edit(*)",
       "Write(*)",
@@ -26,13 +33,13 @@
       "mcp__slack__*"
     ],
     "deny": [
-      "Bash(sudo:*)",
-      "Bash(rm:*)",
-      "Bash(rm -rf:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(git reset:*)",
-      "Bash(git rebase:*)",
+      "Bash(sudo *)",
+      "Bash(rm *)",
+      "Bash(rm -rf *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git reset *)",
+      "Bash(git rebase *)",
       "Read(.env*)",
       "Read(id_rsa)",
       "Read(id_ed25519)",
@@ -40,16 +47,20 @@
       "Read(**/*key*)",
       "Write(.env*)",
       "Write(**/secrets/**)",
-      "Bash(curl:*)",
-      "Bash(wget:*)",
-      "Bash(nc:*)",
-      "Bash(npm uninstall:*)",
-      "Bash(npm remove:*)",
-      "Bash(psql:*)",
-      "Bash(mysql:*)",
-      "Bash(mongod:*)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(nc *)",
+      "Bash(npm uninstall *)",
+      "Bash(npm remove *)",
+      "Bash(psql *)",
+      "Bash(mysql *)",
+      "Bash(mongod *)",
       "mcp__supabase__execute_sql"
     ]
+  },
+  "env": {
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "70",
+    "CLAUDE_CODE_ENABLE_TASKS": "true"
   },
   "model": "claude-opus-4-7",
   "enabledPlugins": {
@@ -65,5 +76,34 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
-  "effortLevel": "xhigh"
+  "effortLevel": "xhigh",
+  "statusLine": {
+    "type": "command",
+    "command": "$HOME/.claude/statusline-command.sh",
+    "padding": 1
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_PROJECT_DIR:-$PWD}/tasks/lessons.md\"; if [ -f \"$f\" ] && [ -n \"$(find \"$f\" -mmin +60 -print 2>/dev/null)\" ]; then echo '{\"systemMessage\":\"tasks/lessons.md が 60 分以上更新されていません。今回のセッションで学びがあったか確認してください\"}'; fi; exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$HOME/.claude/skills/best-practice/.last-run\"; if [ ! -f \"$f\" ] || [ -n \"$(find \"$f\" -mtime +14 -print 2>/dev/null)\" ]; then echo '{\"systemMessage\":\"/best-practice によるルール見直しが 2 週間以上行われていません。設定の陳腐化を防ぐため /best-practice の実行を検討してください\"}'; fi; exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
 }
