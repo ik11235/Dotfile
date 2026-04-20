@@ -76,5 +76,18 @@
     "type": "command",
     "command": "$HOME/.claude/statusline-command.sh",
     "padding": 1
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_PROJECT_DIR:-$PWD}/tasks/lessons.md\"; test -f \"$f\" && find \"$f\" -mmin +60 -print 2>/dev/null | grep -q . && echo '{\"systemMessage\":\"tasks/lessons.md が 60 分以上更新されていません。今回のセッションで学びがあったか確認してください\"}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }
