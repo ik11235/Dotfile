@@ -46,15 +46,22 @@ fi
 # （同等の初期化は fish 側の config.fish / conf.d で行われる）
 # ============================================================
 
+# ~/.zprofile の `brew shellenv` で HOMEBREW_PREFIX / HOMEBREW_REPOSITORY が
+# export されているため、`brew --prefix` / `brew --repository` の
+# サブプロセス起動（各 50〜100ms）を避けてそれらを直接参照する。
+# 万一未定義な場合のみフォールバックする。
+: "${HOMEBREW_PREFIX:=$(brew --prefix)}"
+: "${HOMEBREW_REPOSITORY:=$(brew --repository)}"
+
 # To enable homebrew-command-not-found
-HOMEBREW_COMMAND_NOT_FOUND_HANDLER="$(brew --repository)/Library/Homebrew/command-not-found/handler.sh"
+HOMEBREW_COMMAND_NOT_FOUND_HANDLER="${HOMEBREW_REPOSITORY}/Library/Homebrew/command-not-found/handler.sh"
 if [ -f "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER" ]; then
   source "$HOMEBREW_COMMAND_NOT_FOUND_HANDLER";
 fi
 
 ## gcloud SDK (PATH & completion)
 ## brew cask `gcloud-cli` が share 配下に成果物を配置する
-GCLOUD_SDK_ROOT="$(brew --prefix)/share/google-cloud-sdk"
+GCLOUD_SDK_ROOT="${HOMEBREW_PREFIX}/share/google-cloud-sdk"
 if [ -d "$GCLOUD_SDK_ROOT" ]; then
   source "$GCLOUD_SDK_ROOT/path.zsh.inc"
   source "$GCLOUD_SDK_ROOT/completion.zsh.inc"
@@ -62,7 +69,7 @@ fi
 unset GCLOUD_SDK_ROOT
 
 # mise
-eval "$($(brew --prefix mise)/bin/mise activate zsh)"
+eval "$(${HOMEBREW_PREFIX}/opt/mise/bin/mise activate zsh)"
 
 # direnv
 eval "$(direnv hook zsh)"

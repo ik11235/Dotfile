@@ -1,14 +1,21 @@
 # === 外部ツール連携 ===
 
+# ~/.zprofile の `brew shellenv` で HOMEBREW_PREFIX / HOMEBREW_REPOSITORY が
+# export されているため、`brew --prefix` / `brew --repository` の
+# サブプロセス起動（各 50〜100ms）を避けてそれらを直接参照する。
+# 万一未定義な場合のみフォールバックする。
+set -q HOMEBREW_PREFIX; or set -x HOMEBREW_PREFIX (brew --prefix)
+set -q HOMEBREW_REPOSITORY; or set -x HOMEBREW_REPOSITORY (brew --repository)
+
 # google cloud sdkのPATH
 ## brew cask `gcloud-cli` が share 配下に成果物を配置する
-set -l gcloud_sdk_root (brew --prefix)/share/google-cloud-sdk
+set -l gcloud_sdk_root $HOMEBREW_PREFIX/share/google-cloud-sdk
 if test -d $gcloud_sdk_root
   source $gcloud_sdk_root/path.fish.inc
 end
 
 # To enable homebrew-command-not-found
-set HOMEBREW_COMMAND_NOT_FOUND_HANDLER (brew --repository)/Library/Homebrew/command-not-found/handler.fish
+set HOMEBREW_COMMAND_NOT_FOUND_HANDLER $HOMEBREW_REPOSITORY/Library/Homebrew/command-not-found/handler.fish
 if test -f $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
   source $HOMEBREW_COMMAND_NOT_FOUND_HANDLER
 end
