@@ -55,7 +55,8 @@
     ]
   },
   "env": {
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "70"
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "70",
+    "CLAUDE_CODE_ENABLE_TASKS": "true"
   },
   "model": "claude-opus-4-7",
   "enabledPlugins": {
