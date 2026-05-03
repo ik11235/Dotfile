@@ -27,13 +27,20 @@ mkdir -p "${CWD}/${SESSION_UUID}"
 
 ### Step 3: Create hard links to raw conversation logs
 
-For each `.jsonl` file belonging to this session in the Claude config project directory, create a hard link in the output directory. Skip if the link already exists.
+For each `.jsonl` file belonging to this session in the Claude config project directory, create a hard link in the output directory.
+
+**Stale hard link detection**: 既存リンクが残っていても、Claude Code のセッションロガーは atomic rename (tmpfile → rename) 方式で書き込むことがあり、ソース側の inode が置き換わって**過去のハードリンクが古いスナップショットに取り残される**ケースがある。この場合 vault 側は更新されず、`git diff` にも現れない。inode が一致しない場合は `rm` → `ln` で貼り直す。
 
 ```bash
 # For each jsonl file matching the session UUID:
 JSONL_SOURCE="<path to jsonl in ~/.claude/projects/...>"
 JSONL_DEST="${CWD}/${SESSION_UUID}/$(basename ${JSONL_SOURCE})"
 if [ ! -f "${JSONL_DEST}" ]; then
+  ln "${JSONL_SOURCE}" "${JSONL_DEST}"
+elif [ "$(ls -i "${JSONL_SOURCE}" | awk '{print $1}')" != "$(ls -i "${JSONL_DEST}" | awk '{print $1}')" ]; then
+  # Stale hard link detected: source file was replaced via atomic rename.
+  # Re-link so the vault copy picks up the latest session log.
+  rm "${JSONL_DEST}"
   ln "${JSONL_SOURCE}" "${JSONL_DEST}"
 fi
 ```
