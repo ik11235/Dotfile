@@ -109,6 +109,7 @@
     "enabled": true,
     "mode": "hold"
   },
+  "preferredNotifChannel": "iterm2",
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,
   "theme": "auto"
