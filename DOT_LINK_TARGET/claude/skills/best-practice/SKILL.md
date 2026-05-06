@@ -1,6 +1,11 @@
 ---
 name: best-practice
-description: claude-code-best-practiceリポジトリを最新化し、現在のClaude Code設定に対してベストプラクティスに基づく改善提案を行う。「ベストプラクティス」「best practice」「設定改善」「スキル改善」「Claude Code最適化」「設定見直し」などのリクエストで使用する。引数にglobal/projectを指定して適用先を選べる。
+description: claude-code-best-practiceリポジトリを最新化し、現在のClaude Code設定（global / project）に対してベストプラクティスに基づく改善提案を行う。引数 global/project でスコープ指定可。
+when_to_use: |
+  以下のいずれかに該当する場合に使用：
+  - 「ベストプラクティス」「best practice」「設定見直し」「設定改善」を求められた
+  - 「スキル改善」「Claude Code最適化」「ハック改善」を求められた
+  - settings.json/CLAUDE.md/skills/agents/hooks の見直しや陳腐化チェックを依頼された
 allowed-tools: Read, Bash(git pull*), Bash(git -C * pull*), Bash(ghq get*), Bash(ls *), Bash(touch *), Glob, Grep
 ---
 
