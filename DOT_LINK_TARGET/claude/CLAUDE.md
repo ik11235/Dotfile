@@ -10,8 +10,8 @@
 - 1サブエージェント = 1タスク。複雑問題ほど計算量を投入
 
 ### 自己改善ループ
-- 修正を受けたら `tasks/lessons.md` にパターンを記録
-- セッション開始時にプロジェクト関連 lessons をレビュー
+- 修正を受けたら学びをパターン化して残す。プロジェクトに `tasks/lessons.md` がある場合はそこへ追記する
+- セッション開始時にプロジェクト関連 lessons があればレビュー
 - ミス率が下がるまでルールを改善
 
 ### 完了前検証
@@ -33,7 +33,7 @@
 ### コンテキスト管理
 - 300k tokens 超の手応えで `/compact <方向性>` を手動実行（bad compact 予防）
 - 試行失敗で学びが出たら `/rewind` で試行前に戻す（修正より rewind 優先）
-- Auto-compact 閾値 70%（`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=70`）
+- Auto-compact 閾値 80%（`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=80`）
 
 ### 長時間タスク並列化
 - 10分以上かかる作業（Zenn digest・Vault 整理・横断検索）は `/tasks` でバックグラウンド化

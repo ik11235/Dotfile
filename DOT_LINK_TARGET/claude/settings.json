@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 90,
   "env": {
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "70",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80",
     "CLAUDE_CODE_ENABLE_TASKS": "true"
   },
   "attribution": {
@@ -11,8 +11,6 @@
   },
   "permissions": {
     "allow": [
-      "Edit(*)",
-      "Write(*)",
       "Bash(git -C * status*)",
       "Bash(git -C * diff*)",
       "Bash(git -C * log*)",
@@ -26,7 +24,29 @@
       "mcp__slack__*",
       "mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql",
       "mcp__claude_ai_Google_Calendar__list_events",
-      "mcp__claude_ai_Miro__context_explore"
+      "mcp__claude_ai_Miro__context_explore",
+      "mcp__todoist__find-tasks",
+      "mcp__todoist__find-tasks-by-date",
+      "mcp__todoist__find-projects",
+      "mcp__todoist__find-sections",
+      "mcp__todoist__find-labels",
+      "mcp__todoist__find-filters",
+      "mcp__todoist__find-comments",
+      "mcp__todoist__find-completed-tasks",
+      "mcp__todoist__find-reminders",
+      "mcp__todoist__find-activity",
+      "mcp__todoist__find-project-collaborators",
+      "mcp__todoist__fetch",
+      "mcp__todoist__fetch-object",
+      "mcp__todoist__get-overview",
+      "mcp__todoist__get-productivity-stats",
+      "mcp__todoist__get-project-activity-stats",
+      "mcp__todoist__get-project-health",
+      "mcp__todoist__get-workspace-insights",
+      "mcp__todoist__search",
+      "mcp__todoist__user-info",
+      "mcp__todoist__list-workspaces",
+      "mcp__todoist__analyze-project-health"
     ],
     "deny": [
       "Bash(sudo *)",
@@ -96,6 +116,7 @@
     "command": "$HOME/.claude/statusline-command.sh",
     "padding": 1
   },
+  "enableAllProjectMcpServers": true,
   "enabledPlugins": {
     "slack@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
