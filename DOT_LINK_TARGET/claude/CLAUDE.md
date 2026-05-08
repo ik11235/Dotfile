@@ -43,10 +43,28 @@
 
 ## タスク管理
 
-`tasks/todo.md` を計画と進捗の単一ソースとする:
-1. 計画をチェック可能項目で書く（実装前確認）
-2. 完了を随時マーク。各ステップでサマリー
-3. 完了後にレビューセクションを追記
+**Todoist の専用プロジェクト「claude code」（id は環境変数 `TODOIST_CLAUDE_PROJECT_ID`）を計画と進捗の単一ソースとする**（MCP 共通ルール参照）。
+
+1. 計画はタスクとして登録（粒度はチェック可能な単位。サブタスクで階層化）
+2. 着手・完了は随時 update / complete で反映。重要な経過は task の comment に残す
+3. 期限が決まっているものは `dueString`、固定締切は `deadlineDate`、所要時間は `duration` を使い分ける
+4. 優先度は `p1`〜`p4`（`p1` が最高、`p4` がデフォルト/最低）
+5. 並べ替え・期日変更は専用ツール（`reschedule-tasks` / `reorder-objects`）。`update-tasks` で due を書き換えると recurrence が壊れる
+6. リポジトリ内のローカル `tasks/todo.md` を使うのは、ユーザーが明示的に依頼した場合や Todoist が使えない環境のみ
+
+### セッション復元情報の併設
+
+タスクを Todoist に登録するときは、後で続きを再開できるよう、当該セッションの復元情報を **task description（または最初のコメント）** に併設する。
+
+- 取得元: `$CLAUDE_CODE_SESSION_ID`（環境変数）と `pwd`
+- 推奨フォーマット（コピペで再開できる一行コマンドを必ず含める）:
+  ```
+  cwd: <pwd の値>
+  session: <CLAUDE_CODE_SESSION_ID の値>
+  resume: cd '<pwd の値>' && claude --resume <session-id>
+  ```
+- 1セッション内で複数タスクを切る場合、同一の cwd / session を全タスクの description に記載してよい（重複OK、後から検索性を上げるため）
+- セッションログ実体は `~/.claude/projects/<encoded-cwd>/<session-id>.jsonl` に保存される。`claude --resume` が機能しない場合のフォールバック確認先として把握しておく
 
 ---
 
@@ -56,6 +74,17 @@
 - **手を抜かない**：根本原因を直す。一時しのぎ禁止
 - **影響を最小化**：必要な箇所のみ
 - **Permission 拒否時**：止まってユーザーに依頼。必要なコマンドは `!` 付きで表示
+
+---
+
+## MCP 共通ルール
+
+### Todoist MCP
+- **書き込み許可は専用プロジェクト「claude code」（id は環境変数 `TODOIST_CLAUDE_PROJECT_ID`）のみ**。それ以外のプロジェクト・タスク・セクション・コメント・ラベル・フィルタは Read-Only として扱う
+- ID の実値が必要なときは `echo $TODOIST_CLAUDE_PROJECT_ID` で取得する。未設定なら Todoist MCP を使う前にユーザーに確認
+- 対象書き込み操作（add / update / complete / uncomplete / reschedule / delete / move / reorder / manage-assignments など）は、対象が専用プロジェクト配下に閉じることを事前確認してから実行
+- 他プロジェクトへの書き込みが必要だとユーザーが意図している場合は、必ず明示確認を取ってから実行（暗黙に進めない）
+- 参照系（find-* / fetch / get-* / search / analyze-* など）はプロジェクト横断で自由に利用可
 
 ---
 
