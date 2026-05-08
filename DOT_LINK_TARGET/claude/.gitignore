@@ -1,4 +1,26 @@
+/.last-cleanup
+/backups/
+/cache/
+/debug/
+/downloads/
+/file-history/
+/history.jsonl
 /ide/
+/mcp-needs-auth-cache.json
+/paste-cache/
+/plans/
+/plugins/
+/policy-limits.json
 /projects/
+/scripts/
+/session-env/
+/sessions/
+/shell-snapshots/
+/stats-cache.json
 /statsig/
+/tasks/
+/telemetry/
 /todos/
+
+# Skill workspaces (runtime-generated)
+/skills/*-workspace/

@@ -1,0 +1,26 @@
+{
+  "skill_name": "commit-draft",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/commit-draft を実行してください",
+      "expected_output": "/tmp/commit-draft.sh にスクリプトが書き出され、中身が表示され、cd $(git rev-parse --show-toplevel) が含まれ、! bash /tmp/commit-draft.sh が提示される",
+      "context": "作業ディレクトリは /tmp/commit-draft-test-1/src/components（サブディレクトリ）。1ファイルのstaged変更あり。Claudeは変更に関与していない。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "/commit-draft を実行してください。なお、これらの変更はClaudeが提案・編集したものです。",
+      "expected_output": "/tmp/commit-draft.sh にスクリプトが書き出され、Co-Authored-Byが含まれ、複数ファイルが個別にgit addされる",
+      "context": "作業ディレクトリは /tmp/commit-draft-test-2（git root）。3ファイルのstaged変更あり。Claudeが変更に関与。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "/commit-draft を実行してください",
+      "expected_output": "未コミットの変更はありませんとだけ伝える",
+      "context": "作業ディレクトリは /tmp/commit-draft-test-3。変更なし。",
+      "files": []
+    }
+  ]
+}

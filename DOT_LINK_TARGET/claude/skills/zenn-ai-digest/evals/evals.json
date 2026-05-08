@@ -1,0 +1,23 @@
+{
+  "skill_name": "zenn-ai-digest",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Zennの生成AI記事を直近7日間でまとめて",
+      "expected_output": "Zennから生成AI関連記事を収集し、サマリーリスト＋詳細要約＋総合分析のMarkdownレポートをファイルに保存する",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "今週のAI関連のZenn記事を教えて",
+      "expected_output": "曖昧な表現でもスキルが発動し、直近7日間の記事を収集・要約してレポートを生成する",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Zennの最新のLLM記事を3日分集めて",
+      "expected_output": "3日間の期間指定を正しく解釈し、記事を収集・要約してレポートを生成する",
+      "files": []
+    }
+  ]
+}
