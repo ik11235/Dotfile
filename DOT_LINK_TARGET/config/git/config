@@ -100,6 +100,8 @@
 		| sed -e 's/origin\\///' \
 		| "${AVAILABLE_FUZZY_FINDER:?set AVAILABLE_FUZZY_FINDER env var (e.g. fzf, peco)}" \
 		| xargs git checkout
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	lol = log --graph --decorate --oneline --all
 
 
 ########################################
