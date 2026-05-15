@@ -89,6 +89,10 @@
     "defaultMode": "auto"
   },
   "model": "claude-opus-4-7",
+  "enableAllProjectMcpServers": true,
+  "skillOverrides": {
+    "best-practice": "user-invocable-only"
+  },
   "hooks": {
     "Stop": [
       {
@@ -118,7 +122,6 @@
     "command": "$HOME/.claude/statusline-command.sh",
     "padding": 1
   },
-  "enableAllProjectMcpServers": true,
   "enabledPlugins": {
     "slack@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
@@ -128,12 +131,13 @@
   "language": "ja",
   "effortLevel": "xhigh",
   "autoUpdatesChannel": "stable",
+  "tui": "default",
   "voice": {
     "enabled": true,
     "mode": "hold"
   },
-  "preferredNotifChannel": "iterm2",
   "skipDangerousModePermissionPrompt": true,
-  "skipAutoPermissionPrompt": true,
-  "theme": "auto"
+  "theme": "auto",
+  "preferredNotifChannel": "iterm2",
+  "skipAutoPermissionPrompt": true
 }
