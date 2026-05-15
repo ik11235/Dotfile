@@ -68,6 +68,13 @@
 
 ---
 
+## Permission allowlist のメンテナンス
+
+- `/fewer-permission-prompts` を月1目安で実行し、頻出の read-only Bash/MCP を `~/.claude/settings.json` の `permissions.allow` に追加してプロンプト疲労を減らす
+- 自動提案はマージ前に必ず精査する（過剰許可を防ぐ）
+
+---
+
 ## コア原則
 
 - **シンプル第一**：変更を最小限に
