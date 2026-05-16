@@ -1,0 +1,267 @@
+#!/bin/bash
+# macOSのホットコーナー「画面をロック」を無効化しつつ、ディスプレイスリープも
+# 抑止 (caffeinate -d 内蔵) するツール。起動中のみ有効。
+#
+# Usage:
+#   lockcorner          起動。ホットコーナー無効化 + caffeinate -d で待機 (Ctrl+C で復元終了)
+#   lockcorner stop     起動中のプロセスを止めて復元
+#   lockcorner status   現在の状態を表示
+#
+# 強制終了(SIGKILL)等で復元されなかった場合も、次回起動時にバックアップを検知して
+# 自動復元してから無効化処理に入るので、最終的に設定は失われない。
+# caffeinate は -w $$ オプションで lockcorner プロセスの終了を待つので、
+# lockcorner が SIGKILL されても自動で終了する。
+
+set -eo pipefail
+
+# macOS専用 (defaults / killall / caffeinate / ホットコーナーは macOS のもの)
+if [ "$(uname -s)" != "Darwin" ]; then
+  echo "Error: lockcorner は macOS (Darwin) 専用です (検出: $(uname -s))" >&2
+  exit 1
+fi
+
+STATE_DIR="${HOME}/.local/state"
+BACKUP_FILE="${STATE_DIR}/lockcorner-backup"
+PID_FILE="${STATE_DIR}/lockcorner.pid"
+CAFFEINATE_PID_FILE="${STATE_DIR}/lockcorner-caffeinate.pid"
+CORNERS="tl tr bl br"
+LOCK_ACTION=13
+
+corner_label() {
+  case "$1" in
+    tl) echo "左上" ;;
+    tr) echo "右上" ;;
+    bl) echo "左下" ;;
+    br) echo "右下" ;;
+    *)  echo "$1" ;;
+  esac
+}
+
+action_label() {
+  case "$1" in
+    0)  echo "なし" ;;
+    2)  echo "Mission Control" ;;
+    3)  echo "アプリケーションウインドウ" ;;
+    4)  echo "デスクトップ" ;;
+    5)  echo "スクリーンセーバを開始" ;;
+    6)  echo "スクリーンセーバを無効" ;;
+    10) echo "ディスプレイをスリープ" ;;
+    11) echo "Launchpad" ;;
+    12) echo "通知センター" ;;
+    13) echo "画面をロック" ;;
+    14) echo "クイックメモ" ;;
+    *)  echo "unknown($1)" ;;
+  esac
+}
+
+usage() {
+  sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
+  exit 1
+}
+
+stop_caffeinate() {
+  [ -f "$CAFFEINATE_PID_FILE" ] || return 0
+  cpid=$(cat "$CAFFEINATE_PID_FILE" 2>/dev/null || true)
+  if [ -n "$cpid" ] && kill -0 "$cpid" 2>/dev/null; then
+    # 自分が起こした caffeinate か念のため確認
+    cmd=$(ps -o comm= -p "$cpid" 2>/dev/null || true)
+    case "$cmd" in
+      *caffeinate*) kill "$cpid" 2>/dev/null || true ;;
+    esac
+  fi
+  rm -f "$CAFFEINATE_PID_FILE"
+}
+
+read_corner() {
+  defaults read com.apple.dock "wvous-${1}-corner" 2>/dev/null || echo 0
+}
+
+read_modifier() {
+  defaults read com.apple.dock "wvous-${1}-modifier" 2>/dev/null || echo 0
+}
+
+# バックアップから復元 (内容があれば書き戻す)。Dockのkillはしない。
+restore_from_backup() {
+  [ -f "$BACKUP_FILE" ] || return 0
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    c="${line%%=*}"
+    rest="${line#*=}"
+    a="${rest%%:*}"
+    m="${rest##*:}"
+    defaults write com.apple.dock "wvous-${c}-corner" -int "$a"
+    defaults write com.apple.dock "wvous-${c}-modifier" -int "$m"
+    echo "復元: ${c} ($(corner_label "$c")) → action=${a} modifier=${m}"
+  done < "$BACKUP_FILE"
+  rm -f "$BACKUP_FILE"
+}
+
+# 既に動いているプロセスがあれば PID を返す。なければ空。
+running_pid() {
+  [ -f "$PID_FILE" ] || return 0
+  pid=$(cat "$PID_FILE" 2>/dev/null || true)
+  [ -z "$pid" ] && return 0
+  if kill -0 "$pid" 2>/dev/null; then
+    echo "$pid"
+  fi
+}
+
+cleanup_and_restore() {
+  echo
+  echo "停止シグナルを受信、復元します..."
+  stop_caffeinate
+  restore_from_backup
+  rm -f "$PID_FILE"
+  killall Dock 2>/dev/null || true
+  echo "復元完了"
+  exit 0
+}
+
+cmd_start() {
+  # 既存プロセス確認
+  pid=$(running_pid)
+  if [ -n "$pid" ]; then
+    echo "既に起動中です (PID: $pid)"
+    echo "停止する場合は: lockcorner stop"
+    exit 1
+  fi
+
+  mkdir -p "$STATE_DIR"
+
+  # 前回が強制終了されていてバックアップだけ残っているケースを救う
+  if [ -f "$BACKUP_FILE" ]; then
+    echo "前回未復元のバックアップを検出しました。先に復元します:"
+    restore_from_backup
+    killall Dock 2>/dev/null || true
+    # 少し待ってからDockのdefaultsが落ち着くのを期待
+    sleep 1
+  fi
+
+  # 古いPIDファイルと残存caffeinateを掃除
+  stop_caffeinate
+  rm -f "$PID_FILE"
+
+  # 現状を退避 + 無効化
+  tmp=$(mktemp)
+  found=0
+  for c in $CORNERS; do
+    a=$(read_corner "$c")
+    m=$(read_modifier "$c")
+    if [ "$a" = "$LOCK_ACTION" ]; then
+      echo "${c}=${a}:${m}" >> "$tmp"
+      defaults write com.apple.dock "wvous-${c}-corner" -int 0
+      defaults write com.apple.dock "wvous-${c}-modifier" -int 0
+      echo "無効化: ${c} ($(corner_label "$c")) ← 元 action=${a} modifier=${m}"
+      found=1
+    fi
+  done
+
+  if [ "$found" = "0" ]; then
+    rm -f "$tmp"
+    echo "画面ロック (action=${LOCK_ACTION}) のホットコーナーは見つかりませんでした"
+    exit 0
+  fi
+
+  mv "$tmp" "$BACKUP_FILE"
+  echo "$$" > "$PID_FILE"
+  killall Dock 2>/dev/null || true
+
+  # caffeinate -d を内蔵起動。-w $$ で lockcorner終了を追従するため SIGKILL でも孤児化しない
+  caffeinate -d -w $$ &
+  echo "$!" > "$CAFFEINATE_PID_FILE"
+  echo "caffeinate -d を起動 (PID: $!) → ディスプレイスリープ抑止"
+
+  # シグナルハンドラ。SIGKILL は捕まえられないが、次回起動時に救われる
+  trap cleanup_and_restore INT TERM HUP QUIT
+  # EXIT trap は通常終了時(exit 0など)にも発火させたい
+  trap 'stop_caffeinate; restore_from_backup; rm -f "$PID_FILE"; killall Dock 2>/dev/null || true' EXIT
+
+  echo
+  echo "起動しました (PID: $$)。終了するまでホットコーナー無効 + スリープ抑止"
+  echo "  - このターミナルで Ctrl+C で終了"
+  echo "  - 別ターミナルから停止: lockcorner stop"
+  echo
+
+  # 無限待機。signal が来るまで sleep を回す
+  while true; do
+    sleep 3600 &
+    wait $! 2>/dev/null || true
+  done
+}
+
+cmd_stop() {
+  pid=$(running_pid)
+  if [ -z "$pid" ]; then
+    echo "起動中のプロセスは見つかりません"
+    # 残骸を掃除
+    stop_caffeinate
+    if [ -f "$BACKUP_FILE" ]; then
+      echo "バックアップが残っているので復元します:"
+      restore_from_backup
+      killall Dock 2>/dev/null || true
+    fi
+    rm -f "$PID_FILE"
+    exit 0
+  fi
+
+  echo "PID $pid に TERM を送信..."
+  kill -TERM "$pid"
+
+  # 5秒待って復元されたか見る
+  for _ in 1 2 3 4 5; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "停止しました"
+      exit 0
+    fi
+    sleep 1
+  done
+
+  echo "プロセスが応答しません。強制復元を試みます..."
+  stop_caffeinate
+  restore_from_backup
+  rm -f "$PID_FILE"
+  killall Dock 2>/dev/null || true
+}
+
+cmd_status() {
+  pid=$(running_pid)
+  if [ -n "$pid" ]; then
+    echo "状態: 起動中 (PID: $pid) → ホットコーナーは無効化中"
+    if [ -f "$CAFFEINATE_PID_FILE" ]; then
+      cpid=$(cat "$CAFFEINATE_PID_FILE" 2>/dev/null || true)
+      if [ -n "$cpid" ] && kill -0 "$cpid" 2>/dev/null; then
+        echo "       caffeinate -d 稼働中 (PID: $cpid) → ディスプレイスリープ抑止"
+      else
+        echo "       警告: caffeinate PIDファイルはあるがプロセス無し"
+      fi
+    fi
+  else
+    if [ -f "$BACKUP_FILE" ]; then
+      echo "状態: 未起動だがバックアップが残存(前回強制終了の痕跡)"
+      echo "  → 次回 'lockcorner' 起動時に自動復元、または 'lockcorner stop' で手動復元"
+    else
+      echo "状態: 停止中 (通常状態)"
+    fi
+  fi
+  echo
+  echo "現在のホットコーナー設定:"
+  for c in $CORNERS; do
+    a=$(read_corner "$c")
+    m=$(read_modifier "$c")
+    printf "  %s (%s): action=%s (%s), modifier=%s\n" \
+      "$c" "$(corner_label "$c")" "$a" "$(action_label "$a")" "$m"
+  done
+  if [ -f "$BACKUP_FILE" ]; then
+    echo
+    echo "バックアップ内容 ($BACKUP_FILE):"
+    sed 's/^/  /' "$BACKUP_FILE"
+  fi
+}
+
+case "${1:-start}" in
+  start)  cmd_start ;;
+  stop)   cmd_stop ;;
+  status) cmd_status ;;
+  -h|--help|help) usage ;;
+  *)      usage ;;
+esac
