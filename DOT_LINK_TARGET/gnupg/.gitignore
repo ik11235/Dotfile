@@ -1,0 +1,8 @@
+# 指定したファイル以外はすべて不許可
+# ~/.gnupg 配下は秘密鍵・trustdb・ソケット・乱数seed等の機密/ランタイム
+# ファイルが多いため、明示した設定ファイルのみ allowlist で許可する
+*
+
+!.gitignore
+!common.conf
+!gpg-agent.conf
