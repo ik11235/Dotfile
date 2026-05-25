@@ -134,7 +134,7 @@
     "skill-creator@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true
   },
-  "language": "ja",
+  "language": "japanese",
   "effortLevel": "xhigh",
   "autoUpdatesChannel": "stable",
   "tui": "default",
