@@ -6,7 +6,7 @@
     "CLAUDE_CODE_ENABLE_TASKS": "true"
   },
   "attribution": {
-    "commit": "Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>",
+    "commit": "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>",
     "pr": "Generated with Claude Code"
   },
   "permissions": {
@@ -20,8 +20,6 @@
       "Read(/tmp/commit-draft*)",
       "Write(/tmp/commit-draft*)",
       "Create(/tmp/commit-draft*)",
-      "mcp__notion__*",
-      "mcp__slack__*",
       "mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql",
       "mcp__claude_ai_Atlassian__getAccessibleAtlassianResources",
       "mcp__claude_ai_Atlassian__getJiraIssue",
@@ -94,7 +92,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-opus-4-7",
   "enableAllProjectMcpServers": true,
   "skillOverrides": {
     "best-practice": "user-invocable-only"
