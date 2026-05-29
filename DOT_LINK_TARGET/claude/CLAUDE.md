@@ -84,6 +84,13 @@
 
 ---
 
+## Git / PR
+
+- PR マージ依頼時のデフォルトは **merge コミット** (`gh pr merge <PR> --merge`)。`--squash` / `--rebase` はユーザーの明示指示があった場合のみ
+- `--delete-branch` は併用してよい（ブランチ削除の好みは別軸）
+
+---
+
 ## MCP 共通ルール
 
 ### Todoist MCP
