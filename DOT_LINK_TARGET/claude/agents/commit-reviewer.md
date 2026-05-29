@@ -1,6 +1,6 @@
 ---
 name: commit-reviewer
-description: commit 直前の staged diff とドラフトメッセージを第三者視点でレビュー。秘密情報・typo・diff とメッセージの齟齬を検出。commit-draft スキル実行前に PROACTIVELY 使う
+description: commit 直前の staged diff とドラフトメッセージを第三者視点でレビュー。秘密情報・typo・diff とメッセージの齟齬を検出。秘密情報の混入が疑われるとき、コード変更を含む重要コミットのとき、またはユーザーが明示的にレビューを求めたときに使う（日常的なノート・ログ更新では起動しない）
 model: haiku
 tools: Read, Grep, Glob
 ---

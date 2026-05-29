@@ -8,11 +8,14 @@ allowed-tools:
   - "Bash(git -C * diff*)"
   - "Bash(git -C * log*)"
   - "Bash(git -C * rev-parse*)"
+  - "Bash(git rev-parse*)"
+  - "Bash(ls *)"
+  - "Bash(head*)"
+  - "Bash(grep*)"
   - "Read(/tmp/commit-draft*)"
   - "Read(**/lefthook.yml)"
   - "Read(**/.husky/*)"
   - "Write(/tmp/commit-draft*)"
-  - "Glob"
 ---
 
 # commit-draft — diffからコミットコマンドを生成
@@ -21,18 +24,57 @@ allowed-tools:
 
 ## 手順
 
-### 1. 状態の取得
+### 1. 状態とスタイルの取得（1回のBashにまとめる）
 
-まず `git rev-parse --show-toplevel` でリポジトリルートの絶対パスを取得する。この値は以降のgitコマンド（`git -C <repo-root>`）だけでなく、**出力するシェルスクリプトにも絶対パスとしてハードコードする**（後述）。`cd` は使わない（Bashツールの不要な権限プロンプトを避けるため）。
+**差分の中身（フルdiff）はこの段階ではまだ読まない。** まず `--stat`（ファイル一覧＋増減行数）までを1回のBashコマンドでまとめて取得する。これがトークン節約と高速化の要 — 往復が減り、巨大ファイルの中身をコンテキストに流し込まずに済む。`cd` は使わない（Bashツールの不要な権限プロンプトを避けるため）。
 
-- `git -C <repo-root> status` で未コミットの変更一覧を取得する（`-uall`フラグは使わない）
-- `git -C <repo-root> diff` と `git -C <repo-root> diff --cached` でstaged/unstaged両方の差分を取得する
-- `git -C <repo-root> log --oneline -5` で直近のコミットメッセージのスタイルを確認する
-- `lefthook.yml` や `.husky/prepare-commit-msg` 等を確認し、`prepare-commit-msg` hookがプレフィックスを自動付与するか調べる
+```bash
+ROOT=$(git rev-parse --show-toplevel) && \
+git -C "$ROOT" status && \
+git -C "$ROOT" diff --stat && \
+git -C "$ROOT" diff --cached --stat && \
+git -C "$ROOT" log --oneline -5 && \
+ls "$ROOT"/lefthook.yml "$ROOT"/.husky/prepare-commit-msg 2>/dev/null
+```
 
-### 2. 変更の分析
+- `ROOT` の値（リポジトリルートの絶対パス）は、**出力するシェルスクリプトにも絶対パスとしてハードコードする**（後述）。スクリプト内では `git rev-parse` を実行時に呼ばない
+- `git status` に `-uall` フラグは使わない
+- 末尾の `ls` で `prepare-commit-msg` hookの有無だけを安く確認する。ヒットした場合のみ、必要に応じて該当ファイルをReadして内容（プレフィックス自動付与の有無）を確かめる。存在しなければそれ以上読まない
 
-差分の内容から以下を判断する:
+### 2. 差分内容の取得（必要なものだけ）
+
+`--stat` の結果を見て、**コミットメッセージ作成に内容の理解が必要なファイルだけ**フル差分を取る。全ファイルのフル差分を無条件に取得しない。
+
+**内容を読まずstatだけで判断するもの（フルdiffをスキップ）:**
+- `*.jsonl` などの会話ログ・生成記録、`*.lock` 等のロックファイル、ビルド生成物、`node_modules`、巨大バイナリ
+- `--stat` で数百行を超える大規模差分のファイル
+
+これらはファイル名と増減行数から目的が自明（例: 「会話ログ追加」「依存更新」）なため、中身を読む価値がない。
+
+**内容を読むもの:** 上記以外の、ソース・ドキュメント・設定の実質的な変更。
+
+フル差分は除外pathspecで取得し、保険でバイト上限を付ける（除外パターンはリポジトリの生成物に応じて調整する）:
+
+```bash
+git -C "$ROOT" diff --cached -- . ':(exclude)*.jsonl' ':(exclude)*.lock' | head -c 20000
+git -C "$ROOT" diff           -- . ':(exclude)*.jsonl' ':(exclude)*.lock' | head -c 20000
+```
+
+`head -c` で頭打ちになった（出力が途中で切れた）場合は、残りはstatベースで判断し、メッセージは要約レベルに留める。差分が全てスキップ対象（例: jsonlのみのコミット）なら、フルdiffコマンド自体を省略してstatだけでメッセージを決める。
+
+#### 秘密情報の軽量チェック
+
+フル差分を取得したついでに、staged差分に対し秘密情報の混入を安くスキャンする:
+
+```bash
+git -C "$ROOT" diff --cached | grep -inE 'api[_-]?key|secret|password|passwd|token|BEGIN [A-Z ]*PRIVATE KEY' | head -20
+```
+
+ヒットがあれば commit-draft の出力時にユーザーへ警告する（後述）。ヒットが多数・判断に迷う・コード変更を含む重要コミットの場合に**限って**、`commit-reviewer` サブエージェントを起動して第三者レビューを依頼する。日常的なノート・ログ更新では起動しない（毎回サブエージェントを焚くとトークンと時間の無駄になるため）。
+
+### 3. 変更の分析
+
+差分（必要な範囲）の内容から以下を判断する:
 
 - 変更の目的（バグ修正、機能追加、リファクタ、設定変更など）
 - 論理的なコミット単位への分割が必要か
@@ -74,13 +116,13 @@ allowed-tools:
 
 **フォーマット:**
 
-トレーラーはコミットメッセージ本文の最後に空行を挟んで配置する。モデル名はセッションで使用中のモデルを記載する（例: `Claude Opus 4.6 (1M context)`, `Claude Sonnet 4.6`）。
+トレーラーはコミットメッセージ本文の最後に空行を挟んで配置する。モデル名はセッションで使用中のモデルを記載する（例: `Claude Opus 4.8 (1M context)`, `Claude Sonnet 4.6`）。
 
 ```
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 ```
 
-### 3. コミット単位の決定
+### 4. コミット単位の決定
 
 #### 1コミットにまとめる場合
 - 変更が単一の目的に収まる場合
@@ -89,7 +131,7 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 - 異なる目的の変更が混在している場合
 - 分割する場合は実行順序を明示する
 
-### 4. 出力
+### 5. 出力
 
 #### 出力方式
 
@@ -143,7 +185,7 @@ git add file1 file2
 git commit -F - <<'EOF'
 要約行
 
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 EOF
 ```
 
@@ -158,7 +200,7 @@ git commit -F - <<'EOF'
 
 本文: なぜこの変更をしたか、補足事項など
 
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 EOF
 ```
 
@@ -183,6 +225,6 @@ EOF
 
 複数コミットに分割する場合は、各コミットを別々のスクリプトファイルとして書き出す（`/tmp/commit-draft-1.sh`, `/tmp/commit-draft-2.sh`, ...）。実行コマンドもそれぞれ提示し、1つずつ順番に実行できるようにする。
 
-### 5. 変更がない場合
+### 6. 変更がない場合
 
 `git status` でコミット対象がなければ「未コミットの変更はありません」とだけ伝える。
