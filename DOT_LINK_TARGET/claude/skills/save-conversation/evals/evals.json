@@ -1,0 +1,53 @@
+{
+  "skill_name": "save-conversation",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "短い会話（6往復、tool callノイズ・sidechain・system-reminder混入のjsonl）を新規保存する。ディレクトリ作成・ハードリンク・frontmatter付き要約MD生成・/rename提示まで。",
+      "expected_output": "短い会話の新規保存（基本動作）",
+      "files": [],
+      "assertions": [
+        "session directory created",
+        "jsonl hard-linked with matching inode (stale link resolved)",
+        "summary markdown exists",
+        "frontmatter has correct session_uuid and date",
+        "Summary section is non-empty",
+        "conversation log complete (9 markers present)",
+        "no harness noise leaked into markdown",
+        "title is filesystem-safe and <=50 chars"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "既存セッションディレクトリに stale なハードリンク（atomic rename でソース inode が置換済み）が残っている状態で再保存する。inode 不一致を検出して貼り直せるかが焦点。",
+      "expected_output": "stale ハードリンクの検出と貼り直し",
+      "files": [],
+      "assertions": [
+        "session directory created",
+        "jsonl hard-linked with matching inode (stale link resolved)",
+        "summary markdown exists",
+        "frontmatter has correct session_uuid and date",
+        "Summary section is non-empty",
+        "conversation log complete (9 markers present)",
+        "no harness noise leaked into markdown",
+        "title is filesystem-safe and <=50 chars"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "長い会話（40往復・80メッセージ）を保存する。会話ログの完全性（80マーカー全部）と所要時間・トークン消費が焦点。高速化が最も効くケース。",
+      "expected_output": "長い会話（40往復）の保存速度と完全性",
+      "files": [],
+      "assertions": [
+        "session directory created",
+        "jsonl hard-linked with matching inode (stale link resolved)",
+        "summary markdown exists",
+        "frontmatter has correct session_uuid and date",
+        "Summary section is non-empty",
+        "conversation log complete (80 markers present)",
+        "no harness noise leaked into markdown",
+        "title is filesystem-safe and <=50 chars"
+      ]
+    }
+  ]
+}
