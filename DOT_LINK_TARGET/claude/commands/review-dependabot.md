@@ -1,3 +1,10 @@
+---
+description: DependabotのPRをレビューし、マージして問題ないかを検証する
+argument-hint: "[PR番号またはURL]"
+allowed-tools: Bash(gh *), Read, Grep, Glob, WebFetch
+disallowed-tools: Edit, Write
+---
+
 # Dependabot PR レビュー
 
 DependabotのPRを確認し、マージして問題ないかを検証する。
