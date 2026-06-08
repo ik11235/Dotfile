@@ -1,3 +1,7 @@
+# General principle
+
+Think in English, interact with the user in Japanese.
+
 ## ワークフロー設計[^workflow-ref]
 
 ### Planモード
