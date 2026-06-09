@@ -106,6 +106,7 @@
 		| xargs git checkout
 	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 	lol = log --graph --decorate --oneline --all
+	pull-main = "!f() { \\\n  remote=\"origin\"; \\\n  current=$(git symbolic-ref --short -q HEAD || echo \"\"); \\\n  git fetch --prune \"$remote\" || { echo \"error: fetch に失敗しました\"; return 1; }; \\\n  for b in master main develop; do \\\n    if ! git show-ref --verify --quiet \"refs/heads/$b\"; then echo \"skip: $b (ローカルに存在しない)\"; continue; fi; \\\n    if ! git show-ref --verify --quiet \"refs/remotes/$remote/$b\"; then echo \"skip: $b (リモート $remote に存在しない)\"; continue; fi; \\\n    if [ \"$b\" = \"$current\" ]; then \\\n      if git merge --ff-only \"$remote/$b\"; then echo \"ok: $b (現在のブランチを fast-forward)\"; else echo \"warn: $b は fast-forward できません（スキップ）\"; fi; \\\n    else \\\n      if git fetch \"$remote\" \"$b:$b\"; then echo \"ok: $b\"; else echo \"warn: $b は fast-forward できません（スキップ）\"; fi; \\\n    fi; \\\n  done; \\\n}; f"
 
 
 ########################################
