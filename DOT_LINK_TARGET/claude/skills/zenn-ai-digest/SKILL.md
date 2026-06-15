@@ -7,6 +7,7 @@ when_to_use: |
   - 「今週のAI記事」「AI記事まとめ」「生成AIのトレンド」「AI関連ニュースのまとめ」を求められた
   - 直近N日間の生成AI/LLM/Claude/ChatGPT/Gemini関連の技術記事サーベイを求められた
 user-invocable: true
+argument-hint: "[対象日数 (省略時は7日間)]"
 paths:
   - "**/AI-Chat/**"
   - "**/my-Obsidian-valut/**"
