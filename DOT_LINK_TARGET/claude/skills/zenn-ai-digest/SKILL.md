@@ -8,10 +8,6 @@ when_to_use: |
   - 直近N日間の生成AI/LLM/Claude/ChatGPT/Gemini関連の技術記事サーベイを求められた
 user-invocable: true
 argument-hint: "[対象日数 (省略時は7日間)]"
-paths:
-  - "**/AI-Chat/**"
-  - "**/my-Obsidian-valut/**"
-  - "**/Obsidian-valut/**"
 ---
 
 # zenn-ai-digest — Zenn生成AI記事の収集・要約
