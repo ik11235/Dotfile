@@ -141,6 +141,5 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "theme": "auto",
-  "preferredNotifChannel": "iterm2",
-  "skipAutoPermissionPrompt": true
+  "preferredNotifChannel": "iterm2"
 }
