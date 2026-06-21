@@ -42,6 +42,7 @@ Think in English, interact with the user in Japanese.
 ### 長時間タスク並列化
 - 10分以上かかる作業（Zenn digest・Vault 整理・横断検索）は `/tasks` でバックグラウンド化
 - 完了は通知待ち。sleep ポーリング禁止
+- 分割→並列→統合が明確な作業は `/workflows`（fan-out→検証→統合を決定的に制御するマルチエージェント・オーケストレーション）も選択肢。多数のサブエージェント・トークンを消費するため、明示的に依頼された時のみ起動する
 
 ---
 
