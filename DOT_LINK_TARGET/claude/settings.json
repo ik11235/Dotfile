@@ -3,7 +3,10 @@
   "cleanupPeriodDays": 90,
   "env": {
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80",
-    "CLAUDE_CODE_ENABLE_TASKS": "true"
+    "CLAUDE_CODE_ENABLE_TASKS": "true",
+    "API_TIMEOUT_MS": "1200000",
+    "MCP_TIMEOUT": "30000",
+    "MCP_TOOL_TIMEOUT": "120000"
   },
   "attribution": {
     "commit": "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>",
