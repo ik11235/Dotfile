@@ -92,6 +92,7 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "opus",
   "enableAllProjectMcpServers": true,
   "skillOverrides": {
     "best-practice": "user-invocable-only"
@@ -132,7 +133,7 @@
     "feature-dev@claude-plugins-official": true
   },
   "language": "japanese",
-  "effortLevel": "xhigh",
+  "effortLevel": "medium",
   "autoUpdatesChannel": "stable",
   "tui": "default",
   "voice": {
