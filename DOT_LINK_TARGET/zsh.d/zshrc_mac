@@ -29,6 +29,14 @@ fi
 should_exec_fish() {
   [[ -o interactive ]] || return 1
 
+  # stdout が tty でない場合は env/PATH 収集目的で spawn された "対話シェル"。
+  # ここで exec fish すると渡されたコマンドが実行されず空応答になり、
+  # 呼び出し元（paseo / VS Code 等の Electron アプリの shellEnv 取り込み）が
+  # PATH 解決に失敗するためスキップする
+  [[ -t 1 ]] || return 1
+  # Electron 系アプリの env プローブ（spawnSync で ELECTRON_RUN_AS_NODE=1 が立つ）を除外（保険）
+  [[ -n "$ELECTRON_RUN_AS_NODE" ]] && return 1
+
   case "$TERM_PROGRAM" in
     vscode) return 1 ;;  # VS Code / Cursor
   esac
