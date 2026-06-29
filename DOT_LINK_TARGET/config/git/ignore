@@ -20,5 +20,8 @@
 .envrc
 .env
 
+# Python
+__pycache__/
+
 **/.claude/settings.local.json
 **/.claude.json
