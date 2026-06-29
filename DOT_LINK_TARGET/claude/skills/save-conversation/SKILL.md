@@ -6,7 +6,19 @@ allowed-tools: Bash(*), Write(*), Read(*)
 
 # Save Conversation
 
-現在の会話を `${cwd}/${session_uuid}/` に保存する。機械的な処理（セッション特定・ハードリンク・会話ログ抽出・MD組み立て）はすべて同梱スクリプトが行う。**あなたが書くのはタイトルと Summary だけ**。会話ログ全文を自分で再生成しないこと — それがこのスキルの高速さの理由であり、生ログ jsonl も完全な形でハードリンク保全される。
+現在の会話を保存する。機械的な処理（セッション特定・ハードリンク・会話ログ抽出・MD組み立て）はすべて同梱スクリプトが行う。**あなたが書くのはタイトルと Summary だけ**。会話ログ全文を自分で再生成しないこと — それがこのスキルの高速さの理由であり、生ログ jsonl も完全な形でハードリンク保全される。
+
+## 保存先の決定（引数の解釈）
+
+`/save-conversation` に渡された引数で保存先が決まる。Step 2 のスクリプト呼び出しにそのまま反映する。
+
+| 引数 | 保存先 | スクリプト引数 |
+| --- | --- | --- |
+| なし | `${cwd}/${session_uuid}/`（従来挙動） | `--dest` 不要 |
+| `vault`（typo の `valut` も可） | 環境変数 `CLAUDE_SAVE_CONV_VAULT_DIR` が指す保存先（未設定ならスクリプトがエラー終了） | `--dest vault` |
+| 上記以外の文字列 | その文字列を PATH とみなして保存（従来の PATH 指定挙動） | `--dest "<引数>"` |
+
+`vault` の実パスはスクリプトには埋め込まず、環境変数 `CLAUDE_SAVE_CONV_VAULT_DIR`（zshrc 等のシェル設定で定義）で与える。キーワード解決はスクリプト側で行うので、引数の値をそのまま `--dest` に渡せばよい。生ログ jsonl の探索元は保存先と独立して常に実 cwd から導出されるため、別ディレクトリで起動したセッションを vault に集約しても正しくハードリンクされる。
 
 ## Step 1: タイトルを決め、Summary を書く
 
@@ -24,13 +36,16 @@ allowed-tools: Bash(*), Write(*), Read(*)
 python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
   --title "<タイトル>" \
   --summary-file "/tmp/save-conv-summary-$CLAUDE_CODE_SESSION_ID.md"
+  # 保存先を指定する場合は上記に --dest を足す（上表参照）:
+  #   vault 保存: --dest vault
+  #   PATH 指定:  --dest "/path/to/save"
 ```
 
 スクリプトが自動で行うこと:
 
 - セッション特定: `$CLAUDE_CODE_SESSION_ID` → なければ `~/.claude/projects/<encoded-cwd>/` の最新 jsonl
-- `${cwd}/${session_uuid}/` の作成と jsonl のハードリンク。既存リンクは inode を比較し、atomic rename（tmpfile → rename）でソースが置き換わった stale link は貼り直す
-- jsonl から user/assistant のテキストを抽出（tool call・thinking・system-reminder は除外）し、frontmatter + Summary + Conversation Log の MD を `${cwd}/${session_uuid}/<タイトル>.md` に書き出す
+- 保存先 `${dest}/${session_uuid}/`（`--dest` 省略時は `${cwd}`）の作成と jsonl のハードリンク。既存リンクは inode を比較し、atomic rename（tmpfile → rename）でソースが置き換わった stale link は貼り直す
+- jsonl から user/assistant のテキストを抽出（tool call・thinking・system-reminder は除外）し、frontmatter + Summary + Conversation Log の MD を `${dest}/${session_uuid}/<タイトル>.md` に書き出す
 
 オプション（通常は不要）: `--session <uuid>` `--cwd <dir>` `--project-dir <dir>`
 
