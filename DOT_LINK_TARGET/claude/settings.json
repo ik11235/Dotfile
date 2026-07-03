@@ -119,6 +119,11 @@
             "type": "command",
             "command": "f=\"$HOME/.claude/skills/best-practice/.last-run\"; if [ ! -f \"$f\" ] || [ -n \"$(find \"$f\" -mtime +14 -print 2>/dev/null)\" ]; then echo '{\"systemMessage\":\"/best-practice によるルール見直しが 2 週間以上行われていません。設定の陳腐化を防ぐため /best-practice の実行を検討してください\"}'; fi; exit 0",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "f=\"$HOME/.claude/.fewer-permission-prompts-last-run\"; if [ ! -f \"$f\" ] || [ -n \"$(find \"$f\" -mtime +30 -print 2>/dev/null)\" ]; then echo '{\"systemMessage\":\"/fewer-permission-prompts の実行から30日以上経過しています。allowlist の月次更新を検討してください（実行後: touch ~/.claude/.fewer-permission-prompts-last-run）\"}'; fi; exit 0",
+            "timeout": 5
           }
         ]
       }

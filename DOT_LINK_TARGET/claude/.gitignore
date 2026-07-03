@@ -1,4 +1,5 @@
 /.last-cleanup
+/.fewer-permission-prompts-last-run
 /.credentials.json
 /backups/
 /cache/
