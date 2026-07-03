@@ -25,3 +25,7 @@
 
 # Skill workspaces (runtime-generated)
 /skills/*-workspace/
+
+# Runtime artifacts
+__pycache__/
+*.bak
