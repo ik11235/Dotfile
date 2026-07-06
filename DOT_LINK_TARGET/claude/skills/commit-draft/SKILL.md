@@ -1,6 +1,6 @@
 ---
 name: commit-draft
-description: 未コミットのdiffを分析し、Claude Code内で「!」付きで即実行できるgit commitコマンドを生成する
+description: 未コミットのdiffを分析し、Claude Code内で「!」付きで即実行できるgit commit（＋push）コマンドを生成する
 user-invocable: true
 disable-model-invocation: true
 allowed-tools:
@@ -205,6 +205,16 @@ EOF
 ```
 
 シェルスクリプト内ではheredoc（`<<'EOF'`）が使えるため、`git commit -F -` でstdinからメッセージを読み取る形式にする。`-m` 連結より見やすく、改行や空行の制御も自然にできる。1行メッセージの場合のみ `-m` を使う。
+
+#### push の同梱
+
+コミット後の `!git push` 手打ちを不要にするため、**リモート（origin）が存在するリポジトリでは、スクリプト末尾に push を既定で含める**。
+
+- 現在ブランチに upstream が未設定なら `git push -u origin <branch>`、設定済みなら `git push`
+- 複数コミットに分割する場合は**最後のスクリプトにのみ** push を付ける（途中で失敗したら push されないように）
+- 含めないケース: ユーザーが push 不要と明示した場合／リモートが無い場合／detached HEAD
+- 手順1のコマンドに `git -C "$ROOT" remote` と `git -C "$ROOT" rev-parse --abbrev-ref @{upstream}` の確認を足すと1往復で判定できる（upstream 未設定はエラーになるだけでよい）
+- スクリプト表示時に「push まで実行します」と一言添える
 
 #### prepare-commit-msg hookへの対応
 
