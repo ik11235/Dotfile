@@ -15,7 +15,8 @@ Think in English, interact with the user in Japanese.
 ## タスク管理
 
 - **Todoist の専用プロジェクト「claude code」（id は環境変数 `TODOIST_CLAUDE_PROJECT_ID`）を計画と進捗の単一ソースとする**
-- タスクの登録書式・セッション復元情報の併設・操作ツールの使い分けは todoist-task-with-resume skill に従う
+- **Todoist への書き込みはこの専用プロジェクト配下のみ**（他は Read-Only、書き込みは明示確認後）
+- 登録書式・復元情報・操作ツールの使い分けは todoist-task-with-resume skill に従う
 - ローカル `tasks/todo.md` を使うのは、明示依頼時 or Todoist が使えない環境のみ
 
 ## コア原則
@@ -27,15 +28,6 @@ Think in English, interact with the user in Japanese.
 
 ## Git / PR
 
-- PR マージ依頼時のデフォルトは **merge コミット** (`gh pr merge <PR> --merge`)。`--squash` / `--rebase` はユーザーの明示指示があった場合のみ。`--delete-branch` は併用してよい
-
-## MCP 共通ルール
-
-### Todoist MCP
-
-- **書き込み許可は専用プロジェクト「claude code」（`TODOIST_CLAUDE_PROJECT_ID`）配下のみ**。それ以外は Read-Only とし、他プロジェクトへの書き込みが必要な場合は必ず明示確認を取ってから実行
-- ID の実値は `echo $TODOIST_CLAUDE_PROJECT_ID` で取得。未設定なら使用前にユーザーに確認
-- 期日変更・並べ替えは `reschedule-tasks` / `reorder-objects` を使う（`update-tasks` で due を書き換えると recurrence が壊れる）
-- 参照系（find-* / fetch / get-* / search / analyze-* など）はプロジェクト横断で自由に利用可
+- PR マージの既定は **merge コミット**。`--squash` / `--rebase` は明示指示時のみ。`--delete-branch` は併用可
 
 [^workflow-ref]: ワークフロー設計は https://qiita.com/uno_ha07/items/5820d195510861b5be71 を参考にしている。
