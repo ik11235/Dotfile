@@ -11,15 +11,15 @@
 モデル側はタイトルと Summary 本文（--summary-file）だけ用意すればよい。
 
 保存先の決め方:
-  デフォルトは ${cwd}/${uuid}/。--dest で保存先ルートを上書きできる。
-  --dest に "vault"（typo の "valut" も可）を渡すと環境変数 CLAUDE_SAVE_CONV_VAULT_DIR
-  が指す保存先に保存する（未設定ならエラー終了）。生ログ jsonl の探索元は常に実際の
-  セッション cwd（--cwd / --project-dir）から導出するため、別ディレクトリで起動した
-  セッションを vault に集約しても正しくハードリンクされる。
+  デフォルト（--dest 省略時）は環境変数 CLAUDE_SAVE_CONV_VAULT_DIR が指す vault 保存先
+  （未設定ならエラー終了）。"vault"（typo の "valut" も可）を明示しても同じ。
+  --dest に "pwd" を渡すと ${cwd}/${uuid}/ に保存する（旧デフォルト挙動）。
+  生ログ jsonl の探索元は常に実際のセッション cwd（--cwd / --project-dir）から導出する
+  ため、別ディレクトリで起動したセッションを vault に集約しても正しくハードリンクされる。
 
 usage:
   save_conversation.py --title "会話のタイトル" --summary-file /tmp/summary.md
-  save_conversation.py --title "..." --summary-file ... --dest vault
+  save_conversation.py --title "..." --summary-file ... --dest pwd
   save_conversation.py --title "..." --summary-file ... --dest /path/to/save
   save_conversation.py --title "..." --summary-file ... --session <uuid> --cwd <dir> --project-dir <dir>
 """
@@ -41,23 +41,26 @@ UUID_RE = re.compile(
 VAULT_DIR_ENV = "CLAUDE_SAVE_CONV_VAULT_DIR"
 # vault 保存を要求するキーワード（typo 許容）
 VAULT_KEYWORDS = {"vault", "valut"}
+# cwd 保存（旧デフォルト挙動）を要求するキーワード
+PWD_KEYWORDS = {"pwd"}
 
 
 def resolve_dest(dest: str | None, cwd: str) -> str:
     """保存先ルートを解決する。
 
-    - None: 従来挙動。cwd 直下に保存。
-    - "vault" / "valut"（大小無視）: $CLAUDE_SAVE_CONV_VAULT_DIR。未定義ならエラー終了。
+    - None / "vault" / "valut"（大小無視）: $CLAUDE_SAVE_CONV_VAULT_DIR。未定義ならエラー終了。
+    - "pwd"（大小無視）: cwd 直下に保存（旧デフォルト挙動）。
     - それ以外: PATH とみなしてそのパスを保存先にする（従来の PATH 指定挙動を保持）。
     """
-    if dest is None:
+    keyword = dest.strip().lower() if dest is not None else None
+    if keyword in PWD_KEYWORDS:
         return cwd
-    if dest.strip().lower() in VAULT_KEYWORDS:
+    if keyword is None or keyword in VAULT_KEYWORDS:
         vault_dir = os.environ.get(VAULT_DIR_ENV)
         if not vault_dir:
             sys.exit(
                 f"error: vault 保存先が未定義です。環境変数 {VAULT_DIR_ENV} に "
-                "vault の保存先パスを設定してください"
+                "vault の保存先パスを設定してください（cwd に保存したい場合は --dest pwd）"
             )
         return os.path.abspath(os.path.expanduser(vault_dir))
     return os.path.abspath(os.path.expanduser(dest))
@@ -218,8 +221,8 @@ def main() -> None:
     ap.add_argument("--cwd", default=os.getcwd(),
                     help="セッションの実 cwd（生ログ jsonl の探索元の導出に使う）")
     ap.add_argument("--dest", default=None,
-                    help='保存先ルート。"vault"/"valut" で Obsidian Vault 配下、'
-                         "それ以外は PATH とみなす。省略時は --cwd 直下")
+                    help='保存先ルート。省略時と "vault"/"valut" は Obsidian Vault 配下、'
+                         '"pwd" は --cwd 直下、それ以外は PATH とみなす')
     ap.add_argument("--project-dir", default=None,
                     help="セッション jsonl のあるディレクトリ（デフォルト: ~/.claude/projects/<encoded-cwd>）")
     args = ap.parse_args()
