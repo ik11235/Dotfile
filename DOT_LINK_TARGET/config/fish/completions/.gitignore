@@ -1,0 +1,6 @@
+# fisher・各ツールのインストーラが配置する再生成可能な補完のみ置かれる想定
+# （fish本体の自動生成先は ~/.local/share/fish/generated_completions/ で別）
+*.fish
+
+# 手書き補完を追加したら以下のように例外指定する
+# !my-completion.fish
