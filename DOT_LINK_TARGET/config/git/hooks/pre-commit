@@ -64,9 +64,18 @@ for prohibited_word in "${prohibited_word_list[@]}"; do
   echo $prohibited_word | grep '^\s*$' >/dev/null && continue
 
   for file in $(git diff --cached --name-only); do
-    result=$(git diff --cached -U0 -- $file | grep -i "${prohibited_word}")
+    # 追加行(+)のみチェック。削除行(-)は元々含まれていたものを消すだけなので許容する
+    # ファイルヘッダは必ず "+++ " (スペース付き) なので、"++i" のような追加行を誤除外しない
+    result=$(git diff --cached -U0 -- $file | grep '^+' | grep -v '^+++ ' | grep -i "${prohibited_word}")
     if [ $? -eq 0 ]; then
       prohibited_word_check=$(echo -e "${prohibited_word_check}\n${file}\n${result}\n")
+    fi
+  done
+
+  # ファイル名のチェック（新規追加・リネーム先のパスのみ。削除は許容する）
+  for file in $(git diff --cached --name-only --diff-filter=AR); do
+    if echo "$file" | grep -qi "${prohibited_word}"; then
+      prohibited_word_check=$(echo -e "${prohibited_word_check}\nfilename: ${file}\n")
     fi
   done
 done
