@@ -2,6 +2,7 @@
 name: save-conversation
 description: Save conversation logs with summary and hard links to raw session logs. Use when the user invokes /save-conversation or asks to save, archive, or persist the current conversation/session log (「会話を保存」「ログを保存」「このセッションを記録して」など). Hard-links the raw jsonl and generates a summary markdown via a bundled script — do not hand-write the conversation log.
 allowed-tools: Bash(*), Write(*), Read(*)
+model: sonnet
 ---
 
 # Save Conversation
@@ -57,6 +58,13 @@ python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
 ```
 セッション名を変更するには以下を実行してください:
 /rename <タイトル>
+```
+
+あわせて、このskillはコスト削減のため `model: sonnet` を指定しており、実行後は会話モデルが Sonnet に切り替わったままになる。**報告の最後に必ず以下の警告を表示する**（セッション途中で保存した場合、後続の会話が意図せず Sonnet で続くのを防ぐため）:
+
+```
+⚠️ このskillの実行で会話モデルが sonnet に切り替わっています。
+会話を続ける場合は /model で元のモデルに戻してください（例: /model fable）。
 ```
 
 ## トラブルシューティング

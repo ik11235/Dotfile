@@ -2,6 +2,7 @@
 name: commit-draft
 description: 未コミットのdiffを分析し、Claude Code内で「!」付きで即実行できるgit commit（＋push）コマンドを生成する
 user-invocable: true
+model: sonnet
 disable-model-invocation: true
 allowed-tools:
   - "Bash(git -C * status*)"
