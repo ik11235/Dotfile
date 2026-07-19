@@ -137,11 +137,20 @@
     "slack@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "feature-dev@claude-plugins-official": true
+    "feature-dev@claude-plugins-official": true,
+    "i-have-adhd@i-have-adhd": true
+  },
+  "extraKnownMarketplaces": {
+    "i-have-adhd": {
+      "source": {
+        "source": "directory",
+        "path": "$HOME/ghq/github.com/ayghri/i-have-adhd"
+      }
+    }
   },
   "language": "japanese",
-  "effortLevel": "medium",
   "alwaysThinkingEnabled": true,
+  "effortLevel": "medium",
   "autoUpdatesChannel": "stable",
   "tui": "default",
   "voice": {
