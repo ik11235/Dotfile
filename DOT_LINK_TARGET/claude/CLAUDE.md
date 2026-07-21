@@ -29,5 +29,6 @@ Think in English, interact with the user in Japanese.
 ## Git / PR
 
 - PR マージの既定は **merge コミット**。`--squash` / `--rebase` は明示指示時のみ。`--delete-branch` は併用可
+- **ブランチを切って作業する場合は worktree を使う**（全リポジトリ共通）。同一ディレクトリを複数エージェントが操作して編集が衝突するのを防ぐため、元の working tree で checkout せず、EnterWorktree またはサブエージェントの `isolation: "worktree"` で分離する。作業完了後は worktree の後始末（マージ/push 後の削除）まで行う
 
 [^workflow-ref]: ワークフロー設計は https://qiita.com/uno_ha07/items/5820d195510861b5be71 を参考にしている。
