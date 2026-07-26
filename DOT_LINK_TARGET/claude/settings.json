@@ -166,6 +166,7 @@
   },
   "language": "japanese",
   "alwaysThinkingEnabled": true,
+  "showThinkingSummaries": true,
   "effortLevel": "medium",
   "autoUpdatesChannel": "stable",
   "tui": "default",
