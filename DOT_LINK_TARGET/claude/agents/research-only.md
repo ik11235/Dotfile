@@ -3,6 +3,7 @@ name: research-only
 description: 副作用ゼロのリサーチ専門エージェント。コードベース・ドキュメント・Web 横断の調査に PROACTIVELY 使う。書込みや実行が必要ない調査タスク全般に最適
 model: haiku
 tools: Read, Grep, Glob, WebFetch, WebSearch
+maxTurns: 40
 color: cyan
 ---
 
