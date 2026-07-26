@@ -66,6 +66,9 @@
     "deny": [
       "Bash(sudo *)",
       "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(rm -Rf *)",
+      "Bash(rm -fR *)",
       "Read(.env*)",
       "Read(**/.env)",
       "Read(**/.env.*)",
