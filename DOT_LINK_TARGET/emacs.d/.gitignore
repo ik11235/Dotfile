@@ -8,3 +8,5 @@ transient/
 ac-comphist.dat
 network-security.data
 recentf
+
+custom.el
