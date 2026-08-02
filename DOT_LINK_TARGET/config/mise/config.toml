@@ -1,8 +1,8 @@
 [tools]
 go = "1.24.5"
 python = "3.13.5"
-ruby = "3.4.4"
-node = "24.4.0"
+ruby = "4.0.6"
+node = "24.18.0"
 direnv = "2.37.0"
 gemini-cli = "latest"
 
