@@ -20,6 +20,7 @@ dotfile
 - ターミナル補助: tmux
 - Git / GitHub CLI: `~/.config/git/config`, `~/.config/gh/config.yml`
 - Claude Code: `~/.claude/` 以下 (`CLAUDE.md` / `settings.json` / `commands` / `skills`)
+- Codex: `~/.codex/` 以下。共有設定は `config.template.toml`、実際の `config.toml` と実行時状態はマシンごとに管理する
 - その他: `.editorconfig`, direnv, Brewfile (macOS)
 
 # インストール
