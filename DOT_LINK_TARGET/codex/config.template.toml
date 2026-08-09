@@ -1,0 +1,16 @@
+# Codex の設定テンプレート（Git 管理する）。
+#
+# Codex が実際に読むのは ~/.codex/config.toml である。このテンプレートの
+# 必要な設定を、ローカルの config.toml へ手動で反映して利用する。
+#
+# config.toml には Codex がプロジェクトごとの信頼状態を次のように保存する。
+#
+#   [projects."/Users/<user>/path/to/repository"]
+#   trust_level = "trusted"
+#
+# これはマシン固有の絶対パスを含むため、config.toml 自体は Git 管理しない。
+# 既存の [projects.*] を消さずに、このテンプレートの共有設定だけを追記する。
+
+# Claude Code と併用するリポジトリでは、AGENTS.md がない場合に
+# 既存の CLAUDE.md をプロジェクト指示として読み込む。
+project_doc_fallback_filenames = ["CLAUDE.md"]

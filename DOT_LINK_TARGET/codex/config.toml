@@ -1,7 +1,0 @@
-# Codex のグローバル設定。
-# モデル・権限・MCP など環境依存の設定はここへ安易に固定せず、
-# 各マシンで必要性が確認できたものだけ追加する。
-
-# Claude Code と併用するリポジトリでは、AGENTS.md がない場合に
-# 既存の CLAUDE.md をプロジェクト指示として読み込む。
-project_doc_fallback_filenames = ["CLAUDE.md"]
