@@ -1,0 +1,5 @@
+# Codex runtime state and the active local configuration are machine-specific.
+*
+!.gitignore
+!AGENTS.md
+!config.template.toml
