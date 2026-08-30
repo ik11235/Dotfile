@@ -1,0 +1,9 @@
+# Cloudflare-provided skills (installed locally; do not commit)
+agents-sdk/
+cloudflare*/
+durable-objects/
+sandbox-*/
+turnstile-spin/
+web-perf/
+workers-best-practices/
+wrangler/
