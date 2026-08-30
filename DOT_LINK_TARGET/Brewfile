@@ -1,98 +1,183 @@
 tap "homebrew/command-not-found"
 tap "ynqa/tap"
 tap "yt-dlp/taps"
+# Static analysis and lint tool, for (ba)sh scripts
 brew "shellcheck"
+# Download with resuming and segmented downloading
 brew "aria2"
+# Spell checker with better logic than ispell
 brew "aspell"
+# Automatically restart SSH sessions and tunnels
 brew "autossh"
+# Official Amazon AWS command-line interface
 brew "awscli"
+# Cloudflare Tunnel client (formerly Argo Tunnel)
 brew "cloudflared"
+# Dependency manager for Cocoa projects
 brew "cocoapods"
+# GNU File, Shell, and Text utilities
 brew "coreutils"
+# Get a file from an HTTP, HTTPS or FTP server
 brew "curl"
+# Test various flash cards
 brew "f3"
+# Identify or delete duplicate files
 brew "fdupes"
+# Play, record, convert, and stream select audio and video codecs
 brew "ffmpeg"
+# Collection of GNU find, xargs, and locate
 brew "findutils"
+# User-friendly command-line shell for UNIX-like operating systems
 brew "fish"
+# Command-line fuzzy finder written in Go
 brew "fzf"
+# GitHub command-line tool
 brew "gh"
+# Remote repository management made easy
 brew "ghq"
+# Distributed revision control system
 brew "git"
+# Enable transparent encryption/decryption of files in a git repo
 brew "git-crypt"
+# GNU Privacy Guard (OpenPGP)
 brew "gnupg"
+# Graph visualization software from AT&T and Bell Labs
 brew "graphviz"
+# Tools and libraries to manipulate images in select formats
 brew "imagemagick"
+# Utility to optimize JPEG files
 brew "jpegoptim"
+# Lightweight and flexible command-line JSON processor
 brew "jq"
+# Utility for directing compilation
 brew "make"
+# Mac App Store command-line interface
 brew "mas"
+# Replacement for ls, cp and other commands for object storage
 brew "minio-mc"
+# Polyglot runtime manager (asdf rust clone)
 brew "mise"
+# Improved JPEG encoder
 brew "mozjpeg"
+# Protocol buffers (Google's data interchange format)
 brew "protobuf"
+# Open source relational database management system
 brew "mysql"
+# Network Kanji code conversion Filter (NKF)
 brew "nkf"
+# Port scanning utility for large networks
 brew "nmap"
+# Development kit for the Java programming language
 brew "openjdk"
+# 7-Zip (high compression file archiver) implementation
 brew "p7zip"
+# Simplistic interactive filtering tool
 brew "peco"
+# Pinentry for GPG on Mac
 brew "pinentry-mac"
 brew "redpen"
+# Perl-powered file rename script with many helpful built-ins
 brew "rename"
+# CLI proxy to minimize LLM token consumption
 brew "rtk"
+# Build tool for Scala projects
 brew "sbt"
+# JVM-based programming language
 brew "scala"
+# Display and control your Android device
 brew "scrcpy"
+# Proxy server that works as a poor man's VPN
 brew "sshuttle"
+# User interface to the TELNET protocol
 brew "telnet"
+# Text interface for Git repositories
 brew "tig"
+# Terminal multiplexer
 brew "tmux"
+# Display directories as trees (with optional color/HTML output)
 brew "tree"
+# Sends magic packets to wake up network-devices
 brew "wakeonlan"
+# Watch files and take action when they change
 brew "watchman"
+# PDF viewer
 brew "xpdf"
+# Feature-rich command-line audio/video downloader
 brew "yt-dlp"
 brew "ynqa/tap/jnv"
+# Transfer files from and to an Android smartphone
 cask "android-file-transfer"
+# Android SDK component
 cask "android-platform-tools"
+# Chromium based browser
 cask "arc"
+# Audio utility
 cask "background-music"
+# App for managing battery charging. (Also installs a CLI on first use.)
 cask "battery"
+# Display management tool
 cask "betterdisplay"
+# Web browser focusing on privacy
 cask "brave-browser"
 cask "calibre"
+# Terminal-based AI coding assistant
 cask "claude-code@latest"
+# AI code review CLI
 cask "coderabbit"
+# OpenAI's coding agent that runs in your terminal
 cask "codex"
+# Write, edit, and chat about your code with AI
 cask "cursor"
+# Voice and text chat software
 cask "discord"
+# App to build and share containerised applications and microservices
 cask "docker-desktop"
+# GNU Emacs text editor
 cask "emacs-app"
+# Set of tools to manage resources and applications hosted on Google Cloud
 cask "gcloud-cli"
+# Web browser
 cask "google-chrome"
+# Web browser
 cask "google-chrome@canary"
+# Japanese input software
 cask "google-japanese-ime"
+# Terminal emulator as alternative to Apple's Terminal app
 cask "iterm2"
+# JetBrains tools manager
 cask "jetbrains-toolbox"
+# Menu bar manager
 cask "jordanbaird-ice"
+# Password manager app
 cask "keepassxc"
 cask "kindle"
+# Software for Loupedeck consoles
 cask "loupedeck"
 cask "melonbooksviewer"
+# Open-source software for live streaming and screen recording
 cask "obs"
+# Knowledge base that works on top of a local folder of plain text Markdown files
 cask "obsidian"
 cask "phantomjs"
+# Control your tools with a few keystrokes
 cask "raycast"
+# MySQL/MariaDB database management
 cask "sequel-ace"
 cask "skitch"
+# Team communication and collaboration software
 cask "slack@beta"
+# Video game digital distribution service
 cask "steam"
+# Store, share and access files from anywhere
 cask "sync"
 cask "visual-studio-code@insiders"
+# Web browser with built-in email client focusing on customization and control
 cask "vivaldi"
+# Multimedia player
 cask "vlc"
+# Rust-based terminal
 cask "warp"
 cask "windsurf"
+# Open-source version of the X.Org X Window System
 cask "xquartz"
 mas "Windows App", id: 1295203466
