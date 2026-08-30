@@ -8,4 +8,3 @@ about this topic, using a HTML artifact
 with big pictures and few words.
 
 Topic: $ARGUMENTS
-
