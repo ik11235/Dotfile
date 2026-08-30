@@ -119,7 +119,10 @@ cask "battery"
 cask "betterdisplay"
 # Web browser focusing on privacy
 cask "brave-browser"
+# E-books management software
 cask "calibre"
+# Anthropic's official Claude AI desktop app
+cask "claude"
 # Terminal-based AI coding assistant
 cask "claude-code@latest"
 # AI code review CLI
@@ -158,6 +161,10 @@ cask "melonbooksviewer"
 cask "obs"
 # Knowledge base that works on top of a local folder of plain text Markdown files
 cask "obsidian"
+# Programmable solid 3D CAD modeller
+cask "openscad@snapshot"
+# Self-hosted daemon for AI coding agents
+cask "paseo"
 cask "phantomjs"
 # Control your tools with a few keystrokes
 cask "raycast"
@@ -170,6 +177,7 @@ cask "slack@beta"
 cask "steam"
 # Store, share and access files from anywhere
 cask "sync"
+# Open-source code editor
 cask "visual-studio-code@insiders"
 # Web browser with built-in email client focusing on customization and control
 cask "vivaldi"
