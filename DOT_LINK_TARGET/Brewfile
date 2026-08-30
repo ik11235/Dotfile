@@ -132,6 +132,8 @@ cask "coderabbit"
 cask "codex"
 # Write, edit, and chat about your code with AI
 cask "cursor"
+# Agentic IDE with AI agent command center
+cask "devin-desktop"
 # Voice and text chat software
 cask "discord"
 # App to build and share containerised applications and microservices
@@ -186,7 +188,6 @@ cask "vivaldi"
 cask "vlc"
 # Rust-based terminal
 cask "warp"
-cask "windsurf"
 # Open-source version of the X.Org X Window System
 cask "xquartz"
 mas "Windows App", id: 1295203466
