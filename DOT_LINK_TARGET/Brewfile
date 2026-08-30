@@ -39,6 +39,8 @@ brew "ghq"
 brew "git"
 # Enable transparent encryption/decryption of files in a git repo
 brew "git-crypt"
+# Git extension for versioning large files
+brew "git-lfs"
 # GNU Privacy Guard (OpenPGP)
 brew "gnupg"
 # Graph visualization software from AT&T and Bell Labs
