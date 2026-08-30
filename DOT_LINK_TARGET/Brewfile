@@ -104,7 +104,8 @@ brew "watchman"
 brew "xpdf"
 # Feature-rich command-line audio/video downloader
 brew "yt-dlp"
-brew "ynqa/tap/jnv"
+# JSON navigator and interactive filter leveraging jq
+brew "ynqa/tap/jnv", trusted: true
 # Transfer files from and to an Android smartphone
 cask "android-file-transfer"
 # Android SDK component
