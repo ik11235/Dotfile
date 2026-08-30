@@ -79,7 +79,6 @@ brew "p7zip"
 brew "peco"
 # Pinentry for GPG on Mac
 brew "pinentry-mac"
-brew "redpen"
 # PNG image optimizing utility
 brew "pngquant"
 # Perl-powered file rename script with many helpful built-ins
