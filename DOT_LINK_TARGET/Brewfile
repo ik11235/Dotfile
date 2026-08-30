@@ -71,6 +71,8 @@ brew "nkf"
 brew "nmap"
 # Development kit for the Java programming language
 brew "openjdk"
+# Multithreaded PNG optimizer written in Rust
+brew "oxipng"
 # 7-Zip (high compression file archiver) implementation
 brew "p7zip"
 # Simplistic interactive filtering tool
@@ -78,6 +80,8 @@ brew "peco"
 # Pinentry for GPG on Mac
 brew "pinentry-mac"
 brew "redpen"
+# PNG image optimizing utility
+brew "pngquant"
 # Perl-powered file rename script with many helpful built-ins
 brew "rename"
 # CLI proxy to minimize LLM token consumption
