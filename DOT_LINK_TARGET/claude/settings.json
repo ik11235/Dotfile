@@ -10,10 +10,6 @@
   },
   "permissions": {
     "allow": [
-      "Bash(git -C * status*)",
-      "Bash(git -C * diff*)",
-      "Bash(git -C * log*)",
-      "Bash(git -C * rev-parse*)",
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)",
@@ -33,8 +29,8 @@
       "Bash(npm run lint)",
       "Bash(npx tsc --noEmit*)",
       "Bash(npx prettier --check*)",
-      "Bash(git -C * show*)",
-      "Bash(git -C * remote -v*)",
+      "Bash(git show *)",
+      "Bash(git remote -v*)",
       "Bash(nix *)",
       "Bash(home-manager *)",
       "Read(/tmp/commit-draft*)",
