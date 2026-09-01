@@ -1,9 +1,9 @@
 [tools]
-go = "1.24.5"
-python = "3.13.5"
+go = "1.27.0"
+python = "3.14.7"
 ruby = "4.0.6"
-node = "24.18.0"
-direnv = "2.37.0"
+node = "26.8.1"
+direnv = "2.37.1"
 gemini-cli = "latest"
 
 [settings]
