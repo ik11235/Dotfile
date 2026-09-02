@@ -1,7 +1,13 @@
 ---
 name: save-conversation
 description: Save conversation logs with summary and hard links to raw session logs. Use when the user invokes /save-conversation or asks to save, archive, or persist the current conversation/session log (「会話を保存」「ログを保存」「このセッションを記録して」など). Hard-links the raw jsonl and generates a summary markdown via a bundled script — do not hand-write the conversation log.
-allowed-tools: Bash(*), Write(*), Read(*)
+allowed-tools:
+  - "Bash(python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py*)"
+  - "Bash(mktemp*)"
+  - "Bash(mkdir *)"
+  - "Bash(ln *)"
+  - "Read(/tmp/*)"
+  - "Write(/tmp/*)"
 model: sonnet
 ---
 

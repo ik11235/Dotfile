@@ -3,7 +3,6 @@
   "cleanupPeriodDays": 90,
   "env": {
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80",
-    "CLAUDE_CODE_ENABLE_TASKS": "true",
     "API_TIMEOUT_MS": "1200000",
     "MCP_TIMEOUT": "30000",
     "MCP_TOOL_TIMEOUT": "120000"
@@ -195,5 +194,19 @@
   },
   "showThinkingSummaries": true,
   "theme": "auto",
-  "preferredNotifChannel": "iterm2"
+  "preferredNotifChannel": "iterm2",
+  "autoMode": {
+    "environment": [
+      "Source control: github.com/ik11235 and repos under it, cloned via ghq into ~/ghq/github.com/"
+    ],
+    "soft_deny": [
+      "$defaults",
+      "Never write to Todoist outside the 'claude code' project (id in $TODOIST_CLAUDE_PROJECT_ID); other Todoist projects are read-only unless the user explicitly confirms in the current turn",
+      "Never run git checkout or git switch to another branch in the main working tree; create a git worktree instead",
+      "Never merge a PR with --squash or --rebase unless the user explicitly asks"
+    ],
+    "hard_deny": [
+      "Never send Slack messages, create or update Jira issues, or create or update Notion pages unless the user explicitly asks for that specific action in the current turn"
+    ]
+  }
 }
