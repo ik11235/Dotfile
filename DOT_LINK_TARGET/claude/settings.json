@@ -114,7 +114,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "claude-fable-5-1[1m]",
   "enableAllProjectMcpServers": false,
   "skillOverrides": {
     "best-practice": "user-invocable-only"
