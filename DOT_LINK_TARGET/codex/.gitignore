@@ -6,3 +6,4 @@
 !skills/
 skills/*
 !skills/save-conversation
+!skills/commit-draft

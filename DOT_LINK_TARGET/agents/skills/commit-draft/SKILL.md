@@ -1,6 +1,6 @@
 ---
 name: commit-draft
-description: 未コミットのdiffを分析し、Claude Code内で「!」付きで即実行できるgit commit（＋push）コマンドを生成する
+description: 未コミットのdiffを分析し、Claude Code または Codex で実行できる git commit（＋push）スクリプトを生成する
 user-invocable: true
 model: sonnet
 disable-model-invocation: true
@@ -21,7 +21,7 @@ allowed-tools:
 
 # commit-draft — diffからコミットコマンドを生成
 
-未コミットの変更を分析し、Claude Codeのプロンプトに `!` 付きで貼り付けて即実行できるコミットコマンドを出力する。
+未コミットの変更を分析し、Claude Code または Codex で確認・実行できるコミットスクリプトを出力する。
 
 ## 手順
 
@@ -136,7 +136,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 
 #### 出力方式
 
-Claude Codeの `!` プレフィックスは内部で `(eval)` を使うため、heredocや複数行の入力は動作しない。また、長い1行コマンドを直接表示すると、ターミナル幅で折り返し＋インデントが入りコピペが壊れる。
+Claude Code の `!` プレフィックスは内部で `(eval)` を使うため、heredoc や複数行の入力は動作しない。また、長い1行コマンドを直接表示すると、ターミナル幅で折り返し＋インデントが入りコピペが壊れる。
 
 この問題を回避するため、**コマンドをシェルスクリプトに書き出し、短い実行コマンドを提示する**方式を取る。
 
@@ -144,9 +144,16 @@ Claude Codeの `!` プレフィックスは内部で `(eval)` を使うため、
 
 1. まずReadツールで `/tmp/commit-draft.sh` を読み込む（存在しなくてもエラーが返るだけでよい。Writeツールは事前にReadが必要なため）。その後Writeツールでシェルスクリプトを書き出す
 2. スクリプトの中身をコードブロックでユーザーに表示する（何が実行されるか確認できるようにするため）
-3. 実行用の短いコマンドを提示する:
+3. 実行環境に応じた短いコマンドを提示する:
+
+Claude Code:
 ```
 ! bash /tmp/commit-draft.sh
+```
+
+Codex:
+```bash
+bash /tmp/commit-draft.sh
 ```
 
 #### スクリプトの書き方
