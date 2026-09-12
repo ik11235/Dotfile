@@ -3,3 +3,6 @@
 !.gitignore
 !AGENTS.md
 !config.template.toml
+!skills/
+skills/*
+!skills/save-conversation

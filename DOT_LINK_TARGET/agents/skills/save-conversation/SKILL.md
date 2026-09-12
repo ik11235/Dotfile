@@ -1,6 +1,6 @@
 ---
 name: save-conversation
-description: Save conversation logs with summary and hard links to raw session logs. Use when the user invokes /save-conversation or asks to save, archive, or persist the current conversation/session log (「会話を保存」「ログを保存」「このセッションを記録して」など). Hard-links the raw jsonl and generates a summary markdown via a bundled script — do not hand-write the conversation log.
+description: Save Claude Code or Codex conversation logs with summary and hard links to raw session logs. Use when the user invokes /save-conversation or asks to save, archive, or persist the current conversation/session log (「会話を保存」「ログを保存」「このセッションを記録して」など). Hard-links the raw jsonl and generates a summary markdown — do not hand-write the conversation log.
 allowed-tools:
   - "Bash(python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py*)"
   - "Bash(mktemp*)"
@@ -13,7 +13,7 @@ model: sonnet
 
 # Save Conversation
 
-現在の会話を保存する。機械的な処理（セッション特定・ハードリンク・会話ログ抽出・MD組み立て）はすべて同梱スクリプトが行う。**あなたが書くのはタイトルと Summary だけ**。会話ログ全文を自分で再生成しないこと — それがこのスキルの高速さの理由であり、生ログ jsonl も完全な形でハードリンク保全される。
+現在の Claude Code または Codex 会話を保存する。機械的な処理（セッション特定・ハードリンク・会話ログ抽出・MD組み立て）はすべて同梱スクリプトが行う。**あなたが書くのはタイトルと Summary だけ**。会話ログ全文を自分で再生成しないこと — 生ログ jsonl を完全な形でハードリンク保全する。
 
 ## 保存先の決定（引数の解釈）
 
@@ -40,6 +40,8 @@ model: sonnet
 
 ## Step 2: スクリプトを実行する
 
+Claude Code では従来どおり実行する。
+
 ```bash
 python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
   --title "<タイトル>" \
@@ -49,9 +51,18 @@ python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
   #   PATH 指定: --dest "/path/to/save"
 ```
 
+Codex では `--source codex` を指定する。Codex のセッション ID が環境変数で取得できない場合、スクリプトは `~/.codex/sessions/` 内で最終更新時刻が最も新しい rollout を保存する。別セッションを指定するには `--session <thread-id>` を加える。
+
+```bash
+python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
+  --source codex \
+  --title "<タイトル>" \
+  --summary-file "/tmp/save-conv-summary-<session-id>.md"
+```
+
 スクリプトが自動で行うこと:
 
-- セッション特定: `$CLAUDE_CODE_SESSION_ID` → なければ `~/.claude/projects/<encoded-cwd>/` の最新 jsonl
+- セッション特定: Claude Code は `$CLAUDE_CODE_SESSION_ID` → `~/.claude/projects/`、Codex は `$CODEX_THREAD_ID` → `~/.codex/sessions/` の最新 rollout
 - 保存先 `${dest}/${session_uuid}/`（`--dest` 省略時は vault 保存先）の作成と jsonl のハードリンク。既存リンクは inode を比較し、atomic rename（tmpfile → rename）でソースが置き換わった stale link は貼り直す
 - jsonl から user/assistant のテキストを抽出（tool call・thinking・system-reminder は除外）し、frontmatter + Summary + Conversation Log の MD を `${dest}/${session_uuid}/<タイトル>.md` に書き出す
 
@@ -66,7 +77,7 @@ python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
 /rename <タイトル>
 ```
 
-あわせて、このskillはコスト削減のため `model: sonnet` を指定しており、実行後は会話モデルが Sonnet に切り替わったままになる。**報告の最後に必ず以下の警告を表示する**（セッション途中で保存した場合、後続の会話が意図せず Sonnet で続くのを防ぐため）:
+Claude Code で実行した場合は、このskillの `model: sonnet` 指定により会話モデルが切り替わる。**Claude Code での報告の最後にだけ**以下の警告を表示する。Codex ではこの警告を表示しない。
 
 ```
 ⚠️ このskillの実行で会話モデルが sonnet に切り替わっています。
@@ -76,4 +87,5 @@ python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
 ## トラブルシューティング
 
 - `error: project dir not found` — cwd が想定と違う。`--cwd` で保存先ディレクトリを明示する
+- Codex の保存対象が違う — `--session <thread-id>` で `~/.codex/session_index.jsonl` にある thread ID を指定する
 - スクリプトが失敗した場合のみ、旧来の手動手順（mkdir → ln → MD 手書き）にフォールバックしてよい。その際も会話ログは要点のみに留め、全文再生成はしない
