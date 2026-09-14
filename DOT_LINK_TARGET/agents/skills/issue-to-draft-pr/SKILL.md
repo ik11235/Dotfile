@@ -1,13 +1,10 @@
 ---
 name: issue-to-draft-pr
-description: >-
-  GitHub issue を起点に、影響調査 → 実装計画の承認 → ブランチ作成 → 実装 → Draft PR 作成 →
-  ゼロベースレビュー（敵対的検証つき） → 修正 → push のワークフローを最後まで自走させる。リポジトリ非依存。
-  ユーザーが issue の URL (github.com/owner/repo/issues/123)、`#123`、`owner/repo#123` を貼って
-  「これやって」「実装して」「PR まで作って」「issue 対応して」「直して」と言ったら必ずこのスキルを使う。
-  「このバグ直して」「issue から実装」「draft PR 作って」のような言い回しでも、対象が GitHub issue なら起動する。
-  issue の内容を読むだけ・要約するだけ・質問に答えるだけのときは起動しない（実装〜PR 化の意図があるときに使う）。
-  起点が GitHub issue ではない課題管理システム（Jira 等）のチケットのときは起動しない。
+description: GitHub issue を起点に、影響調査→計画承認→ブランチ作成→実装→Draft PR→敵対的レビュー→修正→push まで自走する。リポジトリ非依存。
+when_to_use: |
+  - issue の URL / `#123` / `owner/repo#123` を貼って「これやって」「実装して」「PR まで作って」「直して」と言われたとき
+  - 読むだけ・要約だけ・質問回答だけのときは起動しない（実装〜PR 化の意図があるときに使う）
+  - GitHub issue 以外（Jira 等）のチケットが起点のときは起動しない
 argument-hint: "<issue URL / #123 / owner/repo#123>"
 ---
 
@@ -18,6 +15,11 @@ argument-hint: "<issue URL / #123 / owner/repo#123>"
 
 このスキルは**特定のリポジトリを前提にしない**。ベースブランチ・命名規約・検証コマンド・PR テンプレートは
 フェーズ 0.5 でそのリポジトリから読み取る。憶測で `develop` や `npm test` を決め打ちしない。
+
+## 起動条件の補足
+
+- 「このバグ直して」「issue から実装」「draft PR 作って」のような言い回しでも、対象が GitHub issue なら起動対象。
+- issue の内容確認・要約・質問への回答だけが求められている場合は起動しない。
 
 ## 大原則（なぜこの順序か）
 
