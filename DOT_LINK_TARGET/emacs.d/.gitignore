@@ -4,6 +4,7 @@ eshell/
 url/
 elpa/
 transient/
+eln-cache/
 
 ac-comphist.dat
 network-security.data
