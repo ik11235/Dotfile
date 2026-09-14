@@ -5,6 +5,7 @@ license: MIT
 metadata:
   source: https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md
   copyright: "Copyright (c) 2026 Matt Pocock"
+  license-file: ./LICENSE
 ---
 
 Interview the user relentlessly until you reach a shared understanding. Map this as a **design tree**: every decision branches into the decisions that hang off it.
