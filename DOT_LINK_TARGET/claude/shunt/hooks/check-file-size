@@ -1,0 +1,32 @@
+#!/bin/bash
+# PreToolUse(Read): 大きなファイルの全文読みをブロックし /bulk-reader へ誘導する
+# 元実装: https://github.com/spotify/portal-ai-plugins/tree/main/plugins/shunt (Apache-2.0)
+
+MIN_LINES="${SHUNT_MIN_LINES:-350}"
+case "$MIN_LINES" in ''|*[!0-9]*) MIN_LINES=350 ;; esac
+
+allow() { echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'; exit 0; }
+
+input=$(cat)
+file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty')
+offset=$(printf '%s' "$input" | jq -r '.tool_input.offset // empty')
+limit=$(printf '%s' "$input" | jq -r '.tool_input.limit // empty')
+
+# offset/limit 指定は狙い読み → 許可
+[ -n "$offset" ] || [ -n "$limit" ] && allow
+# パス無し・存在しない → Read 側にエラーを任せる
+[ -z "$file_path" ] || [ ! -f "$file_path" ] && allow
+# 除外パターン（コロン区切り glob）
+if [ -n "${SHUNT_EXCLUDE_GLOBS:-}" ]; then
+  IFS=':' read -ra globs <<< "$SHUNT_EXCLUDE_GLOBS"
+  for g in "${globs[@]}"; do
+    # shellcheck disable=SC2254
+    case "$file_path" in $g) allow ;; esac
+  done
+fi
+
+lines=$(wc -l < "$file_path" 2>/dev/null | tr -d ' ' || echo 0)
+[ "$lines" -le "$MIN_LINES" ] && allow
+
+jq -nc --arg reason "File is ${lines} lines (threshold: ${MIN_LINES}). Use the /bulk-reader skill (\$HOME/.claude/shunt/scripts/bulk-read --question '...' --paths ${file_path}) to delegate this read to a worker model instead of reading it directly. If you need exact content for editing, re-read with offset/limit for just the section you need." \
+  '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'

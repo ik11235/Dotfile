@@ -1,0 +1,22 @@
+{
+  "description": "check-file-size (PreToolUse Read) の判定テスト",
+  "evals": [
+    {"name":"small-file","input":{"tool_input":{"file_path":"{{FIXTURES}}/small.txt"}},"fixture":{"lines":100},"expected":"allow","reason":"閾値未満"},
+    {"name":"boundary-exact-350","input":{"tool_input":{"file_path":"{{FIXTURES}}/boundary.txt"}},"fixture":{"lines":350},"expected":"allow","reason":"閾値ちょうどは許可"},
+    {"name":"just-over-threshold","input":{"tool_input":{"file_path":"{{FIXTURES}}/over.txt"}},"fixture":{"lines":351},"expected":"deny","reason":"1行超過でブロック"},
+    {"name":"large-file","input":{"tool_input":{"file_path":"{{FIXTURES}}/large.txt"}},"fixture":{"lines":1200},"expected":"deny","reason":"明確な委譲対象"},
+    {"name":"very-large-file","input":{"tool_input":{"file_path":"{{FIXTURES}}/huge.txt"}},"fixture":{"lines":5000},"expected":"deny","reason":"巨大ファイル"},
+    {"name":"empty-file","input":{"tool_input":{"file_path":"{{FIXTURES}}/empty.txt"}},"fixture":{"lines":0},"expected":"allow","reason":"空ファイル"},
+    {"name":"targeted-read-offset","input":{"tool_input":{"file_path":"{{FIXTURES}}/large.txt","offset":100}},"fixture":{"lines":1200},"expected":"allow","reason":"offset 指定は狙い読み"},
+    {"name":"targeted-read-limit","input":{"tool_input":{"file_path":"{{FIXTURES}}/large.txt","limit":50}},"fixture":{"lines":1200},"expected":"allow","reason":"limit 指定は狙い読み"},
+    {"name":"targeted-read-both","input":{"tool_input":{"file_path":"{{FIXTURES}}/large.txt","offset":100,"limit":50}},"fixture":{"lines":1200},"expected":"allow","reason":"両方指定"},
+    {"name":"nonexistent-file","input":{"tool_input":{"file_path":"/tmp/shunt-does-not-exist.txt"}},"fixture":null,"expected":"allow","reason":"存在しない → Read にエラーを任せる"},
+    {"name":"empty-filepath","input":{"tool_input":{"file_path":""}},"fixture":null,"expected":"allow","reason":"空パス"},
+    {"name":"missing-filepath-field","input":{"tool_input":{}},"fixture":null,"expected":"allow","reason":"フィールド無し"},
+    {"name":"offset-zero","input":{"tool_input":{"file_path":"{{FIXTURES}}/large.txt","offset":0}},"fixture":{"lines":1200},"expected":"allow","reason":"offset:0 は既知のバイパス（元実装と同じ挙動）"},
+    {"name":"env-override-lower","input":{"tool_input":{"file_path":"{{FIXTURES}}/medium.txt"}},"fixture":{"lines":250},"env":{"SHUNT_MIN_LINES":"200"},"expected":"deny","reason":"閾値200なら250行はブロック"},
+    {"name":"env-override-higher","input":{"tool_input":{"file_path":"{{FIXTURES}}/over.txt"}},"fixture":{"lines":351},"env":{"SHUNT_MIN_LINES":"500"},"expected":"allow","reason":"閾値500なら351行は許可"},
+    {"name":"env-non-numeric-fallback","input":{"tool_input":{"file_path":"{{FIXTURES}}/over.txt"}},"fixture":{"lines":351},"env":{"SHUNT_MIN_LINES":"abc"},"expected":"deny","reason":"非数値は350にフォールバック"},
+    {"name":"exclude-glob","input":{"tool_input":{"file_path":"{{FIXTURES}}/large.txt"}},"fixture":{"lines":1200},"env":{"SHUNT_EXCLUDE_GLOBS":"*.md:*/large.txt"},"expected":"allow","reason":"除外 glob に一致すれば許可"}
+  ]
+}

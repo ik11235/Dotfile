@@ -1,0 +1,50 @@
+#!/bin/bash
+# PreToolUse(Bash): cat/head/tail/less/more/rtk read で大きなファイルを読むのをブロックする
+# 元実装: https://github.com/spotify/portal-ai-plugins/tree/main/plugins/shunt (Apache-2.0)
+
+MIN_LINES="${SHUNT_MIN_LINES:-350}"
+case "$MIN_LINES" in ''|*[!0-9]*) MIN_LINES=350 ;; esac
+
+allow() { echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'; exit 0; }
+
+input=$(cat)
+command=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
+[ -z "$command" ] && allow
+
+# パイプ・リダイレクトは狙い読み／コピー → 許可
+printf '%s' "$command" | grep -qE '\||>' && allow
+
+# 先頭の読み取りコマンドを剥がす（rtk read も対象）
+if printf '%s' "$command" | grep -qE '^(rtk +read|cat|head|tail|less|more) '; then
+  args=$(printf '%s' "$command" | sed -E 's/^(rtk +read|cat|head|tail|less|more) +//')
+else
+  allow
+fi
+
+file_path=""
+for arg in $args; do
+  case "$arg" in
+    -*) continue ;;
+    *)  file_path=$(printf '%s' "$arg" | tr -d '"'"'"); break ;;
+  esac
+done
+[ -z "$file_path" ] && allow
+case "$file_path" in
+  "~"/*) file_path="$HOME/${file_path#"~"/}" ;;
+  "\$HOME"/*) file_path="$HOME/${file_path#"\$HOME"/}" ;;
+esac
+[ ! -f "$file_path" ] && allow
+
+if [ -n "${SHUNT_EXCLUDE_GLOBS:-}" ]; then
+  IFS=':' read -ra globs <<< "$SHUNT_EXCLUDE_GLOBS"
+  for g in "${globs[@]}"; do
+    # shellcheck disable=SC2254
+    case "$file_path" in $g) allow ;; esac
+  done
+fi
+
+lines=$(wc -l < "$file_path" 2>/dev/null | tr -d ' ' || echo 0)
+[ "$lines" -le "$MIN_LINES" ] && allow
+
+jq -nc --arg reason "File is ${lines} lines (threshold: ${MIN_LINES}). Use the /bulk-reader skill (\$HOME/.claude/shunt/scripts/bulk-read --question '...' --paths ${file_path}) instead of cat/head/tail. For a targeted slice use sed -n 'START,ENDp' or grep." \
+  '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'

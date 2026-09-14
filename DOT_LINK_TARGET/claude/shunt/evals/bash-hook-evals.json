@@ -1,0 +1,254 @@
+{
+  "description": "check-bash-read (PreToolUse Bash) の判定テスト",
+  "evals": [
+    {
+      "name": "cat-large-file",
+      "input": {
+        "tool_input": {
+          "command": "cat {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "deny",
+      "reason": "素の cat はブロック"
+    },
+    {
+      "name": "cat-small-file",
+      "input": {
+        "tool_input": {
+          "command": "cat {{FIXTURES}}/small.txt"
+        }
+      },
+      "fixture": {
+        "lines": 100
+      },
+      "expected": "allow",
+      "reason": "小ファイル"
+    },
+    {
+      "name": "cat-with-flag",
+      "input": {
+        "tool_input": {
+          "command": "cat -n {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "deny",
+      "reason": "フラグ付きでもブロック"
+    },
+    {
+      "name": "head-large-file",
+      "input": {
+        "tool_input": {
+          "command": "head {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "deny",
+      "reason": "head もブロック"
+    },
+    {
+      "name": "head-with-count",
+      "input": {
+        "tool_input": {
+          "command": "head -100 {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "deny",
+      "reason": "head -100 も全文読みとみなす（元実装踏襲）"
+    },
+    {
+      "name": "tail-large-file",
+      "input": {
+        "tool_input": {
+          "command": "tail {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "deny",
+      "reason": "tail もブロック"
+    },
+    {
+      "name": "less-large-file",
+      "input": {
+        "tool_input": {
+          "command": "less {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "deny",
+      "reason": "less もブロック"
+    },
+    {
+      "name": "more-large-file",
+      "input": {
+        "tool_input": {
+          "command": "more {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "deny",
+      "reason": "more もブロック"
+    },
+    {
+      "name": "rtk-read-large-file",
+      "input": {
+        "tool_input": {
+          "command": "rtk read {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "deny",
+      "reason": "rtk read（rtk hook の書き換え後形）もブロック"
+    },
+    {
+      "name": "cat-pipe",
+      "input": {
+        "tool_input": {
+          "command": "cat {{FIXTURES}}/large.txt | grep export"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "allow",
+      "reason": "パイプは狙い読み"
+    },
+    {
+      "name": "cat-redirect",
+      "input": {
+        "tool_input": {
+          "command": "cat {{FIXTURES}}/large.txt > /tmp/out.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "allow",
+      "reason": "リダイレクトはコピー"
+    },
+    {
+      "name": "non-read-command",
+      "input": {
+        "tool_input": {
+          "command": "git status"
+        }
+      },
+      "fixture": null,
+      "expected": "allow",
+      "reason": "読み取りコマンドではない"
+    },
+    {
+      "name": "grep-command",
+      "input": {
+        "tool_input": {
+          "command": "grep -n 'export' {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "allow",
+      "reason": "grep は対象外"
+    },
+    {
+      "name": "sed-range",
+      "input": {
+        "tool_input": {
+          "command": "sed -n '10,40p' {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "allow",
+      "reason": "sed の範囲指定は狙い読み（対象外）"
+    },
+    {
+      "name": "cat-quoted-path",
+      "input": {
+        "tool_input": {
+          "command": "cat \"{{FIXTURES}}/large.txt\""
+        }
+      },
+      "fixture": {
+        "lines": 800
+      },
+      "expected": "deny",
+      "reason": "クォート付きパスも検知"
+    },
+    {
+      "name": "cat-nonexistent",
+      "input": {
+        "tool_input": {
+          "command": "cat /tmp/shunt-does-not-exist.txt"
+        }
+      },
+      "fixture": null,
+      "expected": "allow",
+      "reason": "存在しない → Bash に任せる"
+    },
+    {
+      "name": "empty-command",
+      "input": {
+        "tool_input": {
+          "command": ""
+        }
+      },
+      "fixture": null,
+      "expected": "allow",
+      "reason": "空コマンド"
+    },
+    {
+      "name": "missing-command-field",
+      "input": {
+        "tool_input": {}
+      },
+      "fixture": null,
+      "expected": "allow",
+      "reason": "フィールド無し"
+    },
+    {
+      "name": "head-n-space-count",
+      "input": {
+        "tool_input": {
+          "command": "head -n 5 {{FIXTURES}}/large.txt"
+        }
+      },
+      "fixture": null,
+      "expected": "allow",
+      "reason": "既知のパーサ制約: '5' がパス扱いになり存在しないので許可（元実装と同じ）"
+    },
+    {
+      "name": "cat-tilde-path",
+      "input": {
+        "tool_input": {
+          "command": "cat ~/.claude/shunt/evals/.fixtures-home/large.txt"
+        }
+      },
+      "fixture": {
+        "lines": 800,
+        "home_relative": ".claude/shunt/evals/.fixtures-home/large.txt"
+      },
+      "expected": "deny",
+      "reason": "~ 先頭のパスも展開して検知（実セッションでの取りこぼし修正）"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+#!/bin/bash
+# 大きなファイルの読解を作業用モデルへ委譲し、質問への回答だけを返す
+# Usage: bulk-read --question "what does this do?" --paths file1 file2 ...
+
+. "$(cd "$(dirname "$0")" && pwd)/lib/worker.sh"
+
+SYSTEM_PROMPT='You are a precise code analyst. Read the provided files and answer the question concisely. Output structured bullets only. No greetings, no prose, no preambles, no summaries. Lead every bullet with the exact name, type, or line number. Use nested bullets for details. Skip anything the caller did not ask for. Answer in the same language as the question.'
+
+question=""
+paths=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --question) question="$2"; shift 2 ;;
+    --paths)    shift; while [[ $# -gt 0 && ! "$1" =~ ^-- ]]; do paths+=("$1"); shift; done ;;
+    -h|--help)  sed -n '2,3p' "$0"; exit 0 ;;
+    *)          shift ;;
+  esac
+done
+
+[ -z "$question" ] && { echo "Error: --question is required" >&2; exit 1; }
+[ ${#paths[@]} -eq 0 ] && { echo "Error: --paths is required" >&2; exit 1; }
+for p in "${paths[@]}"; do
+  [ -f "$p" ] && [ -r "$p" ] || { echo "Error: file not found or unreadable: $p" >&2; exit 1; }
+done
+
+shunt_preflight || exit 1
+shunt_tmpfile message_file || exit 1
+shunt_tmpfile answer_file || exit 1
+
+for p in "${paths[@]}"; do
+  {
+    printf '<file path="%s">\n' "$p"
+    cat -n "$p"
+    printf '</file>\n\n'
+  } >> "$message_file"
+done
+printf 'Question: %s\n' "$question" >> "$message_file"
+
+shunt_invoke "$SYSTEM_PROMPT" "$message_file" > "$answer_file" || exit 1
+cat "$answer_file"
+
+in_bytes=$(wc -c < "$message_file" | tr -d ' ')
+out_bytes=$(wc -c < "$answer_file" | tr -d ' ')
+shunt_log bulk-read "$in_bytes" "$out_bytes"
+echo "[shunt: ~$((in_bytes / 4)) input tokens kept out of context | worker=$SHUNT_WORKER]" >&2
