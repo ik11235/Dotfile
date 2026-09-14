@@ -1,4 +1,6 @@
-update-notifier-npm.json
-update-notifier-serverless.json
-update-notifier-@docusaurus/
-update-notifier-@google/
+# npm 系 CLI の更新確認キャッシュ（マシン固有のタイムスタンプ）
+# scoped package は update-notifier-@<scope>/<package>.json の形でディレクトリを作る
+update-notifier-*
+# 各 CLI の設定・認証情報（firebase-tools は login 後にトークンが入る）
+firebase-tools.json
+zenn-cli.json
