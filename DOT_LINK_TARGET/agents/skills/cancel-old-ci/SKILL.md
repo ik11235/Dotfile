@@ -1,6 +1,7 @@
 ---
 name: cancel-old-ci
 description: GitHub PR上で最新コミット以外の実行中CI workflowランをキャンセルする。PR番号の指定がなければ現在のブランチから自動判定する。
+argument-hint: "[PR番号 (省略時は現在のブランチから判定)]"
 when_to_use: |
   以下のいずれかに該当する場合に使用：
   - 「古いCI止めて」「最新以外のCIキャンセル」「CIを止めて」「最新のCI以外止めて」

@@ -1,6 +1,7 @@
 ---
 name: eli5
 description: Explain a topic like I'm a 5 year old.
+argument-hint: "<説明してほしいトピック>"
 ---
 
 Explain like I'm someone who knows nothing

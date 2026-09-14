@@ -8,6 +8,7 @@ description: >-
   「このバグ直して」「issue から実装」「draft PR 作って」のような言い回しでも、対象が GitHub issue なら起動する。
   issue の内容を読むだけ・要約するだけ・質問に答えるだけのときは起動しない（実装〜PR 化の意図があるときに使う）。
   起点が GitHub issue ではない課題管理システム（Jira 等）のチケットのときは起動しない。
+argument-hint: "<issue URL / #123 / owner/repo#123>"
 ---
 
 # GitHub issue → Draft PR 自走ワークフロー
