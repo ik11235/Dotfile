@@ -5,7 +5,8 @@
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80",
     "API_TIMEOUT_MS": "1200000",
     "MCP_TIMEOUT": "30000",
-    "MCP_TOOL_TIMEOUT": "120000"
+    "MCP_TOOL_TIMEOUT": "120000",
+    "SHUNT_MIN_LINES": "350"
   },
   "permissions": {
     "allow": [
@@ -155,6 +156,26 @@
             "command": "rtk hook claude"
           }
         ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/shunt/hooks/check-file-size",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/shunt/hooks/check-bash-read",
+            "timeout": 5
+          }
+        ]
       }
     ]
   },
@@ -196,9 +217,6 @@
   "theme": "auto",
   "preferredNotifChannel": "iterm2",
   "autoMode": {
-    "environment": [
-      "Source control: github.com/ik11235 and repos under it, cloned via ghq into ~/ghq/github.com/"
-    ],
     "soft_deny": [
       "$defaults",
       "Never write to Todoist outside the 'claude code' project (id in $TODOIST_CLAUDE_PROJECT_ID); other Todoist projects are read-only unless the user explicitly confirms in the current turn",
@@ -207,6 +225,9 @@
     ],
     "hard_deny": [
       "Never send Slack messages, create or update Jira issues, or create or update Notion pages unless the user explicitly asks for that specific action in the current turn"
+    ],
+    "environment": [
+      "Source control: github.com/ik11235 and repos under it, cloned via ghq into ~/ghq/github.com/"
     ]
   }
 }
