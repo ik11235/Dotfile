@@ -81,7 +81,7 @@ Claude Code で実行した場合は、このskillの `model: sonnet` 指定に�
 
 ```
 ⚠️ このskillの実行で会話モデルが sonnet に切り替わっています。
-会話を続ける場合は /model で元のモデルに戻してください（例: /model fable）。
+会話を続ける場合は /model で元のモデルに戻してください（例: /model opus[1m]）。
 ```
 
 ## トラブルシューティング

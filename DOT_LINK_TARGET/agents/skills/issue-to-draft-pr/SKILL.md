@@ -16,11 +16,6 @@ argument-hint: "<issue URL / #123 / owner/repo#123>"
 このスキルは**特定のリポジトリを前提にしない**。ベースブランチ・命名規約・検証コマンド・PR テンプレートは
 フェーズ 0.5 でそのリポジトリから読み取る。憶測で `develop` や `npm test` を決め打ちしない。
 
-## 起動条件の補足
-
-- 「このバグ直して」「issue から実装」「draft PR 作って」のような言い回しでも、対象が GitHub issue なら起動対象。
-- issue の内容確認・要約・質問への回答だけが求められている場合は起動しない。
-
 ## 大原則（なぜこの順序か）
 
 - **承認ゲートを 1 回だけ置く**: issue 理解と影響調査が終わった「実装計画」の時点で必ず止まり、ユーザーの承認を得てから実装に入る。
@@ -137,17 +132,19 @@ argument-hint: "<issue URL / #123 / owner/repo#123>"
 
 ## フェーズ 2: ブランチ作成
 
-承認が得られたら作業ブランチを切る。ベースはフェーズ 0.5 で確定したブランチ（最新を取得してから分岐する）。
+承認が得られたら worktree で作業ブランチを切る（元の working tree では checkout / switch しない）。ベースはフェーズ 0.5 で確定したブランチ（最新を取得してから分岐する）。
 
 ```bash
 git fetch origin <base>
-git switch -c <prefix>/<issue番号>_<short_description> origin/<base>
+git worktree add -b <prefix>/<issue番号>_<short_description> <worktree-path> origin/<base>
 ```
+
+EnterWorktree が使える環境ではそちらを使う。
 
 - 命名はリポジトリの既存ブランチに倣う（`git branch -a` の傾向を見る）。規約が無ければ
   `<type>/<issue番号>-<short-description>` のような、issue 番号が入って追跡できる形にする。
 - ベースブランチ直上で作業を始めていないか、別件の変更が混ざっていないかを確認する。
-- 並行作業がある環境では worktree で分離するとディレクトリの取り合いを避けられる。
+- PR 作成・マージ後は worktree を削除する。
 
 ---
 

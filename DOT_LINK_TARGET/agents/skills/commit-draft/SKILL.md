@@ -117,10 +117,10 @@ git -C "$ROOT" diff --cached | grep -inE 'api[_-]?key|secret|password|passwd|tok
 
 **フォーマット:**
 
-トレーラーはコミットメッセージ本文の最後に空行を挟んで配置する。モデル名はセッションで使用中のモデルを記載する（例: `Claude Opus 4.8 (1M context)`, `Claude Sonnet 4.6`）。
+トレーラーはコミットメッセージ本文の最後に空行を挟んで配置する。`<モデル名>` にはセッションで使用中のモデルの表示名を入れる（システムプロンプトの記載に従う）。
 
 ```
-Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Co-Authored-By: <モデル名> <noreply@anthropic.com>
 ```
 
 ### 4. コミット単位の決定
@@ -193,7 +193,7 @@ git add file1 file2
 git commit -F - <<'EOF'
 要約行
 
-Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Co-Authored-By: <モデル名> <noreply@anthropic.com>
 EOF
 ```
 
@@ -208,7 +208,7 @@ git commit -F - <<'EOF'
 
 本文: なぜこの変更をしたか、補足事項など
 
-Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Co-Authored-By: <モデル名> <noreply@anthropic.com>
 EOF
 ```
 

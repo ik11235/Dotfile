@@ -29,7 +29,7 @@ gh api "repos/{owner}/{repo}/actions/runs?per_page=50&branch={branch}" \
 
 ### 3. 最新コミットの特定と古いランの抽出
 
-- 取得したランの中で最も多く出現する `head_sha`、またはブランチの HEAD コミットを最新とする
+- `gh pr view <PR> --json headRefOid --jq .headRefOid` で得た PR の head コミットを最新とする（ラン数の多さでは判定しない）
 - 最新コミット以外の `head_sha` を持つランを「古いラン」として抽出する
 
 ### 4. キャンセル実行

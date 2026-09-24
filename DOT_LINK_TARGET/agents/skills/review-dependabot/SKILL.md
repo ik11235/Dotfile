@@ -45,14 +45,14 @@ DependabotのPR本文には「Release notes」「Changelog」「Commits」への
 ### 4. PR のdiff確認
 
 `gh pr diff <PR番号>` でdiffを取得し、以下を確認する:
-- `package.json` の変更内容（バージョン番号の変更のみか）
-- `package-lock.json` の変更（依存関係の連鎖的な変更がないか）
+- マニフェスト（`package.json` / `go.mod` / `pyproject.toml` / workflow 等）の変更がバージョン番号のみか
+- ロックファイルの変更（依存関係の連鎖的な変更がないか）
 - それ以外のファイルに変更がないか
 
 ### 5. プロジェクトへの影響分析
 
 更新対象パッケージがプロジェクト内でどのように使われているかを調査する:
-- `import` / `require` 文を検索してパッケージの利用箇所を特定
+- そのエコシステムの import / 参照箇所を検索してパッケージの利用箇所を特定
 - 破壊的変更がある場合、影響を受けるコードがないか確認
 - deprecated になったAPIを使用していないか確認
 
@@ -90,4 +90,4 @@ DependabotのPR本文には「Release notes」「Changelog」「Commits」への
 
 ### 8. マージの実行
 
-判定が「マージ可能」の場合、ユーザーにマージするか確認してから `gh pr merge` を実行する。
+判定が「マージ可能」の場合、ユーザーにマージするか確認してから `gh pr merge <PR番号> --merge` を実行する（squash / rebase は明示指示時のみ）。
