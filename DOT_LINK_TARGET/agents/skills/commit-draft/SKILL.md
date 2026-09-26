@@ -13,6 +13,7 @@ allowed-tools:
   - "Bash(ls *)"
   - "Bash(head*)"
   - "Bash(grep*)"
+  - "Bash(jq *)"
   - "Read(/tmp/commit-draft*)"
   - "Read(**/lefthook.yml)"
   - "Read(**/.husky/*)"
@@ -117,11 +118,31 @@ git -C "$ROOT" diff --cached | grep -inE 'api[_-]?key|secret|password|passwd|tok
 
 **フォーマット:**
 
-トレーラーはコミットメッセージ本文の最後に空行を挟んで配置する。`<モデル名>` にはセッションで使用中のモデルの表示名を入れる（システムプロンプトの記載に従う）。
+トレーラーはコミットメッセージ本文の最後に空行を挟んで配置する。
 
 ```
 Co-Authored-By: <モデル名> <noreply@anthropic.com>
 ```
+
+**`<モデル名>` の決め方:** このskillは `model: sonnet` で動くため、システムプロンプトに書かれた自分のモデル名は変更を書いたモデルではない。Claude Code では、セッションの生ログから「skill起動（`<command-message>` で始まるターン）を除いた、commit-draft 起動前の最後の応答のモデル」を取得して使う:
+
+```bash
+jq -rs '(map(.type=="user" and ((.message.content|tostring)|startswith("<command-message>commit-draft<")))|rindex(true)) as $i
+| (if $i then .[:$i] else . end)
+| reduce .[] as $e ({skill:false, model:null};
+    if $e.type=="user" and ($e.message.content|type)=="string" then
+      ($e.message.content) as $c
+      | if ($c|startswith("<command-message>")) then .skill=true
+        elif ($c|test("^<(local-command|command-name|system-reminder)")) then .
+        else .skill=false end
+    elif $e.type=="assistant" and (.skill|not) and ($e.message.model//"<synthetic>")!="<synthetic>" then .model=$e.message.model
+    else . end)
+| .model // "none"' ~/.claude/projects/*/"$CLAUDE_CODE_SESSION_ID".jsonl
+```
+
+- 出力はモデルID。表示名に変換して使う（例: `claude-opus-5-5` → `Claude Opus 5.5`、`claude-sonnet-5` → `Claude Sonnet 5`、`claude-haiku-4-5-20251001` → `Claude Haiku 4.5`）
+- save-conversation など他の `model:` 指定skillのターンも除外されるため、直前にそれらを実行していても正しく取れる
+- `none` やエラー（Codex 実行時・ログが見つからない等）のときだけ、システムプロンプト記載の自分のモデル名で代替する
 
 ### 4. コミット単位の決定
 
