@@ -5,8 +5,7 @@
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80",
     "API_TIMEOUT_MS": "1200000",
     "MCP_TIMEOUT": "30000",
-    "MCP_TOOL_TIMEOUT": "120000",
-    "SHUNT_MIN_LINES": "350"
+    "MCP_TOOL_TIMEOUT": "120000"
   },
   "permissions": {
     "allow": [
@@ -139,26 +138,6 @@
           {
             "type": "command",
             "command": "rtk hook claude"
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/shunt/hooks/check-file-size",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/shunt/hooks/check-bash-read",
-            "timeout": 5
           }
         ]
       }
