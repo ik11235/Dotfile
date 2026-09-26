@@ -77,13 +77,6 @@ python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
 /rename <タイトル>
 ```
 
-Claude Code で実行した場合は、このskillの `model: sonnet` 指定により会話モデルが切り替わる。**Claude Code での報告の最後にだけ**以下の警告を表示する。Codex ではこの警告を表示しない。
-
-```
-⚠️ このskillの実行で会話モデルが sonnet に切り替わっています。
-会話を続ける場合は /model で元のモデルに戻してください（例: /model opus[1m]）。
-```
-
 ## トラブルシューティング
 
 - `error: project dir not found` — cwd が想定と違う。`--cwd` で保存先ディレクトリを明示する
