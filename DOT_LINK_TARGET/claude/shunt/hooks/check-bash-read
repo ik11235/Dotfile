@@ -34,6 +34,8 @@ case "$file_path" in
   "\$HOME"/*) file_path="$HOME/${file_path#"\$HOME"/}" ;;
 esac
 [ ! -f "$file_path" ] && allow
+# バイナリは行数に意味がない → 対象外
+grep -Iq . "$file_path" 2>/dev/null || allow
 
 if [ -n "${SHUNT_EXCLUDE_GLOBS:-}" ]; then
   IFS=':' read -ra globs <<< "$SHUNT_EXCLUDE_GLOBS"

@@ -13,6 +13,7 @@ setup_fixtures() {
     local p; p=$(jq -r ".evals[$i].input.tool_input.file_path // .evals[$i].input.tool_input.command" "$1" | grep -o '{{FIXTURES}}/[^ "|>]*' | head -1 | sed "s|{{FIXTURES}}|$FIXTURES|")
     local hr; hr=$(jq -r ".evals[$i].fixture.home_relative // empty" "$1"); if [ -n "$hr" ]; then p="$HOME/$hr"; mkdir -p "$(dirname "$p")"; fi
     [ -z "$p" ] && continue
+    if [ "$(jq -r ".evals[$i].fixture.binary // false" "$1")" = true ]; then { printf '\211PNG\r\n\032\n\000\000'; seq 1 "$lines"; } > "$p"; continue; fi
     if [ "$lines" -eq 0 ]; then : > "$p"; else seq 1 "$lines" | awk '{print "line "NR}' > "$p"; fi
   done
 }

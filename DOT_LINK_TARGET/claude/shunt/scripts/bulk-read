@@ -21,6 +21,9 @@ done
 [ ${#paths[@]} -eq 0 ] && { echo "Error: --paths is required" >&2; exit 1; }
 for p in "${paths[@]}"; do
   [ -f "$p" ] && [ -r "$p" ] || { echo "Error: file not found or unreadable: $p" >&2; exit 1; }
+  if [ -s "$p" ] && ! grep -Iq . "$p" 2>/dev/null; then
+    echo "Error: binary file (image/PDF etc.) cannot be delegated: $p. Use the Read tool directly; the hook does not block images or PDFs." >&2; exit 1
+  fi
 done
 
 shunt_preflight || exit 1

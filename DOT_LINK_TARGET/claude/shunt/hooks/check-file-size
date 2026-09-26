@@ -16,6 +16,8 @@ limit=$(printf '%s' "$input" | jq -r '.tool_input.limit // empty')
 [ -n "$offset" ] || [ -n "$limit" ] && allow
 # パス無し・存在しない → Read 側にエラーを任せる
 [ -z "$file_path" ] || [ ! -f "$file_path" ] && allow
+# 画像・PDF などバイナリは Read が行単位でなく画像として扱う → 行数判定の対象外
+grep -Iq . "$file_path" 2>/dev/null || allow
 # 除外パターン（コロン区切り glob）
 if [ -n "${SHUNT_EXCLUDE_GLOBS:-}" ]; then
   IFS=':' read -ra globs <<< "$SHUNT_EXCLUDE_GLOBS"

@@ -249,6 +249,20 @@
       },
       "expected": "deny",
       "reason": "~ 先頭のパスも展開して検知（実セッションでの取りこぼし修正）"
+    },
+    {
+      "name": "cat-binary",
+      "input": {
+        "tool_input": {
+          "command": "cat {{FIXTURES}}/shot.png"
+        }
+      },
+      "fixture": {
+        "lines": 800,
+        "binary": true
+      },
+      "expected": "allow",
+      "reason": "バイナリは対象外"
     }
   ]
 }
