@@ -98,7 +98,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "enableAllProjectMcpServers": false,
   "skillOverrides": {
     "best-practice": "user-invocable-only"
