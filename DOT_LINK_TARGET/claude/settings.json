@@ -109,7 +109,8 @@
   "model": "opus",
   "enableAllProjectMcpServers": false,
   "skillOverrides": {
-    "best-practice": "user-invocable-only"
+    "best-practice": "user-invocable-only",
+    "anthropic-skills:skill-creator": "user-invocable-only"
   },
   "hooks": {
     "Stop": [
@@ -163,7 +164,7 @@
   },
   "enabledPlugins": {
     "slack@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true,
+    "code-review@claude-plugins-official": false,
     "skill-creator@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "i-have-adhd@i-have-adhd": true
