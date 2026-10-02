@@ -61,6 +61,8 @@
       "Read(**/.env)",
       "Read(**/.env.*)",
       "Read(**/credentials.json)",
+      "Read(**/.credentials.json)",
+      "Edit(**/.credentials.json)",
       "Read(**/*.pem)",
       "Read(**/*.p12)",
       "Read(**/*.pfx)",
@@ -94,7 +96,13 @@
       "Bash(git reset *)",
       "Bash(git rebase *)",
       "Bash(curl *)",
-      "Bash(wget *)"
+      "Bash(wget *)",
+      "Bash(gh pr merge *--squash*)",
+      "Bash(gh pr merge *--rebase*)",
+      "Bash(gh pr merge * -s*)",
+      "Bash(gh pr merge * -r*)",
+      "Bash(gh pr merge -s*)",
+      "Bash(gh pr merge -r*)"
     ],
     "defaultMode": "auto"
   },
