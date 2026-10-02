@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 90,
+  "autoCompactWindow": 400000,
   "env": {
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80",
     "API_TIMEOUT_MS": "1200000",
     "MCP_TIMEOUT": "30000",
     "MCP_TOOL_TIMEOUT": "120000"
@@ -193,5 +193,6 @@
     "environment": [
       "Source control: github.com/ik11235 and repos under it, cloned via ghq into ~/ghq/github.com/"
     ]
-  }
+  },
+  "skipWorkflowUsageWarning": true
 }
