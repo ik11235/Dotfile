@@ -81,6 +81,6 @@ python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
 
 ## トラブルシューティング
 
-- `error: project dir not found` — cwd が想定と違う。`--cwd` で保存先ディレクトリを明示する
+- `error: project dir not found` — cwd が想定と違う。`--cwd` でセッション開始時のディレクトリを明示する（`$CLAUDE_CODE_SESSION_ID` があれば、セッション中に cd していてもスクリプトが `~/.claude/projects/*/` から jsonl を探すので通常は不要）
 - Codex の保存対象が違う — `--session <thread-id>` で `~/.codex/session_index.jsonl` にある thread ID を指定する
 - スクリプトが失敗した場合のみ、旧来の手動手順（mkdir → ln → MD 手書き）にフォールバックしてよい。その際も会話ログは要点のみに留め、全文再生成はしない

@@ -120,6 +120,24 @@ def find_session(project_dir: str, session: str | None, env_session: str | None)
     return os.path.splitext(os.path.basename(latest))[0]
 
 
+def locate_claude_project_dir(cwd: str, env_session: str | None) -> str:
+    """Claude Code のセッション jsonl があるプロジェクトディレクトリを返す。
+
+    通常は cwd をエンコードした ~/.claude/projects/<encoded-cwd>。ただしセッション中に
+    cwd が移動していると（例: 保存先ディレクトリへ cd した後）そこには jsonl が無いので、
+    環境変数のセッション ID で ~/.claude/projects/*/ を横断して実在する場所を探す。
+    """
+    projects_root = os.path.join(os.path.expanduser("~"), ".claude", "projects")
+    derived = os.path.join(projects_root, encode_cwd(cwd))
+    if env_session:
+        if os.path.exists(os.path.join(derived, f"{env_session}.jsonl")):
+            return derived
+        hits = glob.glob(os.path.join(projects_root, "*", f"{env_session}.jsonl"))
+        if hits:
+            return os.path.dirname(max(hits, key=os.path.getmtime))
+    return derived
+
+
 def hard_link_sources(sources: list[str], dest_dir: str) -> list[str]:
     """セッションの jsonl をハードリンク。inode 不一致（stale link）は貼り直す。"""
     linked = []
@@ -314,12 +332,18 @@ def main() -> None:
 
     cwd = os.path.abspath(args.cwd)
     # 生ログ jsonl の探索元は常に実 cwd から導出する（保存先 --dest とは独立）
+    claude_env_session = os.environ.get("CLAUDE_CODE_SESSION_ID") or None
     source = args.source
     if source == "auto":
-        claude_project_dir = args.project_dir or os.path.join(
-            os.path.expanduser("~"), ".claude", "projects", encode_cwd(cwd)
-        )
-        source = "codex" if (os.environ.get("CODEX_THREAD_ID") or not os.path.isdir(claude_project_dir)) else "claude"
+        # セッション ID の環境変数が最も確かな手がかり。cwd 由来の推測は両方とも無いときだけ使う
+        # （cwd が移動していると project dir が見つからず Codex と誤判定していたため）。
+        if claude_env_session:
+            source = "claude"
+        elif os.environ.get("CODEX_THREAD_ID"):
+            source = "codex"
+        else:
+            claude_project_dir = args.project_dir or locate_claude_project_dir(cwd, None)
+            source = "claude" if os.path.isdir(claude_project_dir) else "codex"
     dest_root = resolve_dest(args.dest, cwd)
     today = datetime.date.today().isoformat()
 
@@ -341,14 +365,10 @@ def main() -> None:
         msgs = extract_codex_messages(main_jsonl)
         resume_command = f"codex resume {session}"
     else:
-        project_dir = args.project_dir or os.path.join(
-            os.path.expanduser("~"), ".claude", "projects", encode_cwd(cwd)
-        )
+        project_dir = args.project_dir or locate_claude_project_dir(cwd, claude_env_session)
         if not os.path.isdir(project_dir):
             sys.exit(f"error: project dir not found: {project_dir}")
-        session = find_session(
-            project_dir, args.session, os.environ.get("CLAUDE_CODE_SESSION_ID") or None
-        )
+        session = find_session(project_dir, args.session, claude_env_session)
         dest_dir = resolve_session_dir(dest_root, session, today)
         os.makedirs(dest_dir, exist_ok=True)
         linked = hard_link_logs(project_dir, session, dest_dir)
