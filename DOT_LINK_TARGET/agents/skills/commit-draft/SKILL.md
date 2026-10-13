@@ -14,6 +14,7 @@ allowed-tools:
   - "Bash(head*)"
   - "Bash(grep*)"
   - "Bash(jq *)"
+  - "Bash(date *)"
   - "Read(/tmp/commit-draft*)"
   - "Read(**/lefthook.yml)"
   - "Read(**/.husky/*)"
@@ -36,11 +37,13 @@ git -C "$ROOT" status && \
 git -C "$ROOT" diff --stat && \
 git -C "$ROOT" diff --cached --stat && \
 git -C "$ROOT" log --oneline -5 && \
+date "+DRAFT_ID=%s-$RANDOM" && \
 ls "$ROOT"/lefthook.yml "$ROOT"/.husky/prepare-commit-msg 2>/dev/null
 ```
 
 - `ROOT` の値（リポジトリルートの絶対パス）は、**出力するシェルスクリプトにも絶対パスとしてハードコードする**（後述）。スクリプト内では `git rev-parse` を実行時に呼ばない
 - `git status` に `-uall` フラグは使わない
+- `DRAFT_ID`（unixtime＋乱数）は出力スクリプトのファイル名に使う（後述）。`ls` は対象が無いと非0で終わるため、`date` はその前に置く
 - 末尾の `ls` で `prepare-commit-msg` hookの有無だけを安く確認する。ヒットした場合のみ、必要に応じて該当ファイルをReadして内容（プレフィックス自動付与の有無）を確かめる。存在しなければそれ以上読まない
 
 ### 2. 差分内容の取得（必要なものだけ）
@@ -163,19 +166,23 @@ Claude Code の `!` プレフィックスは内部で `(eval)` を使うため�
 
 **手順:**
 
-1. まずReadツールで `/tmp/commit-draft.sh` を読み込む（存在しなくてもエラーが返るだけでよい。Writeツールは事前にReadが必要なため）。その後Writeツールでシェルスクリプトを書き出す
+1. Writeツールで `/tmp/commit-draft-<DRAFT_ID>.sh` に書き出す（`<DRAFT_ID>` は手順1の出力値。例: `/tmp/commit-draft-1791878865-17941.sh`）
+   - 固定名にしないのは、複数セッションで並列に commit-draft を実行すると同じファイルを上書きし合い、別リポジトリ向けのスクリプトを実行してしまう事故を防ぐため。unixtime だけだと同一秒の並列実行で衝突するので乱数を併用する
+   - 新規ファイルなので事前のReadは不要
 2. スクリプトの中身をコードブロックでユーザーに表示する（何が実行されるか確認できるようにするため）
 3. 実行環境に応じた短いコマンドを提示する:
 
 Claude Code:
 ```
-! bash /tmp/commit-draft.sh
+! bash /tmp/commit-draft-<DRAFT_ID>.sh
 ```
 
 Codex:
 ```bash
-bash /tmp/commit-draft.sh
+bash /tmp/commit-draft-<DRAFT_ID>.sh
 ```
+
+`<DRAFT_ID>` は実際の値に置き換えて提示する（プレースホルダのまま出さない）。
 
 #### スクリプトの書き方
 
@@ -262,7 +269,7 @@ EOF
 
 #### 複数コミットの場合
 
-複数コミットに分割する場合は、各コミットを別々のスクリプトファイルとして書き出す（`/tmp/commit-draft-1.sh`, `/tmp/commit-draft-2.sh`, ...）。実行コマンドもそれぞれ提示し、1つずつ順番に実行できるようにする。
+複数コミットに分割する場合は、各コミットを別々のスクリプトファイルとして書き出す（`/tmp/commit-draft-<DRAFT_ID>-1.sh`, `/tmp/commit-draft-<DRAFT_ID>-2.sh`, ...。同じ `DRAFT_ID` を共有し、末尾の連番で順序を示す）。実行コマンドもそれぞれ提示し、1つずつ順番に実行できるようにする。
 
 ### 6. 変更がない場合
 
