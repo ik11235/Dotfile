@@ -11,7 +11,9 @@
 モデル側はタイトルと Summary 本文（--summary-file）だけ用意すればよい。
 
 保存先の決め方:
-  デフォルト（--dest 省略時）は環境変数 CLAUDE_SAVE_CONV_VAULT_DIR が指す vault 保存先
+  Codex の既定保存先は CODEX_SAVE_CONV_VAULT_DIR。未設定なら Claude 用保存先
+  （末尾が claude_code）の兄弟ディレクトリ codex を使う。導出できなければエラー終了。
+  Claude Code の既定保存先は環境変数 CLAUDE_SAVE_CONV_VAULT_DIR が指す vault 保存先
   （未設定ならエラー終了）。"vault"（typo の "valut" も可）を明示しても同じ。
   --dest に "pwd" を渡すと ${cwd} を保存先ルートにする（旧デフォルト挙動）。
   どの保存先でも ${root}/${YYYY-MM-DD}/${uuid}/ の形で日付フォルダを挟む。同じセッションを
@@ -51,10 +53,11 @@ DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 CODEX_SESSION_RE = re.compile(r"rollout-.*-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$")
 
 
-def resolve_dest(dest: str | None, cwd: str) -> str:
+def resolve_dest(dest: str | None, cwd: str, source: str = "claude") -> str:
     """保存先ルートを解決する。
 
-    - None / "vault" / "valut"（大小無視）: $CLAUDE_SAVE_CONV_VAULT_DIR。未定義ならエラー終了。
+    - None / "vault" / "valut": source 別の環境変数。Codex は Claude 用保存先の
+      末尾が claude_code なら兄弟の codex をフォールバックに使う。未解決ならエラー終了。
     - "pwd"（大小無視）: cwd 直下に保存（旧デフォルト挙動）。
     - それ以外: PATH とみなしてそのパスを保存先にする（従来の PATH 指定挙動を保持）。
     """
@@ -62,6 +65,20 @@ def resolve_dest(dest: str | None, cwd: str) -> str:
     if keyword in PWD_KEYWORDS:
         return cwd
     if keyword is None or keyword in VAULT_KEYWORDS:
+        if source == "codex":
+            codex_dir = os.environ.get("CODEX_SAVE_CONV_VAULT_DIR")
+            if codex_dir:
+                return os.path.abspath(os.path.expanduser(codex_dir))
+            claude_dir = os.environ.get(VAULT_DIR_ENV)
+            if claude_dir:
+                claude_dir = os.path.abspath(os.path.expanduser(claude_dir))
+                if os.path.basename(claude_dir) == "claude_code":
+                    return os.path.join(os.path.dirname(claude_dir), "codex")
+            sys.exit(
+                "error: Codex の vault 保存先が未定義です。環境変数 "
+                "CODEX_SAVE_CONV_VAULT_DIR に保存先を設定してください"
+                "（cwd に保存したい場合は --dest pwd）"
+            )
         vault_dir = os.environ.get(VAULT_DIR_ENV)
         if not vault_dir:
             sys.exit(
@@ -344,7 +361,7 @@ def main() -> None:
         else:
             claude_project_dir = args.project_dir or locate_claude_project_dir(cwd, None)
             source = "claude" if os.path.isdir(claude_project_dir) else "codex"
-    dest_root = resolve_dest(args.dest, cwd)
+    dest_root = resolve_dest(args.dest, cwd, source)
     today = datetime.date.today().isoformat()
 
     with open(args.summary_file, encoding="utf-8") as f:
