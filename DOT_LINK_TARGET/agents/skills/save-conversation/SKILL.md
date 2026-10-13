@@ -23,10 +23,12 @@ model: sonnet
 | --- | --- | --- |
 | なし | 環境変数 `CLAUDE_SAVE_CONV_VAULT_DIR` が指す vault 保存先（未設定ならスクリプトがエラー終了） | `--dest` 不要 |
 | `vault`（typo の `valut` も可） | 引数なしと同じ（vault 保存の明示指定） | `--dest vault` |
-| `pwd` | `${cwd}/${session_uuid}/`（旧デフォルト挙動） | `--dest pwd` |
+| `pwd` | `${cwd}` 配下（旧デフォルト挙動） | `--dest pwd` |
 | 上記以外の文字列 | その文字列を PATH とみなして保存（従来の PATH 指定挙動） | `--dest "<引数>"` |
 
 `vault` の実パスはスクリプトには埋め込まず、環境変数 `CLAUDE_SAVE_CONV_VAULT_DIR`（zshrc 等のシェル設定で定義）で与える。キーワード解決はスクリプト側で行うので、引数の値をそのまま `--dest` に渡せばよい。生ログ jsonl の探索元は保存先と独立して常に実 cwd から導出されるため、別ディレクトリで起動したセッションを vault に集約しても正しくハードリンクされる。
+
+どの保存先でも、実際のディレクトリは `<保存先>/YYYY-MM-DD/<session_uuid>/` になる（日付は保存した日）。後から日付で探せるようにするため。同じセッションを別の日に保存し直した場合は、既存の `<保存先>/*/<session_uuid>/`（日付フォルダ導入前の `<保存先>/<session_uuid>/` も含む）をスクリプトが見つけて再利用する。日付フォルダは分裂しない。
 
 ## Step 1: タイトルを決め、Summary を書く
 
@@ -63,8 +65,8 @@ python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
 スクリプトが自動で行うこと:
 
 - セッション特定: Claude Code は `$CLAUDE_CODE_SESSION_ID` → `~/.claude/projects/`、Codex は `$CODEX_THREAD_ID` → `~/.codex/sessions/` の最新 rollout
-- 保存先 `${dest}/${session_uuid}/`（`--dest` 省略時は vault 保存先）の作成と jsonl のハードリンク。既存リンクは inode を比較し、atomic rename（tmpfile → rename）でソースが置き換わった stale link は貼り直す
-- jsonl から user/assistant のテキストを抽出（tool call・thinking・system-reminder は除外）し、frontmatter + Summary + Conversation Log の MD を `${dest}/${session_uuid}/<タイトル>.md` に書き出す
+- 保存先 `${dest}/YYYY-MM-DD/${session_uuid}/`（`--dest` 省略時は vault 保存先。既存セッションディレクトリがあれば再利用）の作成と jsonl のハードリンク。既存リンクは inode を比較し、atomic rename（tmpfile → rename）でソースが置き換わった stale link は貼り直す
+- jsonl から user/assistant のテキストを抽出（tool call・thinking・system-reminder は除外）し、frontmatter + Summary + Conversation Log の MD を同ディレクトリの `<タイトル>.md` に書き出す
 
 オプション（通常は不要）: `--session <uuid>` `--cwd <dir>` `--project-dir <dir>`
 

@@ -3,7 +3,7 @@
 
 やること:
   1. セッション UUID の特定（Claude Code または Codex）
-  2. ${cwd}/${uuid}/ の作成
+  2. ${dest}/${YYYY-MM-DD}/${uuid}/ の作成（日付は保存日。既存のセッションディレクトリがあればそれを再利用）
   3. 生ログ jsonl のハードリンク作成（atomic rename による stale link は inode 比較で検出して貼り直す）
   4. jsonl から user/assistant のテキストを機械抽出し、frontmatter + Summary + Conversation Log の
      要約 MD を組み立てて書き出す
@@ -13,7 +13,10 @@
 保存先の決め方:
   デフォルト（--dest 省略時）は環境変数 CLAUDE_SAVE_CONV_VAULT_DIR が指す vault 保存先
   （未設定ならエラー終了）。"vault"（typo の "valut" も可）を明示しても同じ。
-  --dest に "pwd" を渡すと ${cwd}/${uuid}/ に保存する（旧デフォルト挙動）。
+  --dest に "pwd" を渡すと ${cwd} を保存先ルートにする（旧デフォルト挙動）。
+  どの保存先でも ${root}/${YYYY-MM-DD}/${uuid}/ の形で日付フォルダを挟む。同じセッションを
+  別の日に保存し直したときは、既存の ${root}/*/${uuid}/（旧形式の ${root}/${uuid}/ も含む）を
+  再利用し、日付フォルダが分裂しないようにする。
   生ログ jsonl の探索元は常に実際のセッション cwd（--cwd / --project-dir）から導出する
   ため、別ディレクトリで起動したセッションを vault に集約しても正しくハードリンクされる。
 
@@ -44,6 +47,7 @@ VAULT_DIR_ENV = "CLAUDE_SAVE_CONV_VAULT_DIR"
 VAULT_KEYWORDS = {"vault", "valut"}
 # cwd 保存（旧デフォルト挙動）を要求するキーワード
 PWD_KEYWORDS = {"pwd"}
+DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 CODEX_SESSION_RE = re.compile(r"rollout-.*-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$")
 
 
@@ -66,6 +70,24 @@ def resolve_dest(dest: str | None, cwd: str) -> str:
             )
         return os.path.abspath(os.path.expanduser(vault_dir))
     return os.path.abspath(os.path.expanduser(dest))
+
+
+def resolve_session_dir(dest_root: str, session: str, today: str) -> str:
+    """セッションの保存ディレクトリを決める。
+
+    既存ディレクトリ（日付フォルダ配下、または日付フォルダ導入前の直下）があればそれを返す。
+    再保存のたびに日付フォルダが増えると、同じ会話が複数箇所に散って探しにくくなるため。
+    """
+    legacy = os.path.join(dest_root, session)
+    if os.path.isdir(legacy):
+        return legacy
+    existing = sorted(
+        d for d in glob.glob(os.path.join(dest_root, "*", session))
+        if os.path.isdir(d) and DATE_DIR_RE.match(os.path.basename(os.path.dirname(d)))
+    )
+    if existing:
+        return existing[0]
+    return os.path.join(dest_root, today, session)
 
 
 def encode_cwd(cwd: str) -> str:
@@ -248,8 +270,7 @@ def extract_codex_messages(jsonl_path: str) -> list[tuple[str, str]]:
 
 
 def build_markdown(session: str, title: str, summary: str, msgs: list[tuple[str, str]],
-                   resume_command: str) -> str:
-    today = datetime.date.today().isoformat()
+                   resume_command: str, today: str) -> str:
     lines = [
         "---",
         f"session_uuid: {session}",
@@ -300,6 +321,7 @@ def main() -> None:
         )
         source = "codex" if (os.environ.get("CODEX_THREAD_ID") or not os.path.isdir(claude_project_dir)) else "claude"
     dest_root = resolve_dest(args.dest, cwd)
+    today = datetime.date.today().isoformat()
 
     with open(args.summary_file, encoding="utf-8") as f:
         summary = f.read()
@@ -313,7 +335,7 @@ def main() -> None:
             os.path.abspath(os.path.expanduser(args.codex_dir)), args.session,
             os.environ.get("CODEX_THREAD_ID") or None,
         )
-        dest_dir = os.path.join(dest_root, session)
+        dest_dir = resolve_session_dir(dest_root, session, today)
         os.makedirs(dest_dir, exist_ok=True)
         linked = hard_link_sources([main_jsonl], dest_dir)
         msgs = extract_codex_messages(main_jsonl)
@@ -327,7 +349,7 @@ def main() -> None:
         session = find_session(
             project_dir, args.session, os.environ.get("CLAUDE_CODE_SESSION_ID") or None
         )
-        dest_dir = os.path.join(dest_root, session)
+        dest_dir = resolve_session_dir(dest_root, session, today)
         os.makedirs(dest_dir, exist_ok=True)
         linked = hard_link_logs(project_dir, session, dest_dir)
         main_jsonl = os.path.join(dest_dir, f"{session}.jsonl")
@@ -338,7 +360,7 @@ def main() -> None:
 
     md_path = os.path.join(dest_dir, f"{title}.md")
     with open(md_path, "w", encoding="utf-8") as f:
-        f.write(build_markdown(session, title, summary, msgs, resume_command))
+        f.write(build_markdown(session, title, summary, msgs, resume_command, today))
 
     print(f"session: {session}")
     for entry in linked:
