@@ -34,3 +34,8 @@
 # Runtime artifacts
 __pycache__/
 *.bak
+
+# Claude Code の実行時状態（同期時刻・ポリシーのスタンプ・MCP 判定キャッシュ）
+/state/
+/policy-limits.json.stamp.json
+/remote-settings.json.synced-at
