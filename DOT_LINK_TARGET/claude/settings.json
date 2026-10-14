@@ -1,7 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 90,
-  "autoCompactWindow": 400000,
   "env": {
     "API_TIMEOUT_MS": "1200000",
     "MCP_TIMEOUT": "30000",
@@ -180,6 +179,7 @@
   "language": "japanese",
   "alwaysThinkingEnabled": true,
   "effortLevel": "medium",
+  "autoCompactWindow": 400000,
   "autoUpdatesChannel": "stable",
   "tui": "default",
   "voice": {
@@ -187,8 +187,10 @@
     "mode": "hold"
   },
   "showThinkingSummaries": true,
+  "skipWorkflowUsageWarning": true,
   "theme": "auto",
   "preferredNotifChannel": "iterm2",
+  "switchModelsOnFlag": true,
   "autoMode": {
     "soft_deny": [
       "$defaults",
@@ -202,6 +204,5 @@
     "environment": [
       "Source control: github.com/ik11235 and repos under it, cloned via ghq into ~/ghq/github.com/"
     ]
-  },
-  "skipWorkflowUsageWarning": true
+  }
 }
