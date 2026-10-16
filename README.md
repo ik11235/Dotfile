@@ -22,6 +22,8 @@ dotfile
 - Claude Code: `~/.claude/` 以下 (`CLAUDE.md` / `settings.json` / `commands` / `skills`)
 - Codex: `~/.codex/` 以下。共有設定は `config.template.toml`、実際の `config.toml` と実行時状態はマシンごとに管理する
 - 共通 AI スキル: `~/.agents/skills/`。Claude Code の `~/.claude/skills` はこのディレクトリへのリンクで、Codex と同じスキル実体を参照する
+  - 外部スキルは `npx skills add <repo> -g -s <name> -a claude-code -a codex -y` で追加し、スキル本体と `~/.agents/.skill-lock.json` をコミットする（ロックに載っているものが外部スキル）
+  - 更新は `npx skills update -g` → `git diff` で中身（特に `scripts/`）を確認してからコミットする
 - その他: `.editorconfig`, direnv, Brewfile (macOS)
 
 # インストール

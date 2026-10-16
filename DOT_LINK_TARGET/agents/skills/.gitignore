@@ -11,3 +11,6 @@ wrangler/
 # claude.ai から同期されたスキルとその退避先（自動生成・社内スキルを含むため commit しない）
 synced/
 .trash/
+
+# スキル同梱スクリプトの実行時キャッシュ
+__pycache__/
