@@ -179,8 +179,6 @@
     }
   },
   "language": "japanese",
-  "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
   "autoCompactWindow": 400000,
   "autoUpdatesChannel": "stable",
   "tui": "default",
