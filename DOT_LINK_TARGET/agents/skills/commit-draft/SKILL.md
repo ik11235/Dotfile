@@ -5,20 +5,30 @@ user-invocable: true
 model: sonnet
 disable-model-invocation: true
 allowed-tools:
-  - "Bash(git -C * status*)"
-  - "Bash(git -C * diff*)"
-  - "Bash(git -C * log*)"
-  - "Bash(git -C * rev-parse*)"
-  - "Bash(git rev-parse*)"
+  # `git -C * …` は -c を挟んだ任意コマンドまで通すため使わない。-C なしでもサブディレクトリからリポジトリ全体を見られる
+  - "Bash(git status *)"
+  - "Bash(git diff *)"
+  - "Bash(git log *)"
+  - "Bash(git rev-parse *)"
+  - "Bash(git remote)"
   - "Bash(ls *)"
-  - "Bash(head*)"
-  - "Bash(grep*)"
+  - "Bash(head *)"
+  - "Bash(grep *)"
   - "Bash(jq *)"
   - "Bash(date *)"
-  - "Read(/tmp/commit-draft*)"
+  # RTK フックが git status/diff/log・grep・ls を `rtk …` に書き換えてから許可ルールと照合するため、書き換え後の形も並べる
+  - "Bash(rtk git status *)"
+  - "Bash(rtk git diff *)"
+  - "Bash(rtk git log *)"
+  - "Bash(rtk grep *)"
+  - "Bash(rtk ls *)"
+  # `/` 始まりはプロジェクトルート相対になるため `//` で絶対パスにし、/tmp の実体 /private/tmp も並べる。allow の Write(path) は評価されないので Edit で書く
+  - "Read(//tmp/commit-draft-*)"
+  - "Read(//private/tmp/commit-draft-*)"
+  - "Edit(//tmp/commit-draft-*)"
+  - "Edit(//private/tmp/commit-draft-*)"
   - "Read(**/lefthook.yml)"
   - "Read(**/.husky/*)"
-  - "Write(/tmp/commit-draft*)"
 ---
 
 # commit-draft — diffからコミットコマンドを生成
@@ -33,16 +43,17 @@ allowed-tools:
 
 ```bash
 ROOT=$(git rev-parse --show-toplevel) && \
-git -C "$ROOT" status && \
-git -C "$ROOT" diff --stat && \
-git -C "$ROOT" diff --cached --stat && \
-git -C "$ROOT" log --oneline -5 && \
+git status --porcelain=v1 --branch && \
+git diff --stat && \
+git diff --cached --stat && \
+git log --oneline -5 && \
 date "+DRAFT_ID=%s-$RANDOM" && \
 ls "$ROOT"/lefthook.yml "$ROOT"/.husky/prepare-commit-msg 2>/dev/null
 ```
 
 - `ROOT` の値（リポジトリルートの絶対パス）は、**出力するシェルスクリプトにも絶対パスとしてハードコードする**（後述）。スクリプト内では `git rev-parse` を実行時に呼ばない
 - `git status` に `-uall` フラグは使わない
+- `git status` は `--porcelain` で取る。通常形式はパスがカレントディレクトリ相対になり、`cd "$ROOT"` するスクリプトの `git add` に流用すると壊れる。porcelain・`diff --stat` のパスはルート相対
 - `DRAFT_ID`（unixtime＋乱数）は出力スクリプトのファイル名に使う（後述）。`ls` は対象が無いと非0で終わるため、`date` はその前に置く
 - 末尾の `ls` で `prepare-commit-msg` hookの有無だけを安く確認する。ヒットした場合のみ、必要に応じて該当ファイルをReadして内容（プレフィックス自動付与の有無）を確かめる。存在しなければそれ以上読まない
 
@@ -61,8 +72,8 @@ ls "$ROOT"/lefthook.yml "$ROOT"/.husky/prepare-commit-msg 2>/dev/null
 フル差分は除外pathspecで取得し、保険でバイト上限を付ける（除外パターンはリポジトリの生成物に応じて調整する）:
 
 ```bash
-git -C "$ROOT" diff --cached -- . ':(exclude)*.jsonl' ':(exclude)*.lock' | head -c 20000
-git -C "$ROOT" diff           -- . ':(exclude)*.jsonl' ':(exclude)*.lock' | head -c 20000
+git diff --cached -- ':/' ':(exclude)*.jsonl' ':(exclude)*.lock' | head -c 20000
+git diff           -- ':/' ':(exclude)*.jsonl' ':(exclude)*.lock' | head -c 20000
 ```
 
 `head -c` で頭打ちになった（出力が途中で切れた）場合は、残りはstatベースで判断し、メッセージは要約レベルに留める。差分が全てスキップ対象（例: jsonlのみのコミット）なら、フルdiffコマンド自体を省略してstatだけでメッセージを決める。
@@ -72,7 +83,7 @@ git -C "$ROOT" diff           -- . ':(exclude)*.jsonl' ':(exclude)*.lock' | head
 フル差分を取得したついでに、staged差分に対し秘密情報の混入を安くスキャンする:
 
 ```bash
-git -C "$ROOT" diff --cached | grep -inE 'api[_-]?key|secret|password|passwd|token|BEGIN [A-Z ]*PRIVATE KEY' | head -20
+git diff --cached | grep -inE 'api[_-]?key|secret|password|passwd|token|BEGIN [A-Z ]*PRIVATE KEY' | head -20
 ```
 
 ヒットがあれば commit-draft の出力時にユーザーへ警告する（後述）。ヒットが多数・判断に迷う・コード変更を含む重要コミットの場合に**限って**、`commit-reviewer` サブエージェントを起動して第三者レビューを依頼する。日常的なノート・ログ更新では起動しない（毎回サブエージェントを焚くとトークンと時間の無駄になるため）。
@@ -249,7 +260,7 @@ EOF
 - 現在ブランチに upstream が未設定なら `git push -u origin <branch>`、設定済みなら `git push`
 - 複数コミットに分割する場合は**最後のスクリプトにのみ** push を付ける（途中で失敗したら push されないように）
 - 含めないケース: ユーザーが push 不要と明示した場合／リモートが無い場合／detached HEAD
-- 手順1のコマンドに `git -C "$ROOT" remote` と `git -C "$ROOT" rev-parse --abbrev-ref @{upstream}` の確認を足すと1往復で判定できる（upstream 未設定はエラーになるだけでよい）
+- 手順1のコマンドに `git remote` を足すと1往復で判定できる。upstream の有無は `git status --porcelain=v1 --branch` の先頭行（`## branch...origin/branch` なら設定済み）で分かる
 - スクリプト表示時に「push まで実行します」と一言添える
 
 #### prepare-commit-msg hookへの対応

@@ -6,8 +6,11 @@ allowed-tools:
   - "Bash(mktemp*)"
   - "Bash(mkdir *)"
   - "Bash(ln *)"
-  - "Read(/tmp/*)"
-  - "Write(/tmp/*)"
+  # /tmp 全体ではなく Summary の一時ファイルだけ。`//` は絶対パス、/tmp の実体 /private/tmp も並べる。allow の Write(path) は評価されないので Edit で書く
+  - "Read(//tmp/save-conv-summary-*)"
+  - "Read(//private/tmp/save-conv-summary-*)"
+  - "Edit(//tmp/save-conv-summary-*)"
+  - "Edit(//private/tmp/save-conv-summary-*)"
 model: sonnet
 ---
 

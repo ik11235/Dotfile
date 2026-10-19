@@ -137,3 +137,4 @@ Step 2〜4 はサブエージェントに委譲し、メインコンテキスト
 - allow 側の `Write(path)` は評価されない。パス限定の書き込み許可は `Edit(path)` で書く（v2.1.210 以降）
 - Bash ルールで `-C` とサブコマンドの間に `*` を置くと（例 `git -C * log*`）、`-c` や `--exec-path` を挟んだ任意コマンドまで確認なしで通る。パスを固定して書く（2026-10-02、自動実行ログの警告で判明）
 - `~/.claude/settings.json` の編集は、auto mode の判定器に「自己改変」としてブロックされることがある。止まったら回避せず、変更内容を提示してユーザーに任せる（2026-10-02）
+- RTK の PreToolUse フックは `git status/diff/log`・`grep`・`ls` などを `rtk …` に書き換え、許可ルールとの照合は書き換え後のコマンドで行われる。`Bash(git status *)` だけでは一致しないので `Bash(rtk git status *)` も並べる。`git remote`・`git rev-parse`・`head`・`date` は書き換えられない（2026-10-19、`claude -p --allowedTools` で確認）
