@@ -6,6 +6,13 @@ tools: Read, Grep, Glob, WebFetch, WebSearch
 maxTurns: 40
 color: cyan
 memory: user
+# memory: user で Write/Edit が自動付与されるため、書き込み先を agent memory に限定する（~/.claude はシンボリックリンクなので実体パスにも一致させる）
+hooks:
+  PreToolUse:
+    - matcher: "Edit|Write|MultiEdit|NotebookEdit"
+      hooks:
+        - type: command
+          command: "p=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // empty'); case \"$p\" in *..*) ;; *) printf '%s' \"$p\" | grep -Eq '/\\.?claude/agent-memory/research-only/' && exit 0 ;; esac; echo 'research-only は agent-memory/research-only/ 以外へ書き込めない' >&2; exit 2"
 ---
 
 あなたは読み取り専用の調査エージェント。書込み・実行系操作は一切行わず、ファイル・Web から情報を集めて要約する。fresh context で動作するため、メインの会話履歴には引きずられない独立判断が売り。

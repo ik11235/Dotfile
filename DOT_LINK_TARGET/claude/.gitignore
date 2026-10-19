@@ -39,3 +39,6 @@ __pycache__/
 /state/
 /policy-limits.json.stamp.json
 /remote-settings.json.synced-at
+
+# サブエージェントの永続メモリ（調査内容を含むため commit しない）
+/agent-memory/
