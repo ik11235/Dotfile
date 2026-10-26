@@ -23,12 +23,15 @@ setopt extended_glob
 # コマンドの引数やパス名を途中まで入力して <Tab> を押すといい感じに補完してくれる
 # 例： `cd path/to/<Tab>`, `ls -<Tab>`
 # 24 時間以内に更新された ~/.zcompdump があれば `-C` で compaudit を省略して高速化。
-# 24 時間以上経過 or 初回起動は通常の compinit を走らせてキャッシュを更新する。
+# 24 時間以上経過 or 初回起動は compaudit 付きの通常の compinit を走らせる。
+# 通常の compinit は fpath のファイル数と zsh のバージョンが dump と一致していれば
+# dump を読むだけで書き直さず mtime が進まないため、成功時に touch して次の 24 時間は -C に戻す。
+# (insecure directories で compinit が失敗したときは touch しない)
 autoload -Uz compinit
 if [[ -n ${ZDOTDIR:-${HOME}}/.zcompdump(#qN.mh-24) ]]; then
   compinit -C
 else
-  compinit
+  compinit && touch "${ZDOTDIR:-${HOME}}/.zcompdump"
 fi
 # 入力したコマンドが存在せず、かつディレクトリ名と一致するなら、ディレクトリに cd する
 # 例： /usr/bin と入力すると /usr/bin ディレクトリに移動
