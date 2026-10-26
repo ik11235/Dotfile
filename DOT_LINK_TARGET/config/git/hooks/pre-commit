@@ -80,26 +80,37 @@ if [ -d "${hook_dir}/git_prohibited_words_private/" ]; then
   while IFS='' read -r line; do prohibited_word_list+=("$line"); done < <(cat "${hook_dir}/git_prohibited_words_private/"*)
 fi
 
+## コメント行・空行を除いた有効な単語だけを残す
+prohibited_words=()
 for prohibited_word in "${prohibited_word_list[@]}"; do
-  # Skip comment or blank lines
   [[ "$prohibited_word" =~ ^[[:space:]]*# ]] && continue
   [[ "$prohibited_word" =~ ^[[:space:]]*$ ]] && continue
-
-  for file in "${staged_files[@]}"; do
-    # 追加行(+)のみチェック。削除行(-)は元々含まれていたものを消すだけなので許容する
-    # ファイルヘッダは必ず "+++ " (スペース付き) なので、"++i" のような追加行を誤除外しない
-    if result=$(git diff --cached -U0 -- "$file" | grep '^+' | grep -v '^+++ ' | grep -i "${prohibited_word}"); then
-      prohibited_word_check+=$'\n'"${file}"$'\n'"${result}"$'\n'
-    fi
-  done
-
-  # ファイル名のチェック（新規追加・リネーム先のパスのみ。削除は許容する）
-  for file in "${added_files[@]}"; do
-    if echo "$file" | grep -qi "${prohibited_word}"; then
-      prohibited_word_check+=$'\n'"filename: ${file}"$'\n'
-    fi
-  done
+  prohibited_words+=("$prohibited_word")
 done
+
+if [ ${#prohibited_words[@]} -gt 0 ]; then
+  ## 追加行(+)のみチェック。削除行(-)は元々含まれていたものを消すだけなので許容する。
+  ## ファイルヘッダは必ず "+++ " (スペース付き) なので、"++i" のような追加行を誤除外しない。
+  ## git diff はファイルごとに 1 回だけ取り、単語ごとのループは grep だけにする。
+  ## ファイル名は制御文字チェックと同じ理由で :(literal) を前置する
+  for file in "${staged_files[@]}"; do
+    added_lines=$(git diff --cached -U0 -- ":(literal)${file}" | grep '^+' | grep -v '^+++ ') || continue
+    for prohibited_word in "${prohibited_words[@]}"; do
+      if result=$(grep -i "${prohibited_word}" <<<"${added_lines}"); then
+        prohibited_word_check+=$'\n'"${file}"$'\n'"${result}"$'\n'
+      fi
+    done
+  done
+
+  ## ファイル名のチェック（新規追加・リネーム先のパスのみ。削除は許容する）
+  for file in "${added_files[@]}"; do
+    for prohibited_word in "${prohibited_words[@]}"; do
+      if echo "$file" | grep -qi "${prohibited_word}"; then
+        prohibited_word_check+=$'\n'"filename: ${file}"$'\n'
+      fi
+    done
+  done
+fi
 
 if [ -n "$prohibited_word_check" ]; then
   echo "$prohibited_word_check"
