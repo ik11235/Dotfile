@@ -4,8 +4,10 @@ set -euo pipefail
 echo "[*] running .software-install.sh"
 
 echo "Do you want to install a package ? [Y/n]"
-# stdin が閉じていて read が失敗しても (set -e で止めず) 既定の Y 扱いにする
-read -r ANSWER || ANSWER=""
+# stdin が閉じていて read が失敗しても set -e で止めない。
+# 末尾に改行の無い入力 (printf n | ... や n の直後に Ctrl-D) でも read は 1 を返すが
+# 読めた分は ANSWER に入っているので上書きしない。stdin が閉じていれば空のまま = 既定の Y
+read -r ANSWER || true
 ANSWER=$(echo "$ANSWER" | tr y Y)
 
 OS_TYPE=$(uname)
