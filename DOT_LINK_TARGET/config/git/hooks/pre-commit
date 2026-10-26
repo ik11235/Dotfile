@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# `git --literal-pathspecs` (Magit の既定) で commit されると GIT_LITERAL_PATHSPECS=1 が hook にも
+# 引き継がれ、以降で使う :(literal) が magic として解釈されずに検査が素通りする。
+# 呼び出し元の pathspec 設定は hook 内の git には不要なので、関連する環境変数をまとめて外す
+unset GIT_LITERAL_PATHSPECS GIT_GLOB_PATHSPECS GIT_NOGLOB_PATHSPECS GIT_ICASE_PATHSPECS
+
 source "$(dirname "$0")/_local-hook-exec"
 
 # https://dev.classmethod.jp/etc/git_aws_access_key/
