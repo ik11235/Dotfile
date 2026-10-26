@@ -50,7 +50,7 @@ git clone https://github.com/ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfil
 
 ## リンクの仕様
 
-`DOT_LINK_TARGET` / `LINK_TARGET` の **トップレベル** のファイル・ディレクトリのみをリンク対象とする。サブディレクトリはリンクせず、既に同名ディレクトリが `$HOME` に存在する場合は `... Directory exists.` と表示してスキップする。
+`DOT_LINK_TARGET` / `LINK_TARGET` の **トップレベル** のファイル・ディレクトリのみをリンク対象とする。サブディレクトリはリンクせず、既に同名のファイル・ディレクトリ・リンクが `$HOME` に存在する場合は `<path>: already exists, skip.` と表示してスキップする。
 
 ## init.sh が呼ぶサブスクリプト
 
