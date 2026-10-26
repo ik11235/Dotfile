@@ -15,7 +15,6 @@
 /paste-cache/
 /plans/
 /plugins/
-/policy-limits.json
 /projects/
 /rate-limits-state.json
 /scripts/
@@ -37,5 +36,8 @@ __pycache__/
 
 # Claude Code の実行時状態（同期時刻・ポリシーのスタンプ・MCP 判定キャッシュ）
 /state/
-/policy-limits.json.stamp.json
-/remote-settings.json.synced-at
+/feedback/
+# サーバーから同期されるポリシー・リモート設定とその付随ファイル
+# (本体 / .stamp.json / .synced-at / .signature.json / .signature-iat.json) をまとめて除外
+/policy-limits.json*
+/remote-settings.json*
