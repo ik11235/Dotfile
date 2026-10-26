@@ -18,9 +18,9 @@ while IFS= read -r -d '' file; do staged_files+=("$file"); done < <(git diff --c
 ## 新規追加・リネーム先のみ（削除・単純変更は含まない）
 added_files=()
 while IFS= read -r -d '' file; do added_files+=("$file"); done < <(git diff --cached --name-only --diff-filter=AR -z)
-## 内容を検査する対象（削除されたファイルは除く）
+## 内容を検査する対象（削除 (D) だけを除く。型変更 T (symlink <-> 通常ファイル) も含める）
 content_files=()
-while IFS= read -r -d '' file; do content_files+=("$file"); done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+while IFS= read -r -d '' file; do content_files+=("$file"); done < <(git diff --cached --name-only --diff-filter=d -z)
 
 # macでときより挿入される制御文字(0x08)が含まれないかチェックする
 ## 念の為、近似の制御文字も合わせてチェック
@@ -29,8 +29,10 @@ while IFS= read -r -d '' file; do content_files+=("$file"); done < <(git diff --
 ## 作業ツリー全体を見ると、既存ファイルに残る制御文字で無関係なコミットまで止まってしまう
 
 ## homebrew/homebrew-coreにはコード内に制御文字が含まれているのでチェックから除外する
+## ファイル名は :(literal) を前置して pathspec として渡す。
+## そのまま渡すと ":" 始まりの名前が pathspec magic に、"*" 等を含む名前が glob として解釈される
 if [ "$(basename "$(git rev-parse --show-toplevel)")" != "homebrew-core" ] && [ ${#content_files[@]} -gt 0 ]; then
-  if git grep -I -n --cached $'[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]' -- "${content_files[@]}"; then
+  if git grep -I -n --cached $'[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]' -- "${content_files[@]/#/:(literal)}"; then
     echo "Hit control code."
     exit 1
   fi
