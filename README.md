@@ -19,7 +19,8 @@ dotfile
 - エディタ: Emacs (パッケージ一覧は `DOT_LINK_TARGET/emacs.d/init.el` の `installing-package-list` を参照)
 - ターミナル補助: tmux
 - Git / GitHub CLI: `~/.config/git/config`, `~/.config/gh/config.yml`
-- Claude Code: `~/.claude/` 以下 (`CLAUDE.md` / `settings.json` / `commands` / `skills`)
+- AI エージェント共通の指示: `~/.claude/CLAUDE.md`。Codex の `~/.codex/AGENTS.md` はこのファイルへのリンクなので、Claude Code 固有の記述はここに書かず `~/.claude/rules/` に置く（例: RTK の説明 `rules/rtk.md`。user-level rule として全プロジェクトで読み込まれる）
+- Claude Code: `~/.claude/` 以下 (`CLAUDE.md` / `rules` / `settings.json` / `agents` / `skills` / `statusline-command.sh`)
 - Codex: `~/.codex/` 以下。共有設定は `config.template.toml`、実際の `config.toml` と実行時状態はマシンごとに管理する
 - 共通 AI スキル: `~/.agents/skills/`。Claude Code の `~/.claude/skills` はこのディレクトリへのリンクで、Codex と同じスキル実体を参照する
   - 外部スキルは `npx skills add <repo> -g -s <name> -a claude-code -a codex -y` で追加し、スキル本体と `~/.agents/.skill-lock.json` をコミットする（ロックに載っているものが外部スキル）
@@ -62,7 +63,7 @@ git clone https://github.com/ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfil
 | `.software-install.sh` | Brewfile からの一括インストール (macOS のみ) | 共通呼び出し、処理は macOS のみ |
 | `.default-shell-change.sh` | zsh をログインシェルに設定 | 共通 |
 | `.mac-init.sh` | macOS 固有の `defaults write` 等 | macOS のみ (`init.sh` 側で uname 判定) |
-| `.powerline-fonts-install.sh` | Powerline fonts / UDEV Gothic のインストール | macOS のみ (スクリプト冒頭で uname 判定) |
+| `.powerline-fonts-install.sh` | Powerline fonts のインストール (UDEV Gothic は Brewfile の cask `font-udev-gothic-nf` で導入) | macOS のみ (スクリプト冒頭で uname 判定) |
 
 # CI
 
