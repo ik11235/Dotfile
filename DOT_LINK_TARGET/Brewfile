@@ -149,6 +149,8 @@ cask "discord"
 cask "docker-desktop"
 # GNU Emacs text editor
 cask "emacs-app"
+# UDEV Gothic NF (Nerd Fonts 版の日本語プログラミングフォント)
+cask "font-udev-gothic-nf"
 # Set of tools to manage resources and applications hosted on Google Cloud
 cask "gcloud-cli"
 # Web browser
