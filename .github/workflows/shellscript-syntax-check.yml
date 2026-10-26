@@ -23,8 +23,19 @@ jobs:
       - name: zsh syntax check
         run: zsh -n DOT_LINK_TARGET/zshrc DOT_LINK_TARGET/zsh.d/zshrc_* DOT_LINK_TARGET/zsh.d/global/*.zsh
 
+      # `./*.sh` はドット始まりのファイル (.link_dir_and_file.sh 等) にマッチしないため `./.*.sh` も明示する
       - name: bash syntax check
-        run: bash -n ./*.sh
+        run: bash -n ./*.sh ./.*.sh
 
       - name: shellcheck
-        run: shellcheck ./*.sh DOT_LINK_TARGET/bin/*
+        run: |
+          shellcheck ./*.sh ./.*.sh \
+            DOT_LINK_TARGET/bin/* \
+            DOT_LINK_TARGET/claude/statusline-command.sh
+
+      # git hooks は `_local-hook-exec` を source するため -x で追従させ、
+      # パス解決は各 hook のディレクトリ基準 (-P SCRIPTDIR) にする
+      - name: shellcheck (git hooks)
+        run: |
+          find DOT_LINK_TARGET/config/git/hooks -maxdepth 1 -type f ! -name '.*' -print0 \
+            | xargs -0 shellcheck -x -P SCRIPTDIR
