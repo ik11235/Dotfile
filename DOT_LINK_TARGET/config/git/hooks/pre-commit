@@ -79,7 +79,7 @@ while IFS= read -r entry; do
     continue
   fi
   sed "${sed_inplace_opts[@]}" -e "${line}s/ *$//" "$file"
-  git add "$file"
+  git add -- ":(literal)${file}"
 done < <(git diff-index --check --cached "$against" -- | grep -E ': trailing whitespace(\.|, [^:]*\.)$')
 
 # 禁止ワードが含まれていないかチェック
