@@ -108,7 +108,7 @@ brew "wakeonlan"
 # Watch files and take action when they change
 brew "watchman"
 # Port of OpenAI's Whisper model in C/C++
-brew "whisper-cpp"
+brew "whisper.cpp"
 # PDF viewer
 brew "xpdf"
 # Feature-rich command-line audio/video downloader
