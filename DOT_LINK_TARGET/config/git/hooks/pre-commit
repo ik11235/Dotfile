@@ -61,14 +61,26 @@ else
 fi
 
 ## `git diff-index --check` の出力 "path:line: trailing whitespace." から path と line を取り出す。
-## 他の問題と併記される "path:line: trailing whitespace, space before tab in indent." の形式も拾う
+## 他の問題と併記される "path:line: trailing whitespace, space before tab in indent." の形式も拾う。
+## メッセージ行の次には問題行の本文も出力されるため、行末を固定した正規表現でメッセージ行だけを拾い、
+## さらに file が stage 済みの検査対象に含まれ line が数値であることを確かめてから sed と git add を行う
+is_content_file() {
+  local f
+  for f in "${content_files[@]}"; do
+    [ "$f" = "$1" ] && return 0
+  done
+  return 1
+}
 while IFS= read -r entry; do
   entry=${entry%%: trailing whitespace*}
   file=${entry%:*}
   line=${entry##*:}
+  if ! [[ "$line" =~ ^[0-9]+$ ]] || ! is_content_file "$file"; then
+    continue
+  fi
   sed "${sed_inplace_opts[@]}" -e "${line}s/ *$//" "$file"
   git add "$file"
-done < <(git diff-index --check --cached "$against" -- | grep ': trailing whitespace[,.]')
+done < <(git diff-index --check --cached "$against" -- | grep -E ': trailing whitespace(\.|, [^:]*\.)$')
 
 # 禁止ワードが含まれていないかチェック
 prohibited_word_check=""
