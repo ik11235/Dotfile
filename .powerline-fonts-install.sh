@@ -1,5 +1,5 @@
-#!/bin/bash -eu
-set -o pipefail
+#!/bin/bash
+set -euo pipefail
 
 if [ "$(uname)" != "Darwin" ]; then
   echo "Warning: .powerline-fonts-install.sh は現状macOSのみ対応。Linux対応は今後実装予定のためskipします。" >&2

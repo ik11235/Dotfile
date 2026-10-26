@@ -1,10 +1,11 @@
-#!/bin/bash -eu
-set -o pipefail
+#!/bin/bash
+set -euo pipefail
 
 echo "[*] running .software-install.sh"
 
 echo "Do you want to install a package ? [Y/n]"
-read -r ANSWER
+# stdin が閉じていて read が失敗しても (set -e で止めず) 既定の Y 扱いにする
+read -r ANSWER || ANSWER=""
 ANSWER=$(echo "$ANSWER" | tr y Y)
 
 OS_TYPE=$(uname)

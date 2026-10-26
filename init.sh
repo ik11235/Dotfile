@@ -1,5 +1,7 @@
-#!/bin/bash -eu
-set -o pipefail
+#!/bin/bash
+# 各サブスクリプトは `/bin/bash script` 形式で呼ぶため shebang のフラグは無視される。
+# そのため各スクリプト側で set -euo pipefail を明示している
+set -euo pipefail
 
 cd "$(dirname "$0")"
 

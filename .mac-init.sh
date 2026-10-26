@@ -1,5 +1,5 @@
-#!/bin/bash -eu
-set -o pipefail
+#!/bin/bash
+set -euo pipefail
 
 if [ "$(uname)" != "Darwin" ]; then
   echo "Error: .mac-init.sh is macOS only." >&2

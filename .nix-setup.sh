@@ -1,5 +1,5 @@
-#!/bin/bash -eu
-set -o pipefail
+#!/bin/bash
+set -euo pipefail
 
 # 最小 Nix セットアップ:
 # 1. Nix が未インストールなら Determinate Systems インストーラで導入
