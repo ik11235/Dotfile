@@ -21,4 +21,4 @@ jobs:
         uses: reviewdog/action-yamllint@v1
         with:
           fail_on_error: true
-          yamllint_flags: '.github/workflows/ DOT_LINK_TARGET/config/gh/config.yml .yamllint.yml'
+          yamllint_flags: '.github/workflows/ .github/dependabot.yml DOT_LINK_TARGET/config/gh/config.yml DOT_LINK_TARGET/config/gh-dash/config.yml .yamllint.yml'

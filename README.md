@@ -23,8 +23,9 @@ dotfile
 - Claude Code: `~/.claude/` 以下 (`CLAUDE.md` / `rules` / `settings.json` / `agents` / `skills` / `statusline-command.sh`)
 - Codex: `~/.codex/` 以下。共有設定は `config.template.toml`、実際の `config.toml` と実行時状態はマシンごとに管理する
 - 共通 AI スキル: `~/.agents/skills/`。Claude Code の `~/.claude/skills` はこのディレクトリへのリンクで、Codex と同じスキル実体を参照する
-  - 外部スキルは `npx skills add <repo> -g -s <name> -a claude-code -a codex -y` で追加し、スキル本体と `~/.agents/.skill-lock.json` をコミットする（ロックに載っているものが外部スキル）
+  - 外部スキルは `npx skills add <repo> -g -s <name> -a claude-code -a codex -y` で追加し、スキル本体と `~/.agents/.skill-lock.json` をコミットする（ロックに載っているものが `skills` CLI 管理の外部スキル）
   - 更新は `npx skills update -g` → `git diff` で中身（特に `scripts/`）を確認してからコミットする
+  - `skills` CLI を使わず手動で取り込んだ外部スキル（`grilling` / `grill-me`）はロックに載らない。出典とライセンスは各 `SKILL.md` の frontmatter `metadata.source` / `license-file` に記載し、更新は出典を見て手動で行う
 - その他: `.editorconfig`, direnv, Brewfile (macOS)
 
 # インストール
@@ -46,7 +47,7 @@ git clone https://github.com/ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfil
 # ディレクトリ構成
 
 - `DOT_LINK_TARGET/**` — 先頭 `.` 付きで `$HOME` 直下にシンボリックリンクを張る対象 (例: `DOT_LINK_TARGET/zshrc` → `~/.zshrc`)
-- `LINK_TARGET/**` — そのままの名前で `$HOME` 直下にシンボリックリンクを張る対象 (例: `LINK_TARGET/Brewfile` → `~/Brewfile`)
+- `LINK_TARGET/**` — そのままの名前で `$HOME` 直下にシンボリックリンクを張る対象 (例: `LINK_TARGET/foo` → `~/foo`。現在は `.gitkeep` のみで空。Brewfile は `DOT_LINK_TARGET/Brewfile` → `~/.Brewfile` で `brew bundle --global` が読む)
 - `init.sh` — 上記のリンクを張り、必要に応じてソフトウェアをインストールするエントリポイント
 
 ## リンクの仕様
@@ -67,6 +68,6 @@ git clone https://github.com/ik11235/Dotfile.git ~/ghq/github.com/ik11235/Dotfil
 
 # CI
 
-- `shellscript-syntax-check` — `bash -n` / `zsh -n` / `shellcheck` で dotfile 内のシェルを検証
+- `shellscript-syntax-check` — `bash -n` / `zsh -n` / `fish -n` / `shellcheck` で dotfile 内のシェルを検証
 - `actionlint` — GitHub Actions workflow 自体を lint
-- `yamllint` — workflow と `DOT_LINK_TARGET/config/gh/config.yml` を lint (`.yamllint.yml` でルール設定)
+- `yamllint` — workflow、`dependabot.yml`、`DOT_LINK_TARGET/config/gh/config.yml`、`DOT_LINK_TARGET/config/gh-dash/config.yml` を lint (`.yamllint.yml` でルール設定)
