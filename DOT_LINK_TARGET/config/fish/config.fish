@@ -44,7 +44,7 @@ set GHQ_SELECTOR $AVAILABLE_FUZZY_FINDER
 
 # === プロンプト・テーマ ===
 
-# asdf x fishでrubyバージョン表示をOFFに
+# bobthefish の ruby バージョン表示を OFF に (もともと asdf との組み合わせで出ていた表示。asdf 撤去後も不要)
 set -g theme_display_ruby no
 
 ## kubernetesのcontextとnamespaceを出す
