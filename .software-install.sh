@@ -6,7 +6,10 @@ echo "[*] running .software-install.sh"
 echo "Do you want to install a package ? [Y/n]"
 # stdin が閉じていて read が失敗しても set -e で止めない。
 # 末尾に改行の無い入力 (printf n | ... や n の直後に Ctrl-D) でも read は 1 を返すが
-# 読めた分は ANSWER に入っているので上書きしない。stdin が閉じていれば空のまま = 既定の Y
+# 読めた分は ANSWER に入っているので上書きしない。
+# stdin の fd 自体が閉じている (<&-) と read は何も代入せず失敗し set -u で落ちるため、先に空で初期化しておく
+# (空のまま = 既定の Y)
+ANSWER=""
 read -r ANSWER || true
 ANSWER=$(echo "$ANSWER" | tr y Y)
 
