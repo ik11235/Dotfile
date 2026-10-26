@@ -9,6 +9,16 @@ function history-all { history -E 1 } # 全履歴の一覧を出力する
 setopt share_history                  # 履歴の共有
 
 ###ここからhttp://qiita.com/uasi/items/c4288dd835a65eb9d709より引用
+# 拡張 glob を有効にする
+# glob とはパス名にマッチするワイルドカードパターンのこと
+# （たとえば `mv hoge.* ~/dir` における "*"）
+# 拡張 glob を有効にすると # ~ ^ もパターンとして扱われる
+# どういう意味を持つかは `man zshexpn` の FILENAME GENERATION を参照
+# ※ 直後の compinit 判定で glob 修飾子 (#q...) を使うため、compinit より前に有効化する。
+#   無効のままだと (#q...) がただの文字列として扱われて条件が常に真になり、
+#   compinit -C しか走らず ~/.zcompdump が更新されなくなる
+setopt extended_glob
+
 # 自動補完を有効にする
 # コマンドの引数やパス名を途中まで入力して <Tab> を押すといい感じに補完してくれる
 # 例： `cd path/to/<Tab>`, `ls -<Tab>`
@@ -31,13 +41,6 @@ setopt auto_pushd
 
 # pushd したとき、ディレクトリがすでにスタックに含まれていればスタックに追加しない
 setopt pushd_ignore_dups
-
-# 拡張 glob を有効にする
-# glob とはパス名にマッチするワイルドカードパターンのこと
-# （たとえば `mv hoge.* ~/dir` における "*"）
-# 拡張 glob を有効にすると # ~ ^ もパターンとして扱われる
-# どういう意味を持つかは `man zshexpn` の FILENAME GENERATION を参照
-setopt extended_glob
 
 # 入力したコマンドがすでにコマンド履歴に含まれる場合、履歴から古いほうのコマンドを削除する
 # コマンド履歴とは今まで入力したコマンドの一覧のことで、上下キーでたどれる
