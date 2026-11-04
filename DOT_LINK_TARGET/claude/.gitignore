@@ -5,6 +5,8 @@
 /cache/
 /daemon/
 /daemon.log
+/daemon.lock
+/daemon.status.json
 /debug/
 /downloads/
 /file-history/
