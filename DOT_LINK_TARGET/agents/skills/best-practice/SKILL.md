@@ -140,3 +140,5 @@ Step 2〜4 はサブエージェントに委譲し、メインコンテキスト
 - RTK の PreToolUse フックは `git status/diff/log`・`grep`・`ls` などを `rtk …` に書き換え、許可ルールとの照合は書き換え後のコマンドで行われる。`Bash(git status *)` だけでは一致しないので `Bash(rtk git status *)` も並べる。`git remote`・`git rev-parse`・`date`・パイプの後ろの `head` は書き換えられない（2026-10-19、`claude -p --allowedTools` で確認）
 - 上記の補足: `stat`・`jq`・`git -C <path> pull/log` も `rtk …` に、ファイルに直接使う `head <file>` は `rtk read <file> --head-lines N` に書き換えられる。書き換えで auto mode の判定器が verdict を出さず、同じ入力の再送が要る（2026-11-03、rtk 1.1.0 の `rtk rewrite` で確認）
 - global に反映する値（`autoMode.environment` など）に private リポジトリ名を書かない。業務情報だけでなく、private リポジトリ名も public に載る。「`~/ghq/github.com/<user>/` 配下の private notes repo」のように一般化する（2026-11-04、G-4 でユーザーが指摘）
+- project settings（`.claude/settings.json`）は起動ディレクトリ（`CLAUDE_PROJECT_DIR` = cwd、Git ルートではない）のものしか読まれず、rules の `paths` も cwd の外のファイルには一致しない。skill と CLAUDE.md は親までさかのぼるので気づきにくい。サブディレクトリで起動する運用があるなら、deny のパス表記（`./` → `/`）を変えるだけの提案は効かない。`--settings` に SessionStart / InstructionsLoaded フックを足した `claude -p` で実測してから提案する（2026-11-04）
+- cwd の外を指す CLAUDE.md の `@import` は外部 import として一度の承認が要り、`claude -p` では読み飛ばされる。cwd 内に symlink を置いても外部扱い（2026-11-04 実測）
