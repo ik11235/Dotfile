@@ -1,7 +1,7 @@
 ---
 name: best-practice
 description: claude-code-best-practiceリポジトリを最新化し、現在のClaude Code設定（global / project）に対してベストプラクティスに基づく改善提案を行う。引数 global/project でスコープ指定可。
-allowed-tools: Read, Glob, Grep, Bash(ls *), Bash(touch *), Bash(stat *), Bash(ghq get https://github.com/shanraisshan/claude-code-best-practice*), Bash(git -C ~/ghq/github.com/shanraisshan/claude-code-best-practice pull --ff-only*), Bash(git -C ~/ghq/github.com/shanraisshan/claude-code-best-practice log *)
+allowed-tools: Read, Glob, Grep, Bash(ls *), Bash(rtk ls *), Bash(touch *), Bash(stat *), Bash(rtk stat *), Bash(ghq get https://github.com/shanraisshan/claude-code-best-practice*), Bash(git -C ~/ghq/github.com/shanraisshan/claude-code-best-practice pull --ff-only*), Bash(rtk git -C ~/ghq/github.com/shanraisshan/claude-code-best-practice pull --ff-only*), Bash(git -C ~/ghq/github.com/shanraisshan/claude-code-best-practice log *), Bash(rtk git -C ~/ghq/github.com/shanraisshan/claude-code-best-practice log *)
 ---
 
 claude-code-best-practiceリポジトリ（https://github.com/shanraisshan/claude-code-best-practice）を参照し、現在の設定に対する改善提案を行う。
@@ -137,4 +137,5 @@ Step 2〜4 はサブエージェントに委譲し、メインコンテキスト
 - allow 側の `Write(path)` は評価されない。パス限定の書き込み許可は `Edit(path)` で書く（v2.1.210 以降）
 - Bash ルールで `-C` とサブコマンドの間に `*` を置くと（例 `git -C * log*`）、`-c` や `--exec-path` を挟んだ任意コマンドまで確認なしで通る。パスを固定して書く（2026-10-02、自動実行ログの警告で判明）
 - `~/.claude/settings.json` の編集は、auto mode の判定器に「自己改変」としてブロックされることがある。止まったら回避せず、変更内容を提示してユーザーに任せる（2026-10-02）
-- RTK の PreToolUse フックは `git status/diff/log`・`grep`・`ls` などを `rtk …` に書き換え、許可ルールとの照合は書き換え後のコマンドで行われる。`Bash(git status *)` だけでは一致しないので `Bash(rtk git status *)` も並べる。`git remote`・`git rev-parse`・`head`・`date` は書き換えられない（2026-10-19、`claude -p --allowedTools` で確認）
+- RTK の PreToolUse フックは `git status/diff/log`・`grep`・`ls` などを `rtk …` に書き換え、許可ルールとの照合は書き換え後のコマンドで行われる。`Bash(git status *)` だけでは一致しないので `Bash(rtk git status *)` も並べる。`git remote`・`git rev-parse`・`date`・パイプの後ろの `head` は書き換えられない（2026-10-19、`claude -p --allowedTools` で確認）
+- 上記の補足: `stat`・`jq`・`git -C <path> pull/log` も `rtk …` に、ファイルに直接使う `head <file>` は `rtk read <file> --head-lines N` に書き換えられる。書き換えで auto mode の判定器が verdict を出さず、同じ入力の再送が要る（2026-11-03、rtk 1.1.0 の `rtk rewrite` で確認）

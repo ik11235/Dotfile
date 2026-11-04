@@ -16,12 +16,14 @@ allowed-tools:
   - "Bash(grep *)"
   - "Bash(jq *)"
   - "Bash(date *)"
-  # RTK フックが git status/diff/log・grep・ls を `rtk …` に書き換えてから許可ルールと照合するため、書き換え後の形も並べる
+  # RTK フックが git status/diff/log・grep・ls・jq を `rtk …` に書き換えてから許可ルールと照合するため、書き換え後の形も並べる
+  # head はパイプの後ろでしか使わない（書き換えられない）ので rtk read は足さない
   - "Bash(rtk git status *)"
   - "Bash(rtk git diff *)"
   - "Bash(rtk git log *)"
   - "Bash(rtk grep *)"
   - "Bash(rtk ls *)"
+  - "Bash(rtk jq *)"
   # `/` 始まりはプロジェクトルート相対になるため `//` で絶対パスにし、/tmp の実体 /private/tmp も並べる。allow の Write(path) は評価されないので Edit で書く
   - "Read(//tmp/commit-draft-*)"
   - "Read(//private/tmp/commit-draft-*)"
