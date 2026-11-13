@@ -170,13 +170,20 @@
     "code-review@claude-plugins-official": false,
     "skill-creator@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
-    "i-have-adhd@i-have-adhd": true
+    "i-have-adhd@i-have-adhd": true,
+    "pstack@pstack-claude": true
   },
   "extraKnownMarketplaces": {
     "i-have-adhd": {
       "source": {
         "source": "directory",
         "path": "$HOME/ghq/github.com/ayghri/i-have-adhd"
+      }
+    },
+    "pstack-claude": {
+      "source": {
+        "source": "github",
+        "repo": "michael-denyer/pstack-claude"
       }
     }
   },
