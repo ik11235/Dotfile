@@ -6,6 +6,8 @@ tools: Read, Grep, Glob, WebFetch, WebSearch
 maxTurns: 40
 color: cyan
 memory: user
+# 調査専用で、global / project の CLAUDE.md の作業方針（Todoist・worktree・PR 運用など）は判断に使わないため読み込まない
+omitClaudeMd: true
 # memory: user で Write/Edit が自動付与されるため、書き込み先を agent memory に限定する（~/.claude はシンボリックリンクなので実体パスにも一致させる）
 hooks:
   PreToolUse:
@@ -42,7 +44,7 @@ hooks:
 
 ## 出力
 
-以下の構造で返す:
+回答は日本語で書く（omitClaudeMd で global CLAUDE.md の言語指定が読まれないため）。以下の構造で返す:
 
 1. **結論**（1-3 行で結論先出し）
 2. **根拠**（結論を支える `path:line` または URL を箇条書き）
