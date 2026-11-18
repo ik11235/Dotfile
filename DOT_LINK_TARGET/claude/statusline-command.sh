@@ -13,6 +13,8 @@ eval "$(printf '%s' "$input" | jq -r '
        effort=\(.effort.level // "")
        thinking=\(.thinking.enabled // false)
        wt=\(.worktree.name // .workspace.git_worktree // "")
+       pr_num=\(.pr.number // "")
+       pr_state=\(.pr.review_state // "")
        rl5=\(.rate_limits.five_hour.used_percentage // "" | if type == "number" then floor else . end)
        rl7=\(.rate_limits.seven_day.used_percentage // "" | if type == "number" then floor else . end)"
 ')"
@@ -41,6 +43,10 @@ if [ -n "$rl5" ] || [ -n "$rl7" ]; then
 fi
 if [ -n "$wt" ]; then
   suffix="${suffix} wt:${wt}"
+fi
+# 現在のブランチに PR があるときだけ番号とレビュー状態を出す（pr.* は v2.1.145+）
+if [ -n "$pr_num" ]; then
+  suffix="${suffix} PR#${pr_num}${pr_state:+:${pr_state}}"
 fi
 if [ -n "$branch" ]; then
   printf "%s@%s [%s] [%s]%s" "$user" "$host" "$branch" "$cwd" "$suffix"
