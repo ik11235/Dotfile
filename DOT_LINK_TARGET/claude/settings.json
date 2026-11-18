@@ -171,7 +171,8 @@
     "skill-creator@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "i-have-adhd@i-have-adhd": true,
-    "pstack@pstack-claude": true
+    "pstack@pstack-claude": true,
+    "swift-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "i-have-adhd": {
