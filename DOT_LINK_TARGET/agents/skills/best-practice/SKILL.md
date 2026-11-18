@@ -142,3 +142,4 @@ Step 2〜4 はサブエージェントに委譲し、メインコンテキスト
 - global に反映する値（`autoMode.environment` など）に private リポジトリ名を書かない。業務情報だけでなく、private リポジトリ名も public に載る。「`~/ghq/github.com/<user>/` 配下の private notes repo」のように一般化する（2026-11-04、G-4 でユーザーが指摘）
 - project settings（`.claude/settings.json`）は起動ディレクトリ（`CLAUDE_PROJECT_DIR` = cwd、Git ルートではない）のものしか読まれず、rules の `paths` も cwd の外のファイルには一致しない。skill と CLAUDE.md は親までさかのぼるので気づきにくい。サブディレクトリで起動する運用があるなら、deny のパス表記（`./` → `/`）を変えるだけの提案は効かない。`--settings` に SessionStart / InstructionsLoaded フックを足した `claude -p` で実測してから提案する（2026-11-04）
 - cwd の外を指す CLAUDE.md の `@import` は外部 import として一度の承認が要り、`claude -p` では読み飛ばされる。cwd 内に symlink を置いても外部扱い（2026-11-04 実測）
+- エージェントの `memory: project` も cwd 基準（`<cwd>/.claude/agent-memory/<agent>/`）で、symlink を辿らない。ディレクトリを symlink にしても、MEMORY.md 単体を symlink にしても注入されなかった。起動ディレクトリごとに分かれた agent memory を symlink で一本化する提案はしない（2026-11-18、P-3 で誤提案）
