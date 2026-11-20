@@ -46,3 +46,6 @@ __pycache__/
 
 # サブエージェントの永続メモリ（調査内容を含むため commit しない）
 /agent-memory/
+
+# pstack Orchestrate の実行時状態（brief・レビューコメントを含むため commit しない）
+/orchestrate/
