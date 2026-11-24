@@ -1,6 +1,6 @@
 ---
 name: commit-draft
-description: 未コミットのdiffを分析し、Claude Code または Codex で実行できる git commit（＋push）スクリプトを生成する
+description: 未コミットのdiffを分析し、Claude Code、Codex、または Antigravity で実行できる git commit（＋push）スクリプトを生成する
 user-invocable: true
 model: sonnet
 disable-model-invocation: true
@@ -35,7 +35,7 @@ allowed-tools:
 
 # commit-draft — diffからコミットコマンドを生成
 
-未コミットの変更を分析し、Claude Code または Codex で確認・実行できるコミットスクリプトを出力する。
+未コミットの変更を分析し、Claude Code、Codex、または Antigravity で確認・実行できるコミットスクリプトを出力する。
 
 ## 手順
 
@@ -58,6 +58,7 @@ ls "$ROOT"/lefthook.yml "$ROOT"/.husky/prepare-commit-msg 2>/dev/null
 - `git status` は `--porcelain` で取る。通常形式はパスがカレントディレクトリ相対になり、`cd "$ROOT"` するスクリプトの `git add` に流用すると壊れる。porcelain・`diff --stat` のパスはルート相対
 - `DRAFT_ID`（unixtime＋乱数）は出力スクリプトのファイル名に使う（後述）。`ls` は対象が無いと非0で終わるため、`date` はその前に置く
 - 末尾の `ls` で `prepare-commit-msg` hookの有無だけを安く確認する。ヒットした場合のみ、必要に応じて該当ファイルをReadして内容（プレフィックス自動付与の有無）を確かめる。存在しなければそれ以上読まない
+- Antigravity で terminal sandbox によりグローバル git 設定の読み込みが拒否された場合は、`BypassSandbox: true` で同じコマンドを再実行する
 
 ### 2. 差分内容の取得（必要なものだけ）
 
@@ -97,7 +98,7 @@ git diff --cached | grep -inE 'api[_-]?key|secret|password|passwd|token|BEGIN [A
 - 変更の目的（バグ修正、機能追加、リファクタ、設定変更など）
 - 論理的なコミット単位への分割が必要か
 - コミットメッセージの行数（後述の判断基準を参照）
-- **Claudeが変更に関与したか**（後述のCo-Authored-By判定を参照）
+- **エージェント（Claude / Antigravity 等）が変更に関与したか**（後述のCo-Authored-By判定を参照）
 
 #### コミットメッセージの行数判断
 
@@ -117,30 +118,38 @@ git diff --cached | grep -inE 'api[_-]?key|secret|password|passwd|token|BEGIN [A
 
 ### Co-Authored-By の判定
 
-このセッション内でClaudeが変更に関与した場合、コミットメッセージの末尾に `Co-Authored-By` トレーラーを追加する。
+このセッション内でエージェント（Claude / Antigravity 等）が変更に関与した場合、コミットメッセージの末尾に `Co-Authored-By` トレーラーを追加する。
 
 **関与ありと判断するケース:**
-- Claudeがコード変更を提案し、ユーザーがそれを採用した
-- ClaudeがEdit/Writeツールで直接ファイルを編集した
-- Claudeが生成したコードをユーザーが貼り付けて適用した
-- Claudeとユーザーの共同作業で変更が生まれた
+- エージェントがコード変更を提案し、ユーザーがそれを採用した
+- エージェントがEdit/Writeツールで直接ファイルを編集した
+- エージェントが生成したコードをユーザーが貼り付けて適用した
+- エージェントとユーザーの共同作業で変更が生まれた
 
 **関与なしと判断するケース:**
 - ユーザーが自分で書いた変更に対し、コミットコマンドの生成のみを依頼された
-- Claudeはコードレビューやアドバイスのみで、変更内容自体はユーザーが独自に作成した
-- このセッション内でClaudeがEdit/Writeツールを使った形跡がなく、ユーザーからも「Claudeが書いた」という明示がない場合
+- エージェントはコードレビューやアドバイスのみで、変更内容自体はユーザーが独自に作成した
+- このセッション内でエージェントがEdit/Writeツールを使った形跡がなく、ユーザーからも「エージェントが書いた」という明示がない場合
 
-デフォルトはCo-Authored-By **なし**。確実にClaudeが変更に関与したと判断できる場合のみ付ける。「このセッションで自分がコードを書いた/編集した記憶があるか？」を基準にする。コミットコマンドの生成だけを頼まれた場合は関与なし。
+デフォルトはCo-Authored-By **なし**。確実にエージェントが変更に関与したと判断できる場合のみ付ける。「このセッションで自分がコードを書いた/編集した記憶があるか？」を基準にする。コミットコマンドの生成だけを頼まれた場合は関与なし。
 
 **フォーマット:**
 
 トレーラーはコミットメッセージ本文の最後に空行を挟んで配置する。
 
+Claude Code:
 ```
 Co-Authored-By: <モデル名> <noreply@anthropic.com>
 ```
 
-**`<モデル名>` の決め方:** このskillは `model: sonnet` で動くため、システムプロンプトに書かれた自分のモデル名は変更を書いたモデルではない。Claude Code では、セッションの生ログから「skill起動（`<command-message>` で始まるターン）を除いた、commit-draft 起動前の最後の応答のモデル」を取得して使う:
+Antigravity:
+```
+Co-Authored-By: <モデル名> <noreply@google.com>
+```
+
+**`<モデル名>` の決め方:**
+
+- **Claude Code**: このskillは `model: sonnet` で動くため、システムプロンプトに書かれた自分のモデル名は変更を書いたモデルではない。セッションの生ログから「skill起動（`<command-message>` で始まるターン）を除いた、commit-draft 起動前の最後の応答のモデル」を取得して使う:
 
 ```bash
 jq -rs '(map(.type=="user" and ((.message.content|tostring)|startswith("<command-message>commit-draft<")))|rindex(true)) as $i
@@ -156,9 +165,20 @@ jq -rs '(map(.type=="user" and ((.message.content|tostring)|startswith("<command
 | .model // "none"' ~/.claude/projects/*/"$CLAUDE_CODE_SESSION_ID".jsonl
 ```
 
-- 出力はモデルID。表示名に変換して使う（例: `claude-opus-5-5` → `Claude Opus 5.5`、`claude-sonnet-5` → `Claude Sonnet 5`、`claude-haiku-4-5-20251001` → `Claude Haiku 4.5`）
-- save-conversation など他の `model:` 指定skillのターンも除外されるため、直前にそれらを実行していても正しく取れる
-- `none` やエラー（Codex 実行時・ログが見つからない等）のときだけ、システムプロンプト記載の自分のモデル名で代替する
+  - 出力はモデルID。表示名に変換して使う（例: `claude-opus-5-5` → `Claude Opus 5.5`、`claude-sonnet-5` → `Claude Sonnet 5`、`claude-haiku-4-5-20251001` → `Claude Haiku 4.5`）
+  - save-conversation など他の `model:` 指定skillのターンも除外されるため、直前にそれらを実行していても正しく取れる
+  - `none` やエラー（Codex 実行時・ログが見つからない等）のときだけ、システムプロンプト記載の自分のモデル名で代替する
+
+- **Antigravity**: frontmatter の `model:` は無視されセッションのアクティブモデルでそのまま動くため、通常は現在のセッションのモデル表示名（例: `Gemini 4 Neon`）を使う。途中でモデルを切り替えていて生ログから直前の応答モデルを確認したい場合は、以下で取得できる:
+
+```bash
+jq -rs '(map(.type=="USER_INPUT" and ((.content|tostring)|test("<USER_REQUEST>\\s*/commit-draft\\b")))|rindex(true)) as $i
+| (if $i then .[:$i] else . end)
+| map(select(.type=="PLANNER_RESPONSE" and (.model//"")!=""))
+| last.model // "none"' "${ANTIGRAVITY_APP_DATA_DIR:-$HOME/.gemini/antigravity-cli}/brain/$ANTIGRAVITY_CONVERSATION_ID/.system_generated/logs/transcript.jsonl"
+```
+
+  - モデルIDをそのまま書かず、人間が読める表示名に整形する（末尾の effort サフィックス `-high` 等は除く。例: `gemini-4-neon-high` → `Gemini 4 Neon`）
 
 ### 4. コミット単位の決定
 
@@ -185,7 +205,7 @@ Claude Code の `!` プレフィックスは内部で `(eval)` を使うため�
 2. スクリプトの中身をコードブロックでユーザーに表示する（何が実行されるか確認できるようにするため）
 3. 実行環境に応じた短いコマンドを提示する:
 
-Claude Code:
+Claude Code / Antigravity:
 ```
 ! bash /tmp/commit-draft-<DRAFT_ID>.sh
 ```
@@ -225,7 +245,7 @@ git commit -F - <<'EOF'
 EOF
 ```
 
-**Co-Authored-By付きの例:**
+**Co-Authored-By付きの例（Claude Code。Antigravity では `<noreply@google.com>`）:**
 ```bash
 #!/bin/bash
 set -e
@@ -238,7 +258,7 @@ Co-Authored-By: <モデル名> <noreply@anthropic.com>
 EOF
 ```
 
-**複数行 + Co-Authored-By付きの例:**
+**複数行 + Co-Authored-By付きの例（Claude Code。Antigravity では `<noreply@google.com>`）:**
 ```bash
 #!/bin/bash
 set -e

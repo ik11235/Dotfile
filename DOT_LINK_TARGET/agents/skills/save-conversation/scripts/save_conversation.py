@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""save_conversation.py — Claude Code 会話ログ保存の機械処理を一括実行する。
+"""save_conversation.py — Claude Code / Codex / Antigravity 会話ログ保存の機械処理を一括実行する。
 
 やること:
-  1. セッション UUID の特定（Claude Code または Codex）
+  1. セッション UUID の特定（Claude Code / Codex / Antigravity）
   2. ${dest}/${YYYY-MM-DD}/${uuid}/ の作成（日付は保存日。既存のセッションディレクトリがあればそれを再利用）
   3. 生ログ jsonl のハードリンク作成（atomic rename による stale link は inode 比較で検出して貼り直す）
   4. jsonl から user/assistant のテキストを機械抽出し、frontmatter + Summary + Conversation Log の
@@ -11,10 +11,12 @@
 モデル側はタイトルと Summary 本文（--summary-file）だけ用意すればよい。
 
 保存先の決め方:
-  Codex の既定保存先は CODEX_SAVE_CONV_VAULT_DIR。未設定なら Claude 用保存先
-  （末尾が claude_code）の兄弟ディレクトリ codex を使う。導出できなければエラー終了。
   Claude Code の既定保存先は環境変数 CLAUDE_SAVE_CONV_VAULT_DIR が指す vault 保存先
   （未設定ならエラー終了）。"vault"（typo の "valut" も可）を明示しても同じ。
+  Codex の既定保存先は CODEX_SAVE_CONV_VAULT_DIR。未設定なら Claude 用保存先
+  （末尾が claude_code）の兄弟ディレクトリ codex を使う。導出できなければエラー終了。
+  Antigravity の既定保存先は ANTIGRAVITY_SAVE_CONV_VAULT_DIR。未設定なら Claude 用保存先
+  （末尾が claude_code）の兄弟ディレクトリ antigravity を使う。導出できなければエラー終了。
   --dest に "pwd" を渡すと ${cwd} を保存先ルートにする（旧デフォルト挙動）。
   どの保存先でも ${root}/${YYYY-MM-DD}/${uuid}/ の形で日付フォルダを挟む。同じセッションを
   別の日に保存し直したときは、既存の ${root}/*/${uuid}/（旧形式の ${root}/${uuid}/ も含む）を
@@ -27,6 +29,7 @@ usage:
   save_conversation.py --title "..." --summary-file ... --dest pwd
   save_conversation.py --title "..." --summary-file ... --dest /path/to/save
   save_conversation.py --source codex --title "..." --summary-file ...
+  save_conversation.py --source antigravity --title "..." --summary-file ...
   save_conversation.py --title "..." --summary-file ... --session <uuid> --cwd <dir> --project-dir <dir>
 """
 import argparse
@@ -45,6 +48,12 @@ UUID_RE = re.compile(
 # このスクリプトには埋め込まない。
 # シェル設定 （zshrc 等）で定義する。
 VAULT_DIR_ENV = "CLAUDE_SAVE_CONV_VAULT_DIR"
+# Claude 以外の実行元ごとの (環境変数名, claude_code 兄弟ディレクトリ名, 表示ラベル)
+SOURCE_VAULT_FALLBACK = {
+    "codex": ("CODEX_SAVE_CONV_VAULT_DIR", "codex", "Codex"),
+    "antigravity": ("ANTIGRAVITY_SAVE_CONV_VAULT_DIR", "antigravity", "Antigravity"),
+}
+AGY_DEFAULT_APP_DATA_DIR = os.path.join(os.path.expanduser("~"), ".gemini", "antigravity-cli")
 # vault 保存を要求するキーワード（typo 許容）
 VAULT_KEYWORDS = {"vault", "valut"}
 # cwd 保存（旧デフォルト挙動）を要求するキーワード
@@ -56,8 +65,8 @@ CODEX_SESSION_RE = re.compile(r"rollout-.*-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-
 def resolve_dest(dest: str | None, cwd: str, source: str = "claude") -> str:
     """保存先ルートを解決する。
 
-    - None / "vault" / "valut": source 別の環境変数。Codex は Claude 用保存先の
-      末尾が claude_code なら兄弟の codex をフォールバックに使う。未解決ならエラー終了。
+    - None / "vault" / "valut": source 別の環境変数。Codex / Antigravity は Claude 用保存先の
+      末尾が claude_code なら兄弟ディレクトリ（codex / antigravity）をフォールバックに使う。未解決ならエラー終了。
     - "pwd"（大小無視）: cwd 直下に保存（旧デフォルト挙動）。
     - それ以外: PATH とみなしてそのパスを保存先にする（従来の PATH 指定挙動を保持）。
     """
@@ -65,18 +74,19 @@ def resolve_dest(dest: str | None, cwd: str, source: str = "claude") -> str:
     if keyword in PWD_KEYWORDS:
         return cwd
     if keyword is None or keyword in VAULT_KEYWORDS:
-        if source == "codex":
-            codex_dir = os.environ.get("CODEX_SAVE_CONV_VAULT_DIR")
-            if codex_dir:
-                return os.path.abspath(os.path.expanduser(codex_dir))
+        if source in SOURCE_VAULT_FALLBACK:
+            env_name, sibling_name, label = SOURCE_VAULT_FALLBACK[source]
+            source_dir = os.environ.get(env_name)
+            if source_dir:
+                return os.path.abspath(os.path.expanduser(source_dir))
             claude_dir = os.environ.get(VAULT_DIR_ENV)
             if claude_dir:
                 claude_dir = os.path.abspath(os.path.expanduser(claude_dir))
                 if os.path.basename(claude_dir) == "claude_code":
-                    return os.path.join(os.path.dirname(claude_dir), "codex")
+                    return os.path.join(os.path.dirname(claude_dir), sibling_name)
             sys.exit(
-                "error: Codex の vault 保存先が未定義です。環境変数 "
-                "CODEX_SAVE_CONV_VAULT_DIR に保存先を設定してください"
+                f"error: {label} の vault 保存先が未定義です。環境変数 "
+                f"{env_name} に保存先を設定してください"
                 "（cwd に保存したい場合は --dest pwd）"
             )
         vault_dir = os.environ.get(VAULT_DIR_ENV)
@@ -201,6 +211,46 @@ def find_codex_session(codex_dir: str, session: str | None, env_session: str | N
     return match.group(1), source
 
 
+def _pick_antigravity_transcript(logs_dir: str) -> str | None:
+    """Antigravity の logs ディレクトリから完全版（無ければ compact 版）transcript を返す。"""
+    for filename in ("transcript_full.jsonl", "transcript.jsonl"):
+        candidate = os.path.join(logs_dir, filename)
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+def find_antigravity_session(
+    antigravity_dir: str, session: str | None, env_session: str | None
+) -> tuple[str, str]:
+    """Antigravity の transcript jsonl を特定し、(conversation ID, jsonl path) を返す。"""
+    brain_dir = os.path.join(antigravity_dir, "brain")
+    if not os.path.isdir(brain_dir):
+        sys.exit(f"error: Antigravity brain directory not found: {brain_dir}")
+
+    wanted = session or env_session
+    if wanted:
+        if os.path.basename(wanted) != wanted or wanted in (".", ".."):
+            sys.exit(f"error: invalid Antigravity session ID: {wanted}")
+        logs_dir = os.path.join(brain_dir, wanted, ".system_generated", "logs")
+        found = _pick_antigravity_transcript(logs_dir)
+        if not found:
+            sys.exit(f"error: no Antigravity transcript jsonl found for {wanted} in {logs_dir}")
+        return wanted, found
+
+    candidates: list[tuple[str, str]] = []
+    for entry in os.listdir(brain_dir):
+        if not UUID_RE.match(entry):
+            continue
+        logs_dir = os.path.join(brain_dir, entry, ".system_generated", "logs")
+        found = _pick_antigravity_transcript(logs_dir)
+        if found:
+            candidates.append((entry, found))
+    if not candidates:
+        sys.exit(f"error: no Antigravity transcript jsonl found in {brain_dir}")
+    return max(candidates, key=lambda item: os.path.getmtime(item[1]))
+
+
 # --- 会話テキスト抽出 -------------------------------------------------------
 
 SYSTEM_REMINDER_RE = re.compile(r"<system-reminder>.*?</system-reminder>", re.DOTALL)
@@ -304,6 +354,58 @@ def extract_codex_messages(jsonl_path: str) -> list[tuple[str, str]]:
     return msgs
 
 
+AGY_USER_REQUEST_RE = re.compile(
+    r"<USER_REQUEST>\r?\n?(.*?)\r?\n?</USER_REQUEST>"
+    r"(?=\s*(?:<(?:ADDITIONAL_METADATA|USER_SETTINGS_CHANGE|SYSTEM_MESSAGE)>|$))",
+    re.DOTALL,
+)
+AGY_METADATA_RE = re.compile(
+    r"<(?:ADDITIONAL_METADATA|USER_SETTINGS_CHANGE|SYSTEM_MESSAGE)>.*?"
+    r"</(?:ADDITIONAL_METADATA|USER_SETTINGS_CHANGE|SYSTEM_MESSAGE)>",
+    re.DOTALL,
+)
+
+
+def clean_antigravity_user_text(content: str) -> str:
+    """Antigravity の USER_INPUT から <USER_REQUEST> 本文だけを取り出す。"""
+    match = AGY_USER_REQUEST_RE.search(content)
+    if match:
+        return match.group(1).strip()
+    return AGY_METADATA_RE.sub("", content).strip()
+
+
+def extract_antigravity_messages(jsonl_path: str) -> list[tuple[str, str]]:
+    """Antigravity transcript jsonl から利用者とエージェントの表示メッセージだけを抽出する。"""
+    msgs: list[tuple[str, str]] = []
+    with open(jsonl_path, encoding="utf-8") as f:
+        for line in f:
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            step_type = obj.get("type")
+            source = obj.get("source")
+            content = obj.get("content")
+            if not isinstance(content, str):
+                continue
+            if step_type == "USER_INPUT":
+                if source == "SYSTEM":
+                    continue
+                text = clean_antigravity_user_text(content)
+                if not text:
+                    continue
+                msgs.append(("User", text))
+            elif step_type == "PLANNER_RESPONSE":
+                text = content.strip()
+                if not text:
+                    continue
+                if msgs and msgs[-1][0] == "Assistant":
+                    msgs[-1] = ("Assistant", msgs[-1][1] + "\n\n" + text)
+                else:
+                    msgs.append(("Assistant", text))
+    return msgs
+
+
 def build_markdown(session: str, title: str, summary: str, msgs: list[tuple[str, str]],
                    resume_command: str, today: str) -> str:
     lines = [
@@ -334,8 +436,8 @@ def main() -> None:
     ap.add_argument("--title", required=True, help="会話タイトル（ファイル名に使用）")
     ap.add_argument("--summary-file", required=True, help="Summary 本文を書いたファイル")
     ap.add_argument("--session", default=None)
-    ap.add_argument("--source", choices=("auto", "claude", "codex"), default="auto",
-                    help="会話ログの形式。Codex からは codex を明示する")
+    ap.add_argument("--source", choices=("auto", "claude", "codex", "antigravity"), default="auto",
+                    help="会話ログの形式。Codex からは codex、Antigravity からは antigravity を明示する")
     ap.add_argument("--cwd", default=os.getcwd(),
                     help="セッションの実 cwd（生ログ jsonl の探索元の導出に使う）")
     ap.add_argument("--dest", default=None,
@@ -345,19 +447,28 @@ def main() -> None:
                     help="セッション jsonl のあるディレクトリ（デフォルト: ~/.claude/projects/<encoded-cwd>）")
     ap.add_argument("--codex-dir", default=os.path.join(os.path.expanduser("~"), ".codex"),
                     help="Codex の状態ディレクトリ（デフォルト: ~/.codex）")
+    ap.add_argument(
+        "--antigravity-dir",
+        default=os.environ.get("ANTIGRAVITY_APP_DATA_DIR") or AGY_DEFAULT_APP_DATA_DIR,
+        help="Antigravity のアプリデータディレクトリ（デフォルト: $ANTIGRAVITY_APP_DATA_DIR または ~/.gemini/antigravity-cli）",
+    )
     args = ap.parse_args()
 
     cwd = os.path.abspath(args.cwd)
     # 生ログ jsonl の探索元は常に実 cwd から導出する（保存先 --dest とは独立）
     claude_env_session = os.environ.get("CLAUDE_CODE_SESSION_ID") or None
+    codex_env_session = os.environ.get("CODEX_THREAD_ID") or None
+    agy_env_session = os.environ.get("ANTIGRAVITY_CONVERSATION_ID") or None
     source = args.source
     if source == "auto":
-        # セッション ID の環境変数が最も確かな手がかり。cwd 由来の推測は両方とも無いときだけ使う
+        # セッション ID の環境変数が最も確かな手がかり。cwd 由来の推測はどれも無いときだけ使う
         # （cwd が移動していると project dir が見つからず Codex と誤判定していたため）。
         if claude_env_session:
             source = "claude"
-        elif os.environ.get("CODEX_THREAD_ID"):
+        elif codex_env_session:
             source = "codex"
+        elif agy_env_session or os.environ.get("ANTIGRAVITY_AGENT"):
+            source = "antigravity"
         else:
             claude_project_dir = args.project_dir or locate_claude_project_dir(cwd, None)
             source = "claude" if os.path.isdir(claude_project_dir) else "codex"
@@ -374,13 +485,23 @@ def main() -> None:
     if source == "codex":
         session, main_jsonl = find_codex_session(
             os.path.abspath(os.path.expanduser(args.codex_dir)), args.session,
-            os.environ.get("CODEX_THREAD_ID") or None,
+            codex_env_session,
         )
         dest_dir = resolve_session_dir(dest_root, session, today)
         os.makedirs(dest_dir, exist_ok=True)
         linked = hard_link_sources([main_jsonl], dest_dir)
         msgs = extract_codex_messages(main_jsonl)
         resume_command = f"codex resume {session}"
+    elif source == "antigravity":
+        session, main_jsonl = find_antigravity_session(
+            os.path.abspath(os.path.expanduser(args.antigravity_dir)), args.session,
+            agy_env_session,
+        )
+        dest_dir = resolve_session_dir(dest_root, session, today)
+        os.makedirs(dest_dir, exist_ok=True)
+        linked = hard_link_sources([main_jsonl], dest_dir)
+        msgs = extract_antigravity_messages(main_jsonl)
+        resume_command = f"agy --resume {session}"
     else:
         project_dir = args.project_dir or locate_claude_project_dir(cwd, claude_env_session)
         if not os.path.isdir(project_dir):

@@ -1,8 +1,9 @@
 ---
 name: save-conversation
-description: Save Claude Code or Codex conversation logs with summary and hard links to raw session logs. Use when the user invokes /save-conversation or asks to save, archive, or persist the current conversation/session log (「会話を保存」「ログを保存」「このセッションを記録して」など). Hard-links the raw jsonl and generates a summary markdown — do not hand-write the conversation log.
+description: Save Claude Code, Codex, or Antigravity conversation logs with summary and hard links to raw session logs. Use when the user invokes /save-conversation or asks to save, archive, or persist the current conversation/session log (「会話を保存」「ログを保存」「このセッションを記録して」など). Hard-links the raw jsonl and generates a summary markdown — do not hand-write the conversation log.
 allowed-tools:
   - "Bash(python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py*)"
+  - "Bash(python3 ~/.agents/skills/save-conversation/scripts/save_conversation.py*)"
   - "Bash(mktemp*)"
   - "Bash(mkdir *)"
   - "Bash(ln *)"
@@ -16,7 +17,7 @@ model: sonnet
 
 # Save Conversation
 
-現在の Claude Code または Codex 会話を保存する。機械的な処理（セッション特定・ハードリンク・会話ログ抽出・MD組み立て）はすべて同梱スクリプトが行う。**あなたが書くのはタイトルと Summary だけ**。会話ログ全文を自分で再生成しないこと — 生ログ jsonl を完全な形でハードリンク保全する。
+現在の Claude Code、Codex、または Antigravity 会話を保存する。機械的な処理（セッション特定・ハードリンク・会話ログ抽出・MD組み立て）はすべて同梱スクリプトが行う。**あなたが書くのはタイトルと Summary だけ**。会話ログ全文を自分で再生成しないこと — 生ログ jsonl を完全な形でハードリンク保全する。
 
 ## 保存先の決定（引数の解釈）
 
@@ -33,6 +34,7 @@ model: sonnet
 
 - Claude Code: `CLAUDE_SAVE_CONV_VAULT_DIR` を使う。
 - Codex: `CODEX_SAVE_CONV_VAULT_DIR` を優先する。未設定の場合は `CLAUDE_SAVE_CONV_VAULT_DIR` の末尾が `claude_code` なら、同階層の `codex` を使う（例: `AI-Chat/claude_code` → `AI-Chat/codex`）。導出できなければ設定を求めてエラー終了する。
+- Antigravity: `ANTIGRAVITY_SAVE_CONV_VAULT_DIR` を優先する。未設定の場合は `CLAUDE_SAVE_CONV_VAULT_DIR` の末尾が `claude_code` なら、同階層の `antigravity` を使う（例: `AI-Chat/claude_code` → `AI-Chat/antigravity`）。導出できなければ設定を求めてエラー終了する。
 - 明示した PATH と `pwd` は実行元にかかわらずその指定を優先する。
 
 環境変数は zshrc 等のシェル設定で定義する。キーワード解決はスクリプト側で行うので、引数の値をそのまま `--dest` に渡せばよい。生ログ jsonl の探索元は保存先と独立して常に実 cwd から導出されるため、別ディレクトリで起動したセッションを vault に集約しても正しくハードリンクされる。
@@ -43,7 +45,7 @@ model: sonnet
 
 1. この会話の短く説明的なタイトルを決める（会話で使われた言語、最大50文字。`/ \ : * ? " < > |` は使わない — スクリプト側でも除去されるが、最初から安全な形にする）。
 2. Summary を一時ファイルに書く。会話全体の要点 — 議論したトピック、下した決定、実行したアクション — を簡潔に。会話の逐語再現は不要（スクリプトが jsonl から抽出する）。
-   一時ファイル名はセッション固有にすること（固定名だと並行セッションで内容が混線する）: `/tmp/save-conv-summary-$CLAUDE_CODE_SESSION_ID.md`、env が無ければ `mktemp` を使う。
+   一時ファイル名はセッション固有にすること（固定名だと並行セッションで内容が混線する）: Claude Code は `/tmp/save-conv-summary-$CLAUDE_CODE_SESSION_ID.md`、Codex は `$CODEX_THREAD_ID`、Antigravity は `$ANTIGRAVITY_CONVERSATION_ID` を使い、env が無ければ `mktemp` を使う。
 
 ```bash
 # 例: Write ツールで /tmp/save-conv-summary-<session-id>.md に Summary 本文だけを書く
@@ -71,13 +73,24 @@ python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
   --summary-file "/tmp/save-conv-summary-<session-id>.md"
 ```
 
+Antigravity では `--source antigravity` を指定する（`$ANTIGRAVITY_CONVERSATION_ID` または `$ANTIGRAVITY_AGENT` が立っていれば `--source` 省略でも自動判定される）。生ログは `${ANTIGRAVITY_APP_DATA_DIR:-~/.gemini/antigravity-cli}/brain/<conversation-id>/.system_generated/logs/transcript_full.jsonl`（無ければ `transcript.jsonl`）の1本をハードリンクする。別セッションを指定するには `--session <conversation-id>` を加える。
+
+```bash
+python3 ~/.agents/skills/save-conversation/scripts/save_conversation.py \
+  --source antigravity \
+  --title "<タイトル>" \
+  --summary-file "/tmp/save-conv-summary-$ANTIGRAVITY_CONVERSATION_ID.md"
+```
+
+Antigravity の terminal sandbox でスクリプト本体・生ログ・vault 保存先へのアクセスが `Operation not permitted` になった場合は、`BypassSandbox: true` で再実行する。
+
 スクリプトが自動で行うこと:
 
-- セッション特定: Claude Code は `$CLAUDE_CODE_SESSION_ID` → `~/.claude/projects/`、Codex は `$CODEX_THREAD_ID` → `~/.codex/sessions/` の最新 rollout
+- セッション特定: Claude Code は `$CLAUDE_CODE_SESSION_ID` → `~/.claude/projects/`、Codex は `$CODEX_THREAD_ID` → `~/.codex/sessions/` の最新 rollout、Antigravity は `$ANTIGRAVITY_CONVERSATION_ID` → `${ANTIGRAVITY_APP_DATA_DIR:-~/.gemini/antigravity-cli}/brain/` の最新 `transcript_full.jsonl`
 - 保存先 `${dest}/YYYY-MM-DD/${session_uuid}/`（`--dest` 省略時は vault 保存先。既存セッションディレクトリがあれば再利用）の作成と jsonl のハードリンク。既存リンクは inode を比較し、atomic rename（tmpfile → rename）でソースが置き換わった stale link は貼り直す
-- jsonl から user/assistant のテキストを抽出（tool call・thinking・system-reminder は除外）し、frontmatter + Summary + Conversation Log の MD を同ディレクトリの `<タイトル>.md` に書き出す
+- jsonl から user/assistant のテキストを抽出（tool call・thinking・system-reminder は除外）し、frontmatter + Summary + Conversation Log の MD を同ディレクトリの `<タイトル>.md` に書き出す（resume コマンドは Claude Code が `claude --resume <id>`、Codex が `codex resume <id>`、Antigravity が `agy --resume <id>`）
 
-オプション（通常は不要）: `--session <uuid>` `--cwd <dir>` `--project-dir <dir>`
+オプション（通常は不要）: `--session <uuid>` `--cwd <dir>` `--project-dir <dir>` `--codex-dir <dir>` `--antigravity-dir <dir>`
 
 ## Step 3: 結果を報告する
 
@@ -92,4 +105,5 @@ python3 ~/.claude/skills/save-conversation/scripts/save_conversation.py \
 
 - `error: project dir not found` — cwd が想定と違う。`--cwd` でセッション開始時のディレクトリを明示する（`$CLAUDE_CODE_SESSION_ID` があれば、セッション中に cd していてもスクリプトが `~/.claude/projects/*/` から jsonl を探すので通常は不要）
 - Codex の保存対象が違う — `--session <thread-id>` で `~/.codex/session_index.jsonl` にある thread ID を指定する
+- Antigravity の保存対象が違う — `--session <conversation-id>` で `${ANTIGRAVITY_APP_DATA_DIR:-~/.gemini/antigravity-cli}/brain/` 配下の UUID を指定する
 - スクリプトが失敗した場合のみ、旧来の手動手順（mkdir → ln → MD 手書き）にフォールバックしてよい。その際も会話ログは要点のみに留め、全文再生成はしない
