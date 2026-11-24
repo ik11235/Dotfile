@@ -119,6 +119,8 @@ brew "ynqa/tap/jnv", trusted: true
 cask "android-file-transfer"
 # Android SDK component
 cask "android-platform-tools"
+# Terminal interface for Antigravity agents
+cask "antigravity-cli"
 # Chromium based browser
 cask "arc"
 # Audio utility
