@@ -6,9 +6,10 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/nanaism/yomiyasu.git",
       "skillPath": "skills/yomiyasu/SKILL.md",
-      "skillFolderHash": "26d04b79923faf09e288dc1410f3c843dbb7783e",
+      "skillFolderHash": "40741c122d70db04446d4f636f0d6e920c8b9a56",
       "installedAt": "2026-10-16T10:12:56.000Z",
-      "updatedAt": "2026-10-17T04:18:33.311Z"
+      "updatedAt": "2026-11-24T05:07:49.710Z",
+      "commit": "ddf365b5d5b36a7aa4ffab798dce1b694dbb1afd"
     }
   },
   "dismissed": {
