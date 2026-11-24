@@ -6,3 +6,7 @@
 !/config/
 /config/*
 !/config/skills
+!/config/hooks.json
+!/config/rules/
+/config/rules/*
+!/config/rules/rtk.md
