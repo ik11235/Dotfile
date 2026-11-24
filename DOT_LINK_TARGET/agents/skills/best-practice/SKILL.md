@@ -66,7 +66,7 @@ Step 2〜4 はサブエージェントに委譲し、メインコンテキスト
 スコープに応じて以下を読み取る：
 
 **globalスコープ（`~/.claude/`）：**
-- `~/.claude/CLAUDE.md`（Codex と共通）と `~/.claude/rules/*.md`（Claude Code 固有、RTK 等）— グローバル指示
+- `~/.claude/CLAUDE.md`（実体は `~/.agents/AGENTS.md`。Codex・Antigravity と共通）と `~/.claude/rules/*.md`（Claude Code 固有、RTK 等）— グローバル指示
 - `~/.claude/settings.json` — permissions / hooks / autoMode / enabledPlugins / skillOverrides / statusLine
 - `~/.claude/skills/*/SKILL.md` の frontmatter — グローバルスキル一覧
 - `~/.claude/agents/*.md` — グローバルエージェント（存在する場合）

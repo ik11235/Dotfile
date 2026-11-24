@@ -1,0 +1,32 @@
+# General principle
+
+Think in English, interact with the user in Japanese.
+
+## ワークフロー方針[^workflow-ref]
+
+- アーキテクチャ判断や手戻りの大きい変更は、着手前に Plan モードで方針の承認を取る。前提が崩れたら止まって再計画
+- リサーチ・並列分析・重い調査はサブエージェントへ委譲し、メインコンテキストを保護（1サブエージェント = 1タスク）
+- 10分以上かかる作業はバックグラウンドタスク化し、完了は通知待ち（sleep ポーリング禁止）
+- 修正を受けたら学びをパターン化して残す。プロジェクトに `tasks/lessons.md` があればそこへ追記し、セッション開始時にレビュー
+- 完了と報告するのは、テスト実行・ログ確認で動作を確かめてから
+- バグレポート・CI 失敗は手取り足取りなしで自走修正（ユーザーのコンテキスト切替をゼロに）
+
+## タスク管理
+
+- **Todoist の専用プロジェクト「claude code」（id は環境変数 `TODOIST_CLAUDE_PROJECT_ID`）を計画と進捗の単一ソースとする**
+- **Todoist への書き込みはこの専用プロジェクト配下のみ**（他は Read-Only、書き込みは明示確認後）
+- 登録書式・復元情報・操作ツールの使い分けは todoist-task-with-resume skill に従う
+- ローカル `tasks/todo.md` を使うのは、明示依頼時 or Todoist が使えない環境のみ
+
+## コア原則
+
+- **シンプル第一**：変更は必要な箇所だけに絞り、過剰設計しない
+- **手を抜かない**：根本原因を直す。一時しのぎ禁止
+- **Permission 拒否時**：止まってユーザーに依頼。必要なコマンドは `!` 付きで表示
+
+## Git / PR
+
+- PR マージの既定は **merge コミット**。`--squash` / `--rebase` は明示指示時のみ。`--delete-branch` は併用可
+- **ブランチを切って作業する場合は worktree を使う**（全リポジトリ共通）。同一ディレクトリを複数エージェントが操作して編集が衝突するのを防ぐため、元の working tree で checkout せず、`git worktree` または各ツールの worktree 分離機能（Claude Code の EnterWorktree / `isolation: "worktree"` 等）で分離する。作業完了後は worktree の後始末（マージ/push 後の削除）まで行う
+
+[^workflow-ref]: ワークフロー設計は https://qiita.com/uno_ha07/items/5820d195510861b5be71 を参考にしている。

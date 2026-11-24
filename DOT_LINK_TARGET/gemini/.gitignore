@@ -1,0 +1,8 @@
+# ~/.gemini は Gemini CLI と Antigravity の実行時状態（認証・履歴・ログ・会話 DB）が混在するため、
+# 管理対象だけを列挙する。~/.gemini/config/ もログイン時に projects/ や config.json が作られるので同様
+*
+!/.gitignore
+!/AGENTS.md
+!/config/
+/config/*
+!/config/skills
