@@ -1,0 +1,30 @@
+{
+  "reminders": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "~/.agents/hooks/remind-lessons.sh",
+        "timeout": 5
+      },
+      {
+        "type": "command",
+        "command": "~/.agents/hooks/remind-best-practice.sh",
+        "timeout": 5
+      }
+    ]
+  },
+  "rtk-rewrite": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook antigravity",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

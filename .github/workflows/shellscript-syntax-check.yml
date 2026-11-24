@@ -29,13 +29,16 @@ jobs:
 
       # `./*.sh` はドット始まりのファイル (.link_dir_and_file.sh 等) にマッチしないため `./.*.sh` も明示する
       - name: bash syntax check
-        run: bash -n ./*.sh ./.*.sh
+        run: bash -n ./*.sh ./.*.sh DOT_LINK_TARGET/agents/hooks/*.sh
 
       - name: shellcheck
         run: |
           shellcheck ./*.sh ./.*.sh \
             DOT_LINK_TARGET/bin/* \
             DOT_LINK_TARGET/claude/statusline-command.sh
+
+      - name: shellcheck (agent hooks)
+        run: shellcheck -x -P SCRIPTDIR DOT_LINK_TARGET/agents/hooks/*.sh
 
       # git hooks は `_local-hook-exec` を source するため -x で追従させ、
       # パス解決は各 hook のディレクトリ基準 (-P SCRIPTDIR) にする

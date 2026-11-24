@@ -22,7 +22,8 @@ dotfile
 - AI エージェント共通の指示: `~/.agents/AGENTS.md`。Claude Code の `~/.claude/CLAUDE.md`、Codex の `~/.codex/AGENTS.md`、Antigravity の `~/.gemini/AGENTS.md` はすべてこのファイルへのリンク。ツール固有の記述はここに書かず、Claude Code なら `~/.claude/rules/` に置く（例: RTK の説明 `rules/rtk.md`。user-level rule として全プロジェクトで読み込まれる）
 - Claude Code: `~/.claude/` 以下 (`CLAUDE.md` / `rules` / `settings.json` / `agents` / `skills` / `statusline-command.sh`)
 - Codex: `~/.codex/` 以下。共有設定は `config.template.toml`、実際の `config.toml` と実行時状態はマシンごとに管理する
-- Antigravity CLI (`agy`): `~/.gemini/` 以下。Gemini CLI・Antigravity の認証や履歴と同居するため、`.gitignore` で管理対象（`AGENTS.md` / `config/skills`）だけを列挙し、それ以外の実行時状態はマシンごとに管理する
+- Antigravity CLI (`agy`): `~/.gemini/` 以下。Gemini CLI・Antigravity の認証や履歴と同居するため、`.gitignore` で管理対象（`AGENTS.md` / `config/skills` / `config/hooks.json` / `config/rules/rtk.md`）だけを列挙し、それ以外の実行時状態はマシンごとに管理する
+- 共通 AI フック: `~/.agents/hooks/`。Claude Code（`~/.claude/settings.json`）と Antigravity（`~/.gemini/config/hooks.json`）の両方から呼び出し、stdin の JSON 形式（`hookEventName` の有無）で出力を切り替える
 - 共通 AI スキル: `~/.agents/skills/`。Claude Code の `~/.claude/skills` と Antigravity の `~/.gemini/config/skills` はこのディレクトリへのリンクで、Codex と同じスキル実体を参照する
   - 外部スキルは `npx skills add <repo> -g -s <name> -a claude-code -a codex -y` で追加し、スキル本体と `~/.agents/.skill-lock.json` をコミットする（ロックに載っているものが `skills` CLI 管理の外部スキル）
   - 更新は `npx skills update -g` → `git diff` で中身（特に `scripts/`）を確認してからコミットする
