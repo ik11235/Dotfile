@@ -18,9 +18,11 @@ import concurrent.futures
 import dataclasses
 import json
 import os
+import posixpath
 import re
 import shlex
 import shutil
+import stat as stat_mod
 import subprocess
 import sys
 import tempfile
@@ -270,6 +272,7 @@ SAFE_READONLY_PREFIXES = frozenset({
 UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     # rtk の危険・任意実行・機密ファイル読み取り迂回サブコマンド
     "rtk bypass": "bypasses RTK filter for arbitrary commands",
+    "rtk proxy": "bypasses RTK filter for arbitrary commands (deprecated alias of rtk bypass)",
     "rtk run": "executes arbitrary command/shell via rtk",
     "rtk err": "executes arbitrary command via rtk",
     "rtk summary": "executes arbitrary command via rtk",
@@ -407,8 +410,12 @@ EXACT_MATCH_ONLY_RE = re.compile(
     r"\$\(|\$\(\(|`|<[(]|>[(]|(?<!\\)\{[^}\s,]+,[^}\s}]+\}"
 )
 
-# env の引数を 1 つ消費するオプション
-ENV_VALUE_FLAGS = frozenset({"-u", "-C", "-S", "--unset", "--chdir", "--split-string"})
+# env の引数を 1 つ消費する安全な環境変数オプション（-S/--split-string/-P は任意実行・検索パス改変のため剥がさない）
+ENV_VALUE_FLAGS = frozenset({"-u", "-C", "--unset", "--chdir"})
+ENV_UNSAFE_FLAGS = frozenset({"-S", "--split-string", "-P"})
+NICE_VALUE_RE = re.compile(r"^[+-]?\d+$")
+TIMEOUT_DURATION_RE = re.compile(r"^\d+(?:\.\d+)?[smhd]?$")
+WRAPPER_BINARIES = frozenset({"env", "nohup", "nice", "timeout", "command"})
 
 
 @dataclasses.dataclass
@@ -648,17 +655,19 @@ def _pad_unquoted_redirections(segment: str) -> str:
             i += 1
             continue
         if not in_single and not in_double and ch in ("<", ">"):
-            # 直前の fd 数字 (例: 2>&1) はそのままリダイレクト側へ寄せる
+            # 直前の fd 数字 (例: 2>&1) または &>（&&> は除く）をリダイレクト側へ寄せる
             fd_prefix = ""
             if out and out[-1].isdigit() and (len(out) == 1 or out[-2].isspace()):
                 fd_prefix = out.pop()
-            elif out and out[-1] == "&" and ch == ">" and (len(out) == 1 or out[-2].isspace()):
+            elif out and out[-1] == "&" and ch == ">" and not (len(out) >= 2 and out[-2] == "&"):
                 fd_prefix = out.pop()
             op = fd_prefix + ch
             i += 1
             while i < n and segment[i] in ("<", ">", "&", "-"):
-                # 2>&1 のような fd 番号も含めて消費
-                op += segment[i]
+                nxt = segment[i]
+                if nxt == "-" and not (op == "<<" or op.endswith("&")):
+                    break
+                op += nxt
                 i += 1
                 if op.endswith("&") and i < n and segment[i].isdigit():
                     op += segment[i]
@@ -678,14 +687,15 @@ def tokenize_segment(segment: str) -> list[str]:
         tokens = shlex.split(padded, posix=True)
     except ValueError:
         tokens = padded.split()
-    # リダイレクト（2>&1, >/dev/null, <<EOF 等）を取り除く
+    # リダイレクト（2>&1, >/dev/null, <<-EOF, >& /dev/null, 2>&- 等）を取り除く
     cleaned: list[str] = []
     skip_next = False
     for tok in tokens:
         if skip_next:
             skip_next = False
             continue
-        if re.match(r"^(?:&|\d*)[<>]+$", tok):
+        # 直後トークンをターゲット/区切り子として消費する演算子（>&- / <&- / 2>&1 は消費しない）
+        if re.match(r"^(?:\d*<<-|(?:&|\d*)[<>]+|\d*>&)$", tok):
             skip_next = True
             continue
         if re.match(r"^(?:&|\d*)[<>].+$", tok):
@@ -718,13 +728,21 @@ def unwrap_tokens(tokens: list[str]) -> tuple[list[str], bool, bool]:
             continue
         norm = normalize_binary(tok)
         if norm == "env":
+            env_idx = idx
             idx += 1
+            unsafe_env = False
             while idx < n:
                 cur = tokens[idx]
+                if cur == "--":
+                    idx += 1
+                    break
                 if ENV_ASSIGN_RE.match(cur):
                     had_env = True
                     idx += 1
                     continue
+                if cur in ENV_UNSAFE_FLAGS or cur.startswith("--split-string=") or cur.startswith("-S") or cur.startswith("-P"):
+                    unsafe_env = True
+                    break
                 if cur in ENV_VALUE_FLAGS and idx + 1 < n:
                     idx += 2
                     continue
@@ -732,6 +750,8 @@ def unwrap_tokens(tokens: list[str]) -> tuple[list[str], bool, bool]:
                     idx += 1
                     continue
                 break
+            if unsafe_env:
+                return tokens[env_idx:], had_env, was_rtk
             continue
         if norm == "nohup":
             idx += 1
@@ -740,23 +760,35 @@ def unwrap_tokens(tokens: list[str]) -> tuple[list[str], bool, bool]:
             idx += 1
             while idx < n and tokens[idx] in ("-p", "-v", "-V"):
                 idx += 1
+            if idx < n and tokens[idx] == "--":
+                idx += 1
             continue
         if norm == "nice":
+            nice_idx = idx
             idx += 1
-            if idx < n and tokens[idx] == "-n" and idx + 1 < n:
-                idx += 2
-            elif idx < n and tokens[idx].startswith("-"):
+            if idx < n and tokens[idx] == "-n":
+                if idx + 1 < n and NICE_VALUE_RE.match(tokens[idx + 1]):
+                    idx += 2
+                else:
+                    return tokens[nice_idx:], had_env, was_rtk
+            elif idx < n and re.match(r"^-\d+$", tokens[idx]):
                 idx += 1
             continue
         if norm == "timeout":
+            to_idx = idx
             idx += 1
             while idx < n and tokens[idx].startswith("-"):
+                if tokens[idx] == "--":
+                    idx += 1
+                    break
                 if tokens[idx] in ("-s", "-k", "--signal", "--kill-after") and idx + 1 < n:
                     idx += 2
                 else:
                     idx += 1
-            if idx < n:
-                idx += 1  # duration
+            if idx < n and TIMEOUT_DURATION_RE.match(tokens[idx]):
+                idx += 1
+            else:
+                return tokens[to_idx:], had_env, was_rtk
             continue
         if norm == "rtk":
             if idx + 1 >= n:
@@ -943,6 +975,17 @@ def _split_regex_top_level_tokens(pattern: str) -> list[str]:
     return tokens
 
 
+def _ends_with_unescaped_dollar(pattern: str) -> bool:
+    if not pattern.endswith("$"):
+        return False
+    backslashes = 0
+    i = len(pattern) - 2
+    while i >= 0 and pattern[i] == "\\":
+        backslashes += 1
+        i -= 1
+    return (backslashes % 2) == 0
+
+
 def command_rule_matches_prefix(rule_target: str, candidate_prefix: str) -> bool:
     """Antigravity の command(...) ルールが候補プレフィックスに一致するか判定する。"""
     target = rule_target.strip()
@@ -958,22 +1001,27 @@ def command_rule_matches_prefix(rule_target: str, candidate_prefix: str) -> bool
         if cand.startswith("regex:"):
             return pattern == cand[len("regex:"):].strip()
         try:
-            if re.fullmatch(pattern, cand):
-                return True
-            rule_toks = _split_regex_top_level_tokens(pattern)
-            cand_toks = cand.split()
-            if not rule_toks or len(rule_toks) > len(cand_toks):
-                return False
-            if all(re.fullmatch(rt, ct) for rt, ct in zip(rule_toks, cand_toks)):
-                return True
-            # 先頭プレフィックスが正規表現全体に一致するか（例: regex:(gh pr|git push) vs "gh pr view"）
-            if len(rule_toks) == 1:
-                for k in range(1, len(cand_toks) + 1):
-                    if re.fullmatch(pattern, " ".join(cand_toks[:k])):
-                        return True
+            compiled = re.compile(pattern)
         except re.error:
             return False
-        return False
+        if compiled.fullmatch(cand):
+            return True
+        cand_toks = cand.split()
+        anchored_end = _ends_with_unescaped_dollar(pattern)
+        if not anchored_end:
+            for k in range(1, len(cand_toks)):
+                if compiled.fullmatch(" ".join(cand_toks[:k])):
+                    return True
+        # Antigravity のトークン単位アンカー仕様（例: regex:npm run build|lint）との互換フォールバック
+        rule_toks = _split_regex_top_level_tokens(pattern)
+        if not rule_toks or len(rule_toks) > len(cand_toks):
+            return False
+        if anchored_end and len(rule_toks) < len(cand_toks):
+            return False
+        try:
+            return all(re.fullmatch(rt, ct) for rt, ct in zip(rule_toks, cand_toks))
+        except re.error:
+            return False
 
     if cand.startswith("regex:"):
         return False
@@ -1012,36 +1060,59 @@ def url_rule_matches(rule_target: str, domain: str) -> bool:
 
 def _normalize_rule_path(path: str) -> str:
     norm = path.strip().replace("\\", "/")
-    while norm.startswith("./"):
-        norm = norm[2:]
-    if len(norm) > 1 and norm.endswith("/"):
-        norm = norm.rstrip("/")
-    return norm
+    if not norm:
+        return ""
+    if norm == "~" or norm.startswith("~/"):
+        norm = os.path.expanduser(norm).replace("\\", "/")
+    normalized = posixpath.normpath(norm)
+    # posixpath.normpath("//foo") は POSIX 仕様で "//foo" を残すため "/" へ正規化する
+    if normalized.startswith("//"):
+        normalized = "/" + normalized.lstrip("/")
+    return normalized
 
 
 def file_rule_matches(rule_target: str, candidate_path: str) -> bool:
+    if rule_target.strip() == "*":
+        return True
     target = _normalize_rule_path(rule_target)
     cand = _normalize_rule_path(candidate_path)
     if not target or not cand:
         return False
-    if target == "*":
-        return True
+    if target == "/":
+        return cand.startswith("/")
     if cand == target:
         return True
     return cand.startswith(target + "/")
 
 
 def is_sensitive_path(path: str) -> bool:
-    """相対パス・絶対パス・チルダ表記を問わず機密ファイル・ディレクトリを検出する。"""
-    norm = path.strip().replace("\\", "/").lower()
-    while norm.startswith("./"):
-        norm = norm[2:]
-    if norm.startswith("~/"):
-        norm = norm[2:]
+    """相対パス・絶対パス・チルダ表記・//や./を問わず機密ファイル・ディレクトリを検出する。"""
+    raw = path.strip().replace("\\", "/").lower()
+    if not raw:
+        return False
+    if raw.startswith("~/"):
+        raw = raw[2:]
+    norm = posixpath.normpath(raw)
+    if norm.startswith("//"):
+        norm = "/" + norm.lstrip("/")
     anchored = "/" + norm.lstrip("/")
     if any(pat in anchored for pat in SENSITIVE_PATH_SEGMENT_PATTERNS):
         return True
     return any(pat in norm for pat in SENSITIVE_PATH_SUBSTR_PATTERNS)
+
+
+def _is_overly_broad_file_path(path: str) -> bool:
+    """ファイルシステム全体・ホーム全体・カレント/親ディレクトリを指す広域パスか判定する。"""
+    raw = path.strip().replace("\\", "/")
+    if raw in ("/", "~", "~/", ".", ".."):
+        return True
+    norm = _normalize_rule_path(raw)
+    home = _normalize_rule_path("~")
+    if norm in ("", "/", ".", "..", home):
+        return True
+    if ".." in norm.split("/"):
+        return True
+    return False
 
 
 def check_rule_status(
@@ -1104,9 +1175,9 @@ def _extract_validated_permissions(
     settings_path: str,
 ) -> tuple[dict[str, list[str]], list[str]]:
     """settings dict から型検証済みの permissions と既存ルール構文警告を返す。"""
-    perms_raw = data.get("permissions")
-    if perms_raw is None:
+    if "permissions" not in data:
         return {"allow": [], "ask": [], "deny": []}, []
+    perms_raw = data["permissions"]
     if not isinstance(perms_raw, dict):
         raise ValueError(f"settings.permissions must be a JSON object: {settings_path}")
 
@@ -1169,6 +1240,8 @@ def _build_rtk_probe_commands(
     only_pipe_downstream: bool = False,
 ) -> list[str]:
     """rtk rewrite へ渡す検証コマンド候補を順に返す（フラグ途中で切らない）。"""
+    if only_pipe_downstream:
+        return []
     probes: list[str] = []
     if sample_cmd:
         segs = split_shell_segments(sample_cmd)
@@ -1176,8 +1249,6 @@ def _build_rtk_probe_commands(
             toks, _, _ = unwrap_tokens(tokenize_segment(segs[0]))
             if toks and " ".join(toks).startswith(prefix) and len(toks) <= 12:
                 probes.append(shlex.join(toks))
-    if only_pipe_downstream:
-        return probes
     if prefix not in probes:
         probes.append(prefix)
     if " " in prefix:
@@ -1231,10 +1302,16 @@ def compute_rtk_prefix(
     return None
 
 
-def find_antigravity_transcripts(antigravity_dir: str, limit: int) -> list[tuple[str, str]]:
+def find_antigravity_transcripts(
+    antigravity_dir: str,
+    limit: int,
+    warnings_out: list[str] | None = None,
+    unreadable_out: list[str] | None = None,
+) -> list[tuple[str, str]]:
     """直近 limit 件の (conversation_id, transcript_path) を新しい順に返す。
 
     brain/ の不存在や PermissionError は握り潰さず OSError を送出する。
+    個別セッション配下の PermissionError 等は warnings_out / unreadable_out へ記録する。
     """
     if limit <= 0:
         raise ValueError("limit must be a positive integer")
@@ -1245,18 +1322,24 @@ def find_antigravity_transcripts(antigravity_dir: str, limit: int) -> list[tuple
         if not UUID_RE.match(entry):
             continue
         logs_dir = os.path.join(brain_dir, entry, ".system_generated", "logs")
-        chosen: str | None = None
+        chosen: tuple[float, str] | None = None
         for fname in ("transcript_full.jsonl", "transcript.jsonl"):
             candidate = os.path.join(logs_dir, fname)
-            if os.path.isfile(candidate):
-                chosen = candidate
+            try:
+                st = os.stat(candidate)
+            except (FileNotFoundError, NotADirectoryError):
+                continue
+            except OSError as exc:
+                if unreadable_out is not None:
+                    unreadable_out.append(candidate)
+                if warnings_out is not None:
+                    warnings_out.append(f"could not stat transcript for session {entry}: {exc}")
+                break
+            if stat_mod.S_ISREG(st.st_mode):
+                chosen = (st.st_mtime, candidate)
                 break
         if chosen:
-            try:
-                mtime = os.path.getmtime(chosen)
-            except OSError:
-                continue
-            found.append((mtime, entry, chosen))
+            found.append((chosen[0], entry, chosen[1]))
     found.sort(key=lambda item: item[0], reverse=True)
     return [(cid, path) for _, cid, path in found[:limit]]
 
@@ -1277,8 +1360,10 @@ def normalize_mcp_tool_name(tool_name: str) -> str:
 
 
 def is_mcp_mutating(tool_name: str) -> bool:
-    lower = tool_name.lower()
-    tokens = re.split(r"[^a-z0-9]+", lower)
+    # camelCase / PascalCase 境界を分割してから小文字化する（例: writeFile -> write_file）
+    spaced = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", tool_name)
+    spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", spaced)
+    tokens = re.split(r"[^a-z0-9]+", spaced.lower())
     return any(tok in MCP_MUTATING_KEYWORDS for tok in tokens)
 
 
@@ -1296,7 +1381,13 @@ def scan_transcripts(
         raise ValueError("min_count must be a positive integer")
 
     warnings: list[str] = []
-    transcripts = find_antigravity_transcripts(antigravity_dir, limit)
+    unreadable_stat_paths: list[str] = []
+    transcripts = find_antigravity_transcripts(
+        antigravity_dir,
+        limit,
+        warnings_out=warnings,
+        unreadable_out=unreadable_stat_paths,
+    )
     permissions, perm_warnings = load_permissions(settings_path)
     warnings.extend(perm_warnings)
 
@@ -1319,7 +1410,7 @@ def scan_transcripts(
     total_run_commands = 0
     total_bypass_commands = 0
     sessions_scanned = 0
-    unreadable_files = 0
+    unreadable_files = len(unreadable_stat_paths)
     malformed_lines = 0
 
     for conv_id, path in transcripts:
@@ -1333,12 +1424,25 @@ def scan_transcripts(
         file_line_count = 0
         with fh:
             for line in fh:
-                if not line.strip():
+                stripped_line = line.strip()
+                if not stripped_line:
                     continue
                 file_line_count += 1
-                # tool_calls を含まない巨大なツール出力行は json.loads 前にスキップ
+                # tool_calls を含まない巨大なツール出力行は json.loads を省くが、
+                # 最初の有効 JSON 確認前・および {...} 形式でない行は破損検出のためパース検証する
                 if '"tool_calls"' not in line:
-                    file_has_valid_json = True
+                    if not file_has_valid_json or not (
+                        stripped_line.startswith("{") and stripped_line.endswith("}")
+                    ):
+                        try:
+                            probe_obj = json.loads(stripped_line)
+                        except json.JSONDecodeError:
+                            malformed_lines += 1
+                            continue
+                        if not isinstance(probe_obj, dict):
+                            malformed_lines += 1
+                            continue
+                        file_has_valid_json = True
                     continue
                 try:
                     obj = json.loads(line)
@@ -1670,6 +1774,8 @@ def validate_rule_for_apply(rule: str) -> str | None:
         return f"refusing global wildcard rule for safety: {rule}"
 
     if action in ("read_file", "write_file"):
+        if _is_overly_broad_file_path(target_stripped):
+            return f"refusing overly broad file path rule: {rule}"
         if is_sensitive_path(target_stripped):
             return f"refusing sensitive path rule: {rule}"
         return None
@@ -1693,14 +1799,64 @@ def validate_rule_for_apply(rule: str) -> str | None:
             toks = shlex.split(target_stripped, posix=True)
         except ValueError:
             return f"invalid command tokenization in rule: {rule}"
-        unwrapped, _, _ = unwrap_tokens(toks)
-        if not unwrapped:
-            return f"refusing wrapper-only or empty command rule: {rule}"
-        prefix, reason = classify_command_tokens(unwrapped)
+        if not toks:
+            return f"refusing empty command rule: {rule}"
+        # apply では環境変数代入・ラッパー（env/nohup/nice/timeout/command）・フルパス指定を禁止し、
+        # 安全な先頭ラッパーは単独の rtk のみ許可する
+        if ENV_ASSIGN_RE.match(toks[0]):
+            return f"refusing command rule with leading environment assignment: {rule}"
+        if "/" in toks[0]:
+            return f"refusing command rule with path-qualified executable: {rule}"
+        if toks[0] in WRAPPER_BINARIES:
+            return f"refusing wrapper command rule: {rule}"
+        if toks[0] == "rtk":
+            if len(toks) < 2:
+                return f"refusing bare rtk command rule: {rule}"
+            if toks[1].startswith("-"):
+                return f"refusing rtk flag rule: {rule}"
+            if ENV_ASSIGN_RE.match(toks[1]) or "/" in toks[1] or toks[1] in WRAPPER_BINARIES or toks[1] == "rtk":
+                return f"refusing wrapped or path-qualified rtk command rule: {rule}"
+            if f"rtk {toks[1]}" in UNSAFE_SUBCOMMAND_PREFIXES:
+                return (
+                    f"refusing unsafe rtk command rule ({UNSAFE_SUBCOMMAND_PREFIXES[f'rtk {toks[1]}']}): {rule}"
+                )
+            classify_target = toks[1:]
+        else:
+            classify_target = toks
+        prefix, reason = classify_command_tokens(classify_target)
         if prefix is None or reason is not None:
             detail = reason or "unrecognized or builtin command"
             return f"refusing unsafe or overly broad command rule ({detail}): {rule}"
     return None
+
+
+def _find_reverse_deny_overlaps(
+    action: str,
+    target: str,
+    deny_rules: list[str],
+) -> list[str]:
+    """新規 allow ルールが既存の狭い deny ルールを包含する場合、重複する deny ルール一覧を返す。"""
+    overlaps: list[str] = []
+    for raw_deny in deny_rules:
+        parsed = parse_rule(raw_deny)
+        if not parsed:
+            continue
+        d_action, d_target = parsed
+        matched = False
+        if action == "command" and d_action == "command":
+            matched = command_rule_matches_prefix(target, d_target)
+            if not matched and target.startswith("rtk "):
+                matched = command_rule_matches_prefix(target[4:].strip(), d_target)
+        elif action == "mcp" and d_action == "mcp":
+            matched = mcp_rule_matches(target, d_target)
+        elif action in ("read_url", "execute_url", "download_url") and d_action == action:
+            matched = url_rule_matches(target, d_target)
+        elif action in ("read_file", "write_file") and d_action in ("read_file", "write_file"):
+            if d_action == action or (action == "write_file" and d_action == "read_file"):
+                matched = file_rule_matches(target, d_target)
+        if matched:
+            overlaps.append(raw_deny)
+    return overlaps
 
 
 def apply_rules(
@@ -1733,10 +1889,23 @@ def apply_rules(
         assert parsed is not None
         action, target = parsed
         status = check_rule_status(action, target, existing_perms)
+        # command(rtk <cmd>) は元の <cmd> に対する deny/ask とも照合する
+        if action == "command" and target.startswith("rtk ") and status != "deny":
+            inner_status = check_rule_status("command", target[4:].strip(), existing_perms)
+            if inner_status == "deny":
+                status = "deny"
+            elif inner_status == "ask" and status == "none":
+                status = "ask"
         if status == "deny":
             raise ValueError(f"rule conflicts with existing permissions.deny: {rule}")
         if status == "ask":
             warnings.append(f"rule is shadowed by existing permissions.ask (Ask > Allow): {rule}")
+        reverse_overlaps = _find_reverse_deny_overlaps(action, target, existing_perms["deny"])
+        if reverse_overlaps:
+            warnings.append(
+                f"broader rule {rule} partially overlaps existing permissions.deny ({', '.join(reverse_overlaps)}); "
+                "denied targets remain blocked by Deny > Allow"
+            )
         allow_list.append(rule)
         added.append(rule)
 
