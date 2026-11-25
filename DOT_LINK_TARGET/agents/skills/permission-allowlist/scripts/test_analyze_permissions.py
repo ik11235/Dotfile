@@ -38,6 +38,20 @@ class ShellParsingTests(unittest.TestCase):
             ap.split_shell_segments("git log $(whoami) && git push&>/dev/null"),
             ["git log $(whoami)", "git push&>/dev/null"],
         )
+        # Operators inside $(...) must NOT split the outer segment
+        self.assertEqual(
+            ap.split_shell_segments("echo $(git status && ls)"),
+            ["echo $(git status && ls)"],
+        )
+        # Pipe downstream flag preserved across newline or subshell opening paren
+        self.assertEqual(
+            ap.split_shell_segments_with_meta("git log --oneline |\n  wc -l"),
+            [("git log --oneline", False), ("wc -l", True)],
+        )
+        self.assertEqual(
+            ap.split_shell_segments_with_meta("git log | (wc -l)"),
+            [("git log", False), ("wc -l", True)],
+        )
 
     def test_unwrap_tokens_strips_env_wrappers_and_safe_rtk(self) -> None:
         toks = ap.tokenize_segment(
@@ -52,6 +66,16 @@ class ShellParsingTests(unittest.TestCase):
         self.assertEqual(ap.unwrap_tokens(["command", "-v", "jq"])[0], [])
         self.assertEqual(ap.unwrap_tokens(["command", "-V", "git"])[0], [])
         self.assertEqual(ap.unwrap_tokens(["command", "-pv", "git"])[0], [])
+
+        # Combined short value flags (-iu, -iC) must consume their argument
+        self.assertEqual(
+            ap.unwrap_tokens(ap.tokenize_segment("env -iu PATH rm -rf /tmp/foo"))[0],
+            ["rm", "-rf", "/tmp/foo"],
+        )
+        self.assertEqual(
+            ap.unwrap_tokens(ap.tokenize_segment("env -iC /tmp git status"))[0],
+            ["git", "status"],
+        )
 
         # RTK native safe subcommands must NOT strip rtk
         unwrapped_gain, _, was_rtk_gain = ap.unwrap_tokens(["rtk", "gain", "--history"])
@@ -192,6 +216,12 @@ class ClassificationTests(unittest.TestCase):
             ["tar", "--list", "-f", "a.tar"],
             ["tar", "--overwrite", "-xf", "a.tar"],
             ["uv", "run", "python"],
+            ["uvx", "ruff"],
+            ["npm", "exec", "evil"],
+            ["pnpm", "dlx", "evil"],
+            ["pnpm", "exec", "evil"],
+            ["yarn", "dlx", "evil"],
+            ["yarn", "exec", "evil"],
             ["mise", "exec", "--", "sh"],
             ["mise", "x", "--", "sh"],
             ["cargo", "run"],
@@ -232,6 +262,10 @@ class ClassificationTests(unittest.TestCase):
             ["npx", "sh"],
             ["npx", "bash"],
             ["npx", "env"],
+            ["npx", "npx", "bash"],
+            ["npx", "wrangler", "deploy"],
+            ["npx", "git", "push"],
+            ["npx", "unzip", "a.zip"],
             ["npx", "./evil.js"],
             ["npx", "/usr/bin/id"],
             ["unzip", "archive.zip"],
@@ -243,6 +277,7 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(ap.classify_command_tokens(["git", "remote", "-v"]), ("git remote -v", None))
         self.assertEqual(ap.classify_command_tokens(["npx", "tsc", "--noEmit"]), ("npx tsc --noEmit", None))
         self.assertEqual(ap.classify_command_tokens(["npx", "prettier", "--check", "."]), ("npx prettier --check", None))
+        self.assertEqual(ap.classify_command_tokens(["npx", "git", "status"]), ("npx git status", None))
         self.assertEqual(ap.classify_command_tokens(["npx", "@biomejs/biome", "check"]), ("npx @biomejs/biome", None))
         self.assertEqual(ap.classify_command_tokens(["tsc", "--noEmit"]), ("tsc --noEmit", None))
         self.assertEqual(ap.classify_command_tokens(["prettier", "--check", "."]), ("prettier --check", None))
@@ -464,6 +499,20 @@ class RtkIntegrationTests(unittest.TestCase):
                     self.assertFalse(enabled)
                     self.assertEqual(len(warns), 1)
 
+                # Non-UTF-8 hooks.json records warning instead of crashing
+                with open(hooks, "wb") as fh:
+                    fh.write(b"\xff\xfe")
+                enabled_bad, warns_bad = ap.detect_rtk_hook_enabled(hooks)
+                self.assertFalse(enabled_bad)
+                self.assertEqual(len(warns_bad), 1)
+
+                # Broken symlink hooks.json records warning instead of silent False
+                broken_hooks = os.path.join(tmp, "broken_hooks.json")
+                os.symlink(os.path.join(tmp, "nonexistent_hooks.json"), broken_hooks)
+                enabled_brk, warns_brk = ap.detect_rtk_hook_enabled(broken_hooks)
+                self.assertFalse(enabled_brk)
+                self.assertTrue(any("broken symlink" in w for w in warns_brk))
+
 
 class ScanAndApplyIntegrationTests(unittest.TestCase):
     def _write_transcript(
@@ -511,6 +560,7 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                         {"name": "run_command", "args": {"CommandLine": "gh issue view 1", "BypassSandbox": True}},
                         {"name": "run_command", "args": {"CommandLine": "gh api repos/o/r", "BypassSandbox": True}},
                         {"name": "run_command", "args": {"CommandLine": "ls -la | wc -l", "BypassSandbox": False}},
+                        {"name": "run_command", "args": {"CommandLine": "rtk next build", "BypassSandbox": True}},
                         {"name": "run_command", "args": {"CommandLine": "stat foo", "BypassSandbox": True}},  # count=1 -> filtered by min_count=2
                         {"name": "mcp__todoist__find-tasks", "args": {"query": "today"}},
                         {"name": "mcp__todoist__create-task", "args": {"content": "x"}},
@@ -540,6 +590,7 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                             {"name": "run_command", "args": {"CommandLine": '"gh issue view 2"', "BypassSandbox": "true"}},
                             {"name": "run_command", "args": {"CommandLine": '"gh api repos/o/r"', "BypassSandbox": "true"}},
                             {"name": "run_command", "args": {"CommandLine": '"ls -la | wc -l"', "BypassSandbox": "false"}},
+                            {"name": "run_command", "args": {"CommandLine": '"rtk next build"', "BypassSandbox": "true"}},
                             {"name": "mcp__todoist__find-tasks", "args": {"query": "tomorrow"}},
                             {"name": "mcp__todoist__create-task", "args": {"content": "y"}},
                             {"name": "read_url_content", "args": {"Url": '"https://antigravity.google/docs/sandbox"'}},
@@ -614,6 +665,8 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
             )
             # Original allowed, RTK companion missing
             self.assertEqual(cand_map["command(npm run lint)"]["suggested_rules"], ["command(rtk lint)"])
+            # rtk-prefixed command in transcript preserves command(rtk ...) even when compute_rtk_prefix returns None
+            self.assertIn("command(rtk next)", cand_map["command(next)"]["suggested_rules"])
             # Sandbox-only command sorted below bypass commands
             self.assertIn("command(ls)", cand_map)
             self.assertEqual(cand_map["command(ls)"]["bypass_count"], 0)
@@ -777,7 +830,7 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
             self.assertEqual(saved["$schema"], "https://antigravity.google/schemas/v1/settings.json")
             self.assertEqual(saved["trustedWorkspaces"], ["/tmp/demo"])
 
-            # Comprehensive validate_rule_for_apply safety rejections
+            # Comprehensive validate_rule_for_apply safety rejections (tested directly so deny rules cannot mask guards)
             for bad in (
                 "command(*)",
                 "command(   )",
@@ -798,7 +851,7 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "command(/usr/bin/git log)",
                 "command(rtk)",
                 "command(rtk /tmp/attacker/git status)",
-                "command(rtk\tgit log)",
+                "command(rtk\tgit status)",
                 "command(rtk proxy)",
                 "command(rtk run)",
                 "command(rtk read)",
@@ -815,6 +868,10 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "command(sort)",
                 "command(jq)",
                 "command(tar -tf)",
+                "command(uvx)",
+                "command(npm exec)",
+                "command(pnpm dlx)",
+                "command(yarn dlx)",
                 "command(fd)",
                 "command(yq)",
                 "command(git)",
@@ -823,6 +880,9 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "command(tar -txf)",
                 "command(npx -c)",
                 "command(npx sh)",
+                "command(npx npx)",
+                "command(npx wrangler)",
+                "command(npx unzip)",
                 "command(npx ./evil.js)",
                 "command(uv run)",
                 "command(gh pr merge)",
@@ -833,22 +893,29 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "read_url(*.com)",
                 "read_url(https://example.com/path)",
                 "read_url(example.com.)",
+                "read_url(example.com:8080)",
+                "read_url(-evil.com)",
                 "read_url(localhost)",
                 "mcp(*)",
                 "mcp(*/*)",
-                "mcp( todoist/find-tasks )",
+                "mcp( github/list-prs )",
                 "mcp(todoist/delete-task)",
                 "mcp(fs/writeFile)",
                 "mcp(github/deleteBranch)",
                 "read_file(/)",
                 "write_file(/)",
                 "write_file(//)",
+                "write_file(/**)",
+                "read_file(~/*)",
+                "read_file(~/.s*h)",
                 "write_file(~)",
+                "write_file(~/.)",
+                f"write_file({os.path.expanduser('~')})",
                 "write_file(~/..)",
                 "write_file(~/sub/..)",
                 "write_file(~root)",
                 f"write_file({os.path.dirname(os.path.expanduser('~'))})",
-                "read_file(/tmp/../etc/hosts)",
+                "read_file(/workspace/a/../b)",
                 "write_file(.)",
                 "write_file(..)",
                 "read_file(~/.ssh)",
@@ -860,6 +927,7 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "read_file(secrets/prod.yaml)",
                 "invalid syntax",
             ):
+                self.assertIsNotNone(ap.validate_rule_for_apply(bad), f"expected validate_rule_for_apply rejection for {bad}")
                 with self.assertRaises(ValueError, msg=f"expected rejection for {bad}"):
                     ap.apply_rules(settings_path, [bad], dry_run=True)
 
@@ -889,6 +957,21 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
             os.symlink(os.path.join(tmp, "nonexistent.json"), broken_link)
             with self.assertRaisesRegex(ValueError, "broken symlink"):
                 ap.apply_rules(broken_link, ["command(gh pr view)"], dry_run=False)
+
+            # Symlink into unreadable directory propagates PermissionError (not misreported as broken symlink)
+            locked_parent = os.path.join(tmp, "locked_parent")
+            os.makedirs(locked_parent, exist_ok=True)
+            locked_target = os.path.join(locked_parent, "settings.json")
+            with open(locked_target, "w", encoding="utf-8") as fh:
+                json.dump({"permissions": {"allow": []}}, fh)
+            perm_link = os.path.join(tmp, "perm_link.json")
+            os.symlink(locked_target, perm_link)
+            os.chmod(locked_parent, 0o000)
+            try:
+                with self.assertRaises(PermissionError):
+                    ap.load_permissions(perm_link)
+            finally:
+                os.chmod(locked_parent, 0o700)
 
             # Corrupted JSON & bad schema types (including permissions: null) are rejected without mutating file
             for content in (

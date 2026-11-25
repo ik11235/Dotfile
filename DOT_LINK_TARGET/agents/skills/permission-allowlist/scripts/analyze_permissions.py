@@ -178,6 +178,7 @@ UNSAFE_COMMANDS: dict[str, str] = {
     "mongosh": "database client (can mutate data)",
     "redis-cli": "database client (can mutate data)",
     # その他危険なラッパー
+    "uvx": "arbitrary package execution runner",
     "open": "opens arbitrary files/URLs/apps",
     "pbcopy": "mutates clipboard",
 }
@@ -286,6 +287,7 @@ SAFE_READONLY_PREFIXES = frozenset({
 RTK_NATIVE_SAFE_SUBCOMMANDS = frozenset({
     "gain", "discover", "session", "verify", "hook-audit",
     "cc-economics", "help", "methods", "tasks", "pipeline",
+    "deps", "learn", "recall",
 })
 
 # 安全な読み取り専用実行に必須フラグを要求するツール（直接呼び出し・npx 経由で共有）
@@ -397,16 +399,21 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "npm install": "installs packages / runs lifecycle scripts",
     "npm i": "installs packages / runs lifecycle scripts",
     "npm ci": "installs packages / runs lifecycle scripts",
+    "npm exec": "executes arbitrary package/command",
     "npm uninstall": "mutates dependencies",
     "npm remove": "mutates dependencies",
     "npm update": "mutates dependencies",
     "npm publish": "publishes package",
     "pnpm install": "installs packages / runs lifecycle scripts",
+    "pnpm dlx": "downloads and executes arbitrary package",
+    "pnpm exec": "executes arbitrary command",
     "pnpm add": "mutates dependencies",
     "pnpm remove": "mutates dependencies",
     "yarn add": "mutates dependencies",
     "yarn remove": "mutates dependencies",
     "yarn install": "installs packages / runs lifecycle scripts",
+    "yarn dlx": "downloads and executes arbitrary package",
+    "yarn exec": "executes arbitrary command",
     "brew install": "installs packages",
     "brew uninstall": "uninstalls packages",
     "brew upgrade": "upgrades packages",
@@ -429,6 +436,18 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "kubectl patch": "mutates cluster",
     "terraform apply": "mutates infrastructure",
     "terraform destroy": "destroys infrastructure",
+    "tofu apply": "mutates infrastructure",
+    "tofu destroy": "destroys infrastructure",
+    "pulumi up": "mutates infrastructure",
+    "pulumi destroy": "destroys infrastructure",
+    "wrangler deploy": "deploys worker to Cloudflare",
+    "wrangler publish": "publishes worker to Cloudflare",
+    "wrangler delete": "deletes worker from Cloudflare",
+    "wrangler secret": "mutates Cloudflare secrets",
+    "wrangler rollback": "mutates worker deployment",
+    "vercel deploy": "deploys to Vercel",
+    "fly deploy": "deploys to Fly.io",
+    "flyctl deploy": "deploys to Fly.io",
     "nix run": "executes arbitrary package",
     "nix shell": "spawns shell",
     "nix develop": "spawns shell",
@@ -629,13 +648,17 @@ def split_shell_segments_with_meta(command: str) -> list[tuple[str, bool]]:
     i = 0
     n = len(command)
 
-    def flush(next_is_pipe: bool) -> None:
+    def flush(next_is_pipe: bool, *, reset_on_empty: bool = True) -> None:
         nonlocal cur_pipe_downstream
         seg = "".join(buf).strip()
         if seg:
             segments.append((seg, cur_pipe_downstream))
-        buf.clear()
-        cur_pipe_downstream = next_is_pipe
+            buf.clear()
+            cur_pipe_downstream = next_is_pipe
+        else:
+            buf.clear()
+            if reset_on_empty:
+                cur_pipe_downstream = next_is_pipe
 
     while i < n:
         ch = command[i]
@@ -676,7 +699,7 @@ def split_shell_segments_with_meta(command: str) -> list[tuple[str, bool]]:
                     subexpr_depth += 1
                     buf.append(ch)
                 else:
-                    flush(False)
+                    flush(False, reset_on_empty=False)
                 i += 1
                 continue
             if ch == ")":
@@ -687,38 +710,43 @@ def split_shell_segments_with_meta(command: str) -> list[tuple[str, bool]]:
                     flush(False)
                 i += 1
                 continue
-            if ch in (";", "\n"):
-                flush(False)
-                i += 1
-                continue
-            if ch == "&":
-                if i + 1 < n and command[i + 1] == "&":
+            if subexpr_depth == 0:
+                if ch == ";":
                     flush(False)
-                    i += 2
-                    continue
-                if i + 1 < n and command[i + 1] == ">":
-                    buf.append("&>")
-                    i += 2
-                    continue
-                if buf and buf[-1] in (">", "<"):
-                    buf.append(ch)
                     i += 1
                     continue
-                # 単独の &（バックグラウンド実行）はセグメント区切り
-                flush(False)
-                i += 1
-                continue
-            if ch == "|":
-                if i + 1 < n and command[i + 1] == "|":
-                    flush(False)
-                    i += 2
-                elif i + 1 < n and command[i + 1] == "&":
-                    flush(True)
-                    i += 2
-                else:
-                    flush(True)
+                if ch == "\n":
+                    flush(False, reset_on_empty=False)
                     i += 1
-                continue
+                    continue
+                if ch == "&":
+                    if i + 1 < n and command[i + 1] == "&":
+                        flush(False)
+                        i += 2
+                        continue
+                    if i + 1 < n and command[i + 1] == ">":
+                        buf.append("&>")
+                        i += 2
+                        continue
+                    if buf and buf[-1] in (">", "<"):
+                        buf.append(ch)
+                        i += 1
+                        continue
+                    # 単独の &（バックグラウンド実行）はセグメント区切り
+                    flush(False)
+                    i += 1
+                    continue
+                if ch == "|":
+                    if i + 1 < n and command[i + 1] == "|":
+                        flush(False)
+                        i += 2
+                    elif i + 1 < n and command[i + 1] == "&":
+                        flush(True)
+                        i += 2
+                    else:
+                        flush(True)
+                        i += 1
+                    continue
         buf.append(ch)
         i += 1
 
@@ -727,7 +755,7 @@ def split_shell_segments_with_meta(command: str) -> list[tuple[str, bool]]:
 
 
 def split_shell_segments(command: str) -> list[str]:
-    """クォートとエスケープを尊重して &&, ||, ;, |, 改行 でコマンドを分割する。"""
+    """クォートとエスケープを尊重して &&, ||, ;, |, &, サブシェル括弧, 改行 でコマンドを分割する。"""
     return [seg for seg, _ in split_shell_segments_with_meta(command)]
 
 
@@ -856,7 +884,10 @@ def unwrap_tokens(tokens: list[str]) -> tuple[list[str], bool, bool]:
                 ):
                     unsafe_env = True
                     break
-                if cur in ENV_VALUE_FLAGS and idx + 1 < n:
+                if (
+                    cur in ENV_VALUE_FLAGS
+                    or (cur.startswith("-") and not cur.startswith("--") and len(cur) > 1 and cur[-1] in ("u", "C"))
+                ) and idx + 1 < n:
                     idx += 2
                     continue
                 if cur.startswith("-"):
@@ -998,13 +1029,23 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
             base_pkg = pkg.split("@", 1)[0]
             if not VALID_CMD_RE.match(base_pkg):
                 return f"{cmd} {pkg}", "invalid package name in package runner"
-        if base_pkg in UNSAFE_COMMANDS or base_pkg in WRAPPER_BINARIES or base_pkg in SHELL_BUILTINS:
+        if (
+            base_pkg in UNSAFE_COMMANDS
+            or base_pkg in WRAPPER_BINARIES
+            or base_pkg in SHELL_BUILTINS
+            or base_pkg in ("npx", "pnpx", "bunx")
+        ):
             return f"{cmd} {pkg}", f"unsafe package/command in package runner ({base_pkg})"
         if base_pkg in REQUIRED_SAFE_FLAGS:
             req_flag, req_reason = REQUIRED_SAFE_FLAGS[base_pkg]
             if req_flag in rest[1:]:
                 return f"{cmd} {base_pkg} {req_flag}", None
             return f"{cmd} {base_pkg}", req_reason
+        if base_pkg in TWO_LEVEL_CLIS or base_pkg in ("unzip", "rtk"):
+            inner_prefix, inner_reason = classify_command_tokens([base_pkg, *rest[1:]])
+            if inner_prefix is None or inner_reason is not None:
+                return f"{cmd} {inner_prefix or base_pkg}", inner_reason or "unrecognized subcommand in package runner"
+            return f"{cmd} {inner_prefix}", None
         return f"{cmd} {pkg}", None
 
     # unzip の読み取り専用フラグチェック（tar は --use-compress-program 等の任意実行経路があるため UNSAFE_COMMANDS 側で一律除外）
@@ -1038,7 +1079,7 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
             return prefix, None
         return cmd, "bare CLI without subcommand would match write subcommands"
 
-    # 単体コマンド（ls, stat, jq 等）
+    # 単体コマンド（ls, stat, wc 等）
     return cmd, None
 
 
@@ -1405,8 +1446,17 @@ def load_permissions(settings_path: str) -> tuple[dict[str, list[str]], list[str
 
 
 def detect_rtk_hook_enabled(hooks_path: str) -> tuple[bool, list[str]]:
-    """RTK PreToolUse フックが有効か判定する。読取異常や rtk 未検出は警告を返す。"""
+    """RTK PreToolUse フックが有効か判定する。壊れた symlink・読取異常・rtk 未検出は警告を返す。"""
     warnings: list[str] = []
+    if os.path.islink(hooks_path):
+        try:
+            os.stat(hooks_path)
+        except FileNotFoundError:
+            warnings.append(f"hooks config is a broken symlink: {hooks_path}")
+            return False, warnings
+        except OSError as exc:
+            warnings.append(f"could not stat hooks config ({hooks_path}): {exc}")
+            return False, warnings
     try:
         with open(hooks_path, encoding="utf-8") as fh:
             raw = fh.read()
@@ -1608,6 +1658,7 @@ def scan_transcripts(
     sessions_scanned = 0
     unreadable_files = len(unreadable_stat_paths)
     malformed_lines = 0
+    malformed_sessions: list[str] = []
 
     for conv_id, path in transcripts:
         try:
@@ -1618,6 +1669,7 @@ def scan_transcripts(
             continue
         file_has_valid_json = False
         file_line_count = 0
+        file_malformed = 0
         with fh:
             for line in fh:
                 stripped_line = line.strip()
@@ -1634,9 +1686,11 @@ def scan_transcripts(
                             probe_obj = json.loads(stripped_line)
                         except json.JSONDecodeError:
                             malformed_lines += 1
+                            file_malformed += 1
                             continue
                         if not isinstance(probe_obj, dict):
                             malformed_lines += 1
+                            file_malformed += 1
                             continue
                         file_has_valid_json = True
                     continue
@@ -1644,9 +1698,11 @@ def scan_transcripts(
                     obj = json.loads(line)
                 except json.JSONDecodeError:
                     malformed_lines += 1
+                    file_malformed += 1
                     continue
                 if not isinstance(obj, dict):
                     malformed_lines += 1
+                    file_malformed += 1
                     continue
                 file_has_valid_json = True
                 tool_calls = obj.get("tool_calls")
@@ -1722,13 +1778,16 @@ def scan_transcripts(
                         st.total_count += 1
                         st.sessions.add(conv_id)
                         st.add_sample(name)
+        if file_malformed > 0 and len(malformed_sessions) < 5:
+            malformed_sessions.append(conv_id)
         if file_line_count == 0 or file_has_valid_json:
             sessions_scanned += 1
         else:
             warnings.append(f"transcript for session {conv_id} contained no valid JSONL lines")
 
     if malformed_lines > 0:
-        warnings.append(f"skipped {malformed_lines} malformed JSONL line(s) across transcripts")
+        sess_note = f" (sessions: {', '.join(malformed_sessions)})" if malformed_sessions else ""
+        warnings.append(f"skipped {malformed_lines} malformed JSONL line(s) across transcripts{sess_note}")
 
     # RTK リライト判定を並列実行（min_count 通過後のユニークプレフィックスのみ）
     eligible_cmds = [(p, st) for p, st in cmd_stats.items() if st.total_count >= min_count]
@@ -1750,10 +1809,10 @@ def scan_transcripts(
             for p, rtk_p, local_warn in pool.map(_probe_one, eligible_cmds):
                 rtk_map[p] = rtk_p
                 warnings.extend(local_warn)
-    elif check_rtk is None and rtk_seen_prefixes:
-        # RTK フック未検出でもトランスクリプトに rtk <cmd> が記録されていた安全なプレフィックスは保持する
+    if check_rtk is not False and rtk_seen_prefixes:
+        # RTK フック未検出や rtk rewrite が None を返した場合でも、トランスクリプトに rtk <cmd> が記録されていた安全なプレフィックスは保持する
         for p, _ in eligible_cmds:
-            if p in rtk_seen_prefixes and not p.startswith("rtk "):
+            if p in rtk_seen_prefixes and not p.startswith("rtk ") and rtk_map.get(p) is None:
                 rtk_map[p] = f"rtk {p}"
 
     candidates: list[dict[str, Any]] = []
@@ -1979,6 +2038,8 @@ def validate_rule_for_apply(rule: str) -> str | None:
         return f"refusing global wildcard rule for safety: {rule}"
 
     if action in ("read_file", "write_file"):
+        if any(ch in target_stripped for ch in ("*", "?", "[", "]")):
+            return f"refusing glob metacharacters in file path rule: {rule}"
         if _is_overly_broad_file_path(target_stripped):
             return f"refusing overly broad file path rule: {rule}"
         if is_sensitive_path(target_stripped):
