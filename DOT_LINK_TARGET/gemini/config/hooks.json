@@ -10,6 +10,11 @@
         "type": "command",
         "command": "~/.agents/hooks/remind-best-practice.sh",
         "timeout": 5
+      },
+      {
+        "type": "command",
+        "command": "~/.agents/hooks/check-agent-config-sync.sh",
+        "timeout": 5
       }
     ]
   },

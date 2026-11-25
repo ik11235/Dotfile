@@ -7,6 +7,9 @@
 /config/*
 !/config/skills
 !/config/hooks.json
+!/config/agents/
+/config/agents/*
+!/config/agents/*.md
 !/config/rules/
 /config/rules/*
 !/config/rules/rtk.md

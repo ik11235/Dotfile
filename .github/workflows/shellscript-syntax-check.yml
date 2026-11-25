@@ -29,7 +29,7 @@ jobs:
 
       # `./*.sh` はドット始まりのファイル (.link_dir_and_file.sh 等) にマッチしないため `./.*.sh` も明示する
       - name: bash syntax check
-        run: bash -n ./*.sh ./.*.sh DOT_LINK_TARGET/agents/hooks/*.sh
+        run: bash -n ./*.sh ./.*.sh DOT_LINK_TARGET/agents/hooks/*.sh DOT_LINK_TARGET/bin/agent-config-sync
 
       - name: shellcheck
         run: |
