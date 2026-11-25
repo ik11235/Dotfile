@@ -35,7 +35,8 @@ jobs:
         run: |
           shellcheck ./*.sh ./.*.sh \
             DOT_LINK_TARGET/bin/* \
-            DOT_LINK_TARGET/claude/statusline-command.sh
+            DOT_LINK_TARGET/claude/statusline-command.sh \
+            DOT_LINK_TARGET/gemini/antigravity-cli/statusline-command.sh
 
       - name: shellcheck (agent hooks)
         run: shellcheck -x -P SCRIPTDIR DOT_LINK_TARGET/agents/hooks/*.sh

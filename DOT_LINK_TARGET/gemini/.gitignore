@@ -13,3 +13,6 @@
 !/config/rules/
 /config/rules/*
 !/config/rules/rtk.md
+!/antigravity-cli/
+/antigravity-cli/*
+!/antigravity-cli/statusline-command.sh
