@@ -14,6 +14,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import dataclasses
 import json
 import os
@@ -38,6 +39,7 @@ HEREDOC_START_RE = re.compile(r"<<-?\s*(?:'([^']+)'|\"([^\"]+)\"|\\?([A-Za-z0-9_
 RULE_RE = re.compile(
     r"^(command|mcp|read_url|read_file|write_file|execute_url|download_url)\((.+)\)$"
 )
+SHELL_META_IN_RULE_RE = re.compile(r"['\"\\;|&<>`$()]")
 
 # Antigravity のビルトインツール（これ以外は MCP ツール候補として扱う）
 BUILTIN_TOOLS = frozenset({
@@ -80,9 +82,9 @@ SHELL_BUILTINS = frozenset({
     "until", "case", "esac", "in", "function", "{", "}", "!",
 })
 
-# 任意コード実行・破壊的操作・書き込み系コマンド（allow 候補から自動除外）
+# 任意コード実行・破壊的操作・書き込み系・機密ファイル読み取り迂回コマンド（自動除外）
 UNSAFE_COMMANDS: dict[str, str] = {
-    # 任意コード実行 / シェル / インタプリタ
+    # 任意コード実行 / シェル / インタプリタ / ラッパー
     "sh": "arbitrary code execution (shell)",
     "bash": "arbitrary code execution (shell)",
     "zsh": "arbitrary code execution (shell)",
@@ -92,6 +94,12 @@ UNSAFE_COMMANDS: dict[str, str] = {
     "exec": "arbitrary code execution",
     "source": "arbitrary code execution",
     ".": "arbitrary code execution",
+    "env": "arbitrary command wrapper",
+    "nohup": "arbitrary command wrapper",
+    "nice": "arbitrary command wrapper",
+    "timeout": "arbitrary command wrapper",
+    "command": "arbitrary command wrapper",
+    "rtk": "bare rtk wrapper matches arbitrary subcommands",
     "python": "arbitrary code execution (interpreter)",
     "python3": "arbitrary code execution (interpreter)",
     "node": "arbitrary code execution (interpreter)",
@@ -104,9 +112,19 @@ UNSAFE_COMMANDS: dict[str, str] = {
     "osascript": "arbitrary code execution",
     "xargs": "executes arbitrary subcommands",
     "find": "supports -exec / -delete",
+    "fd": "supports -x / -X arbitrary command execution",
     "awk": "supports system() / file output",
     "gawk": "supports system() / file output",
     "sed": "supports in-place edit (-i) and execute",
+    "yq": "supports in-place edit (-i)",
+    # 任意ファイル内容読み取り（BypassSandbox 経由で read_file deny / sandbox 保護を迂回）
+    "cat": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
+    "head": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
+    "tail": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
+    "grep": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
+    "egrep": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
+    "fgrep": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
+    "rg": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
     # 特権・破壊的・ファイル変更系
     "sudo": "privilege escalation",
     "su": "privilege escalation",
@@ -152,7 +170,8 @@ UNSAFE_COMMANDS: dict[str, str] = {
 
 # 2〜3トークン目がサブコマンドになる CLI（先頭トークンだけだと書き込み系まで許可してしまう）
 TWO_LEVEL_CLIS = frozenset({
-    "git", "brew", "cargo", "go", "mise", "uv", "home-manager",
+    "git", "gh", "nix", "docker", "npm", "pnpm", "yarn",
+    "brew", "cargo", "go", "mise", "uv", "home-manager",
     "kubectl", "helm", "terraform", "tofu", "pulumi", "wrangler",
     "gcloud", "aws", "az", "stripe", "flyctl", "fly", "supabase",
     "vercel", "netlify", "ghq", "tmux", "defaults", "diskutil",
@@ -195,10 +214,9 @@ THREE_LEVEL_GROUPS: set[tuple[str, str]] = {
     ("npm", "run"),
     ("pnpm", "run"),
     ("yarn", "run"),
-    ("bun", "run"),
 }
 
-# 安全とみなすサブコマンド（ホワイトリスト的に評価を補助）
+# 安全とみなすサブコマンド（known-safe ラベル付け用）
 SAFE_READONLY_PREFIXES = frozenset({
     # git 読み取り専用
     "git status", "git diff", "git log", "git show", "git blame",
@@ -219,14 +237,15 @@ SAFE_READONLY_PREFIXES = frozenset({
     # nix / home-manager 読み取り・検証
     "nix flake check", "nix flake show", "nix flake metadata",
     "nix profile list", "nix search", "nix eval", "nix build",
-    "nix store", "home-manager generations", "home-manager build",
+    "nix store ls", "nix store path-info",
+    "home-manager generations", "home-manager build",
     # JS / TS 検証系
     "npm test", "npm run lint", "npm run typecheck", "npm run check",
     "npm run test", "npm run build", "npm ls", "npm outdated",
     "pnpm test", "pnpm run lint", "pnpm run typecheck", "pnpm run check",
     "yarn test", "yarn lint", "yarn typecheck",
     "npx jest", "npx vitest", "npx tsc --noEmit", "npx prettier --check",
-    "npx eslint",
+    "npx eslint", "tsc --noEmit", "prettier --check",
     # 他言語テスト・検証系
     "cargo test", "cargo check", "cargo clippy", "cargo metadata",
     "go test", "go vet", "go list", "go version",
@@ -237,18 +256,30 @@ SAFE_READONLY_PREFIXES = frozenset({
     "docker compose ps", "docker compose logs", "docker compose config",
     "kubectl get", "kubectl describe", "kubectl logs", "kubectl version",
     "kubectl config current-context", "kubectl config get-contexts",
-    # UNIX 読み取り専用ユーティリティ
-    "ls", "stat", "file", "cat", "head", "tail", "wc", "sort", "uniq",
-    "cut", "tr", "grep", "egrep", "fgrep", "rg", "fd", "jq", "yq",
+    # UNIX 読み取り専用ユーティリティ（任意ファイル内容読み取りの cat/head/tail/grep/rg 等は除外済み）
+    "ls", "stat", "file", "wc", "sort", "uniq",
+    "cut", "tr", "jq",
     "diff", "cmp", "comm", "tree", "du", "df", "pwd", "which", "whereis",
-    "type", "command", "date", "uname", "whoami", "id", "hostname",
+    "type", "date", "uname", "whoami", "id", "hostname",
     "realpath", "readlink", "dirname", "basename", "shasum", "sha256sum",
     "md5", "md5sum", "strings", "hexdump", "xxd", "unzip -p", "unzip -l",
-    "tar -tf", "tar -tzf", "sw_vers", "sysctl", "ps", "lsof",
+    "tar -tf", "tar -tzf", "tar --list", "sw_vers", "sysctl", "ps", "lsof",
 })
 
 # 明示的に危険・書き込み系として除外するサブコマンドプレフィックス
 UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
+    # rtk の危険・任意実行・機密ファイル読み取り迂回サブコマンド
+    "rtk bypass": "bypasses RTK filter for arbitrary commands",
+    "rtk run": "executes arbitrary command/shell via rtk",
+    "rtk err": "executes arbitrary command via rtk",
+    "rtk summary": "executes arbitrary command via rtk",
+    "rtk test": "executes arbitrary command via rtk",
+    "rtk trust": "modifies rtk trust configuration",
+    "rtk config": "modifies rtk configuration",
+    "rtk read": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
+    "rtk grep": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
+    "rtk rg": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
+    "rtk find": "wraps find (can bypass file restrictions)",
     # git 書き込み・破壊的操作
     "git add": "mutates git index",
     "git commit": "mutates git history",
@@ -317,7 +348,7 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "gh variable delete": "deletes variables",
     "gh auth login": "mutates auth state",
     "gh auth logout": "mutates auth state",
-    # パッケージマネージャ変更系
+    # パッケージマネージャ・コンテナ・クラスタ変更系
     "npm install": "installs packages / runs lifecycle scripts",
     "npm i": "installs packages / runs lifecycle scripts",
     "npm ci": "installs packages / runs lifecycle scripts",
@@ -346,7 +377,6 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "kubectl exec": "executes command in pod",
     "kubectl edit": "mutates cluster",
     "kubectl patch": "mutates cluster",
-    "rtk bypass": "bypasses RTK filter for arbitrary commands",
     "nix run": "executes arbitrary package",
     "nix shell": "spawns shell",
     "nix develop": "spawns shell",
@@ -362,10 +392,13 @@ MCP_MUTATING_KEYWORDS = (
     "approve", "reject", "assign", "comment", "reply",
 )
 
-# 機密パス（read_file 候補から必ず除外）
-SENSITIVE_PATH_PATTERNS = (
+# 機密パス（先頭 / 付きの境界一致パターンと部分一致パターン）
+SENSITIVE_PATH_SEGMENT_PATTERNS = (
     "/.ssh", "/.aws", "/.gnupg", "/.kube", "/.config/gcloud",
-    "/.netrc", "/secrets", "/.env", "credentials", ".pem", ".key",
+    "/.netrc", "/secrets", "/.env",
+)
+SENSITIVE_PATH_SUBSTR_PATTERNS = (
+    "credentials", ".pem", ".key", ".p12", ".pfx",
     "id_rsa", "id_ed25519", "id_ecdsa", "id_dsa",
 )
 
@@ -373,6 +406,9 @@ SENSITIVE_PATH_PATTERNS = (
 EXACT_MATCH_ONLY_RE = re.compile(
     r"\$\(|\$\(\(|`|<[(]|>[(]|(?<!\\)\{[^}\s,]+,[^}\s}]+\}"
 )
+
+# env の引数を 1 つ消費するオプション
+ENV_VALUE_FLAGS = frozenset({"-u", "-C", "-S", "--unset", "--chdir", "--split-string"})
 
 
 @dataclasses.dataclass
@@ -383,8 +419,8 @@ class CommandStat:
     sessions: set[str] = dataclasses.field(default_factory=set)
     samples: list[str] = dataclasses.field(default_factory=list)
     exact_match_only_count: int = 0
-    seen_as_rtk: bool = False
     has_env_prefix_count: int = 0
+    non_pipe_downstream_count: int = 0
 
     def add_sample(self, raw: str) -> None:
         compact = " ".join(raw.split())
@@ -429,7 +465,6 @@ def _is_truthy(val: Any) -> bool:
 
 def has_exact_match_only_construct(command: str) -> bool:
     """Antigravity がプレフィックス一致を無効化する構文を含むか判定する。"""
-    # シングルクォート内は無視するため簡易的にマスクする
     masked = re.sub(r"'[^']*'", "''", command)
     if EXACT_MATCH_ONLY_RE.search(masked):
         return True
@@ -441,7 +476,7 @@ def has_exact_match_only_construct(command: str) -> bool:
 
 
 def _find_heredoc_delims(line: str) -> list[tuple[str, bool]]:
-    """クォート外にある <<DELIM / <<'DELIM' / <<"DELIM" / <<-DELIM をすべて抽出する。"""
+    """クォート外・コメント外にある <<DELIM / <<'DELIM' / <<"DELIM" / <<-DELIM を抽出する。"""
     delims: list[tuple[str, bool]] = []
     in_single = False
     in_double = False
@@ -466,18 +501,21 @@ def _find_heredoc_delims(line: str) -> list[tuple[str, bool]]:
             in_double = not in_double
             i += 1
             continue
-        if not in_single and not in_double and ch == "<" and i + 1 < n and line[i + 1] == "<":
-            # <<< here-string は heredoc ではない
-            if i + 2 < n and line[i + 2] == "<":
-                i += 3
-                continue
-            m = HEREDOC_START_RE.match(line, i)
-            if m:
-                delim = m.group(1) or m.group(2) or m.group(3)
-                if delim:
-                    delims.append((delim, m.group(0).startswith("<<-")))
-                i = m.end()
-                continue
+        if not in_single and not in_double:
+            if ch == "#" and (i == 0 or line[i - 1].isspace()):
+                break
+            if ch == "<" and i + 1 < n and line[i + 1] == "<":
+                # <<< here-string は heredoc ではない
+                if i + 2 < n and line[i + 2] == "<":
+                    i += 3
+                    continue
+                m = HEREDOC_START_RE.match(line, i)
+                if m:
+                    delim = m.group(1) or m.group(2) or m.group(3)
+                    if delim:
+                        delims.append((delim, m.group(0).startswith("<<-")))
+                    i = m.end()
+                    continue
         i += 1
     return delims
 
@@ -488,7 +526,7 @@ def strip_heredocs(command: str) -> str:
         return command
     lines = command.splitlines()
     out: list[str] = []
-    pending_delims: list[tuple[str, bool]] = []  # (delimiter, strip_tabs)
+    pending_delims: list[tuple[str, bool]] = []
     for line in lines:
         if pending_delims:
             delim, strip_tabs = pending_delims[0]
@@ -501,22 +539,25 @@ def strip_heredocs(command: str) -> str:
     return "\n".join(out)
 
 
-def split_shell_segments(command: str) -> list[str]:
-    """クォートとエスケープを尊重して &&, ||, ;, |, 改行 でコマンドを分割する。"""
+def split_shell_segments_with_meta(command: str) -> list[tuple[str, bool]]:
+    """クォートとエスケープを尊重して &&, ||, ;, |, 改行 で分割し、(segment, is_pipe_downstream) を返す。"""
     command = strip_heredocs(command)
-    segments: list[str] = []
+    segments: list[tuple[str, bool]] = []
     buf: list[str] = []
     in_single = False
     in_double = False
     escaped = False
+    cur_pipe_downstream = False
     i = 0
     n = len(command)
 
-    def flush() -> None:
+    def flush(next_is_pipe: bool) -> None:
+        nonlocal cur_pipe_downstream
         seg = "".join(buf).strip()
         if seg:
-            segments.append(seg)
+            segments.append((seg, cur_pipe_downstream))
         buf.clear()
+        cur_pipe_downstream = next_is_pipe
 
     while i < n:
         ch = command[i]
@@ -542,56 +583,126 @@ def split_shell_segments(command: str) -> list[str]:
             continue
         if not in_single and not in_double:
             if ch == "#" and (not buf or buf[-1].isspace()):
-                # 行末までコメント
                 while i < n and command[i] != "\n":
                     i += 1
                 continue
             if ch in (";", "\n"):
-                flush()
+                flush(False)
                 i += 1
                 continue
             if ch == "&" and i + 1 < n and command[i + 1] == "&":
-                flush()
+                flush(False)
                 i += 2
                 continue
             if ch == "|":
-                flush()
                 if i + 1 < n and command[i + 1] == "|":
+                    flush(False)
+                    i += 2
+                elif i + 1 < n and command[i + 1] == "&":
+                    flush(True)
                     i += 2
                 else:
+                    flush(True)
                     i += 1
                 continue
         buf.append(ch)
         i += 1
 
-    flush()
+    flush(False)
     return segments
+
+
+def split_shell_segments(command: str) -> list[str]:
+    """クォートとエスケープを尊重して &&, ||, ;, |, 改行 でコマンドを分割する。"""
+    return [seg for seg, _ in split_shell_segments_with_meta(command)]
+
+
+def _pad_unquoted_redirections(segment: str) -> str:
+    """クォート外の空白なしリダイレクト（例: git push>/dev/null）の前後に空白を補う。"""
+    out: list[str] = []
+    in_single = False
+    in_double = False
+    escaped = False
+    i = 0
+    n = len(segment)
+    while i < n:
+        ch = segment[i]
+        if escaped:
+            out.append(ch)
+            escaped = False
+            i += 1
+            continue
+        if ch == "\\" and not in_single:
+            out.append(ch)
+            escaped = True
+            i += 1
+            continue
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            out.append(ch)
+            i += 1
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            out.append(ch)
+            i += 1
+            continue
+        if not in_single and not in_double and ch in ("<", ">"):
+            # 直前の fd 数字 (例: 2>&1) はそのままリダイレクト側へ寄せる
+            fd_prefix = ""
+            if out and out[-1].isdigit() and (len(out) == 1 or out[-2].isspace()):
+                fd_prefix = out.pop()
+            elif out and out[-1] == "&" and ch == ">" and (len(out) == 1 or out[-2].isspace()):
+                fd_prefix = out.pop()
+            op = fd_prefix + ch
+            i += 1
+            while i < n and segment[i] in ("<", ">", "&", "-"):
+                # 2>&1 のような fd 番号も含めて消費
+                op += segment[i]
+                i += 1
+                if op.endswith("&") and i < n and segment[i].isdigit():
+                    op += segment[i]
+                    i += 1
+                    break
+            out.append(f" {op} ")
+            continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
 
 
 def tokenize_segment(segment: str) -> list[str]:
     """シェルセグメントをトークン化する。shlex が失敗したら空白分割にフォールバック。"""
+    padded = _pad_unquoted_redirections(segment)
     try:
-        tokens = shlex.split(segment, posix=True)
+        tokens = shlex.split(padded, posix=True)
     except ValueError:
-        tokens = segment.split()
-    # リダイレクト（2>&1, >/dev/null 等）を取り除く
+        tokens = padded.split()
+    # リダイレクト（2>&1, >/dev/null, <<EOF 等）を取り除く
     cleaned: list[str] = []
     skip_next = False
     for tok in tokens:
         if skip_next:
             skip_next = False
             continue
-        if re.match(r"^\d*[<>]+$", tok):
+        if re.match(r"^(?:&|\d*)[<>]+$", tok):
             skip_next = True
             continue
-        if re.match(r"^\d*[<>].+$", tok):
+        if re.match(r"^(?:&|\d*)[<>].+$", tok):
             continue
         cleaned.append(tok)
     return cleaned
 
 
+def normalize_binary(tok: str) -> str:
+    """フルパス指定（/usr/bin/python3 等）をコマンド名へ正規化する。"""
+    if "/" in tok and not tok.startswith("./") and not tok.startswith("../"):
+        return os.path.basename(tok)
+    return tok
+
+
 def unwrap_tokens(tokens: list[str]) -> tuple[list[str], bool, bool]:
-    """先頭の環境変数代入・透過ラッパー（env, timeout, nohup, nice）・rtk を剥がす。
+    """先頭の環境変数代入・透過ラッパー（env, timeout, nohup, nice, command）・安全な rtk を剥がす。
 
     Returns: (unwrapped_tokens, had_env_prefix, was_rtk_prefixed)
     """
@@ -605,24 +716,39 @@ def unwrap_tokens(tokens: list[str]) -> tuple[list[str], bool, bool]:
             had_env = True
             idx += 1
             continue
-        if tok == "env":
+        norm = normalize_binary(tok)
+        if norm == "env":
             idx += 1
-            while idx < n and (tokens[idx].startswith("-") or ENV_ASSIGN_RE.match(tokens[idx])):
-                if ENV_ASSIGN_RE.match(tokens[idx]):
+            while idx < n:
+                cur = tokens[idx]
+                if ENV_ASSIGN_RE.match(cur):
                     had_env = True
+                    idx += 1
+                    continue
+                if cur in ENV_VALUE_FLAGS and idx + 1 < n:
+                    idx += 2
+                    continue
+                if cur.startswith("-"):
+                    idx += 1
+                    continue
+                break
+            continue
+        if norm == "nohup":
+            idx += 1
+            continue
+        if norm == "command":
+            idx += 1
+            while idx < n and tokens[idx] in ("-p", "-v", "-V"):
                 idx += 1
             continue
-        if tok in ("nohup", "command"):
-            idx += 1
-            continue
-        if tok == "nice":
+        if norm == "nice":
             idx += 1
             if idx < n and tokens[idx] == "-n" and idx + 1 < n:
                 idx += 2
             elif idx < n and tokens[idx].startswith("-"):
                 idx += 1
             continue
-        if tok == "timeout":
+        if norm == "timeout":
             idx += 1
             while idx < n and tokens[idx].startswith("-"):
                 if tokens[idx] in ("-s", "-k", "--signal", "--kill-after") and idx + 1 < n:
@@ -632,19 +758,17 @@ def unwrap_tokens(tokens: list[str]) -> tuple[list[str], bool, bool]:
             if idx < n:
                 idx += 1  # duration
             continue
-        if tok == "rtk" and idx + 1 < n and tokens[idx + 1] != "bypass":
+        if norm == "rtk":
+            if idx + 1 >= n:
+                break
+            next_tok = tokens[idx + 1]
+            if next_tok.startswith("-") or f"rtk {next_tok}" in UNSAFE_SUBCOMMAND_PREFIXES:
+                break
             was_rtk = True
             idx += 1
             continue
         break
     return tokens[idx:], had_env, was_rtk
-
-
-def normalize_binary(tok: str) -> str:
-    """フルパス指定（/usr/bin/python3 等）をコマンド名へ正規化する。"""
-    if "/" in tok and not tok.startswith("./") and not tok.startswith("../"):
-        return os.path.basename(tok)
-    return tok
 
 
 def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
@@ -660,17 +784,24 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
         return None, None
     if cmd.startswith(("./", "../", "$")):
         return cmd, "relative or variable executable path"
-    if not VALID_CMD_RE.match(cmd):
-        return None, None
 
-    # rtk bypass は任意コマンドを通してしまうので除外
-    if cmd == "rtk" and len(tokens) >= 2 and tokens[1] == "bypass":
-        return "rtk bypass", UNSAFE_SUBCOMMAND_PREFIXES["rtk bypass"]
+    # rtk 単独・フラグ付き・危険サブコマンドを明示的に除外
+    if cmd == "rtk":
+        if len(tokens) >= 2:
+            sub = f"rtk {tokens[1]}"
+            if sub in UNSAFE_SUBCOMMAND_PREFIXES:
+                return sub, UNSAFE_SUBCOMMAND_PREFIXES[sub]
+            if tokens[1].startswith("-"):
+                return sub, "rtk global flag before subcommand is unsafe"
+        return "rtk", UNSAFE_COMMANDS["rtk"]
 
-    # そもそも危険なコマンド
+    # UNSAFE_COMMANDS は VALID_CMD_RE より先に評価する（"." などの記号コマンドを取りこぼさないため）
     if cmd in UNSAFE_COMMANDS:
         prefix = f"{cmd} {tokens[1]}" if len(tokens) >= 2 and tokens[1].startswith("-") else cmd
         return prefix, UNSAFE_COMMANDS[cmd]
+
+    if not VALID_CMD_RE.match(cmd):
+        return None, None
 
     # git の危険なグローバルオプション (-C, -c, --exec-path, --git-dir)
     if cmd == "git" and len(tokens) >= 2:
@@ -683,21 +814,32 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
     if cmd == "gh" and len(tokens) >= 2 and tokens[1] in ("-R", "--repo"):
         return f"gh {tokens[1]}", "gh -R before subcommand would match write subcommands too"
 
+    # 直接呼び出しの prettier / tsc（rtk rewrite 後を含む）も安全フラグを要求
+    if cmd == "tsc":
+        if "--noEmit" in tokens[1:]:
+            return "tsc --noEmit", None
+        return "tsc", "tsc without --noEmit may write files"
+    if cmd == "prettier":
+        if "--check" in tokens[1:]:
+            return "prettier --check", None
+        return "prettier", "prettier without --check may write files"
+
     # npx / pnpx / bunx の特別扱い（ツール名＋安全フラグを残す）
     if cmd in ("npx", "pnpx", "bunx"):
         rest = [t for t in tokens[1:] if t not in ("-y", "--yes", "--no-install")]
         if not rest:
             return cmd, "bare package runner"
         pkg = rest[0]
-        if pkg == "tsc" and "--noEmit" in rest[1:]:
-            return f"{cmd} tsc --noEmit", None
-        if pkg == "prettier" and "--check" in rest[1:]:
-            return f"{cmd} prettier --check", None
-        if pkg in ("jest", "vitest", "eslint", "oxlint", "biome", "stylelint", "knip", "depcheck"):
-            return f"{cmd} {pkg}", None
-        # 未知パッケージは is_known_safe=False (review) として候補に残し、明示的な書き込み系だけ除外する
-        if pkg in ("prettier", "tsc"):
-            return f"{cmd} {pkg}", f"{pkg} without --check/--noEmit may write files"
+        if pkg.startswith("-"):
+            return f"{cmd} {pkg}", "flag passed to package runner may execute arbitrary command/package"
+        if pkg == "tsc":
+            if "--noEmit" in rest[1:]:
+                return f"{cmd} tsc --noEmit", None
+            return f"{cmd} tsc", "tsc without --noEmit may write files"
+        if pkg == "prettier":
+            if "--check" in rest[1:]:
+                return f"{cmd} prettier --check", None
+            return f"{cmd} prettier", "prettier without --check may write files"
         return f"{cmd} {pkg}", None
 
     # unzip / tar の読み取り専用フラグチェック
@@ -706,9 +848,22 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
             return f"unzip {tokens[1]}", None
         return "unzip", "extracts files to disk (only -p/-l are read-only)"
     if cmd == "tar":
-        if len(tokens) >= 2 and "t" in tokens[1] and "x" not in tokens[1] and "c" not in tokens[1]:
-            return f"tar {tokens[1]}", None
-        return "tar", "creates or extracts archives (only listing -t is read-only)"
+        if any(
+            t.startswith("--to-command") or t.startswith("--checkpoint-action")
+            for t in tokens[1:]
+        ):
+            return "tar", "tar action flag executes arbitrary commands"
+        if len(tokens) >= 2:
+            flag = tokens[1]
+            if flag == "--list":
+                return "tar --list", None
+            if (
+                re.fullmatch(r"-?[a-zA-Z]+", flag)
+                and "t" in flag
+                and not any(ch in flag for ch in "xcrudA")
+            ):
+                return f"tar {flag}", None
+        return "tar", "creates, modifies, or extracts archives (only listing -t/--list is read-only)"
 
     # 3階層サブコマンド（gh pr view, nix flake show, npm run lint 等）
     if len(tokens) >= 3 and (cmd, tokens[1]) in THREE_LEVEL_GROUPS:
@@ -721,50 +876,110 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
         return prefix, None
 
     # 2階層サブコマンド
-    if cmd in TWO_LEVEL_CLIS or cmd in ("gh", "nix", "docker", "npm", "pnpm", "yarn"):
+    if cmd in TWO_LEVEL_CLIS:
         if len(tokens) >= 2 and not tokens[1].startswith("-"):
             prefix = f"{cmd} {tokens[1]}"
             if prefix in UNSAFE_SUBCOMMAND_PREFIXES:
                 return prefix, UNSAFE_SUBCOMMAND_PREFIXES[prefix]
-            # 3階層グループなのに2語しかなかった場合（例: `gh pr` 単独）
             if (cmd, tokens[1]) in THREE_LEVEL_GROUPS:
                 return prefix, "too broad (covers both read and write subcommands)"
             return prefix, None
         return cmd, "bare CLI without subcommand would match write subcommands"
 
-    # 単体コマンド（ls, stat, rg, jq 等）
+    # 単体コマンド（ls, stat, jq 等）
     return cmd, None
 
 
 def parse_rule(rule: str) -> tuple[str, str] | None:
+    if not isinstance(rule, str):
+        return None
     m = RULE_RE.match(rule.strip())
     if not m:
         return None
     return m.group(1), m.group(2)
 
 
+def _split_regex_top_level_tokens(pattern: str) -> list[str]:
+    """括弧 (...)・文字クラス [...] 内の空白では割らず、トップレベル空白のみで分割する。"""
+    tokens: list[str] = []
+    buf: list[str] = []
+    paren_depth = 0
+    in_bracket = False
+    escaped = False
+    for ch in pattern:
+        if escaped:
+            buf.append(ch)
+            escaped = False
+            continue
+        if ch == "\\":
+            buf.append(ch)
+            escaped = True
+            continue
+        if in_bracket:
+            buf.append(ch)
+            if ch == "]":
+                in_bracket = False
+            continue
+        if ch == "[":
+            in_bracket = True
+            buf.append(ch)
+            continue
+        if ch == "(":
+            paren_depth += 1
+            buf.append(ch)
+            continue
+        if ch == ")":
+            paren_depth = max(0, paren_depth - 1)
+            buf.append(ch)
+            continue
+        if ch.isspace() and paren_depth == 0:
+            if buf:
+                tokens.append("".join(buf))
+                buf.clear()
+            continue
+        buf.append(ch)
+    if buf:
+        tokens.append("".join(buf))
+    return tokens
+
+
 def command_rule_matches_prefix(rule_target: str, candidate_prefix: str) -> bool:
     """Antigravity の command(...) ルールが候補プレフィックスに一致するか判定する。"""
     target = rule_target.strip()
+    cand = candidate_prefix.strip()
+    if not target or not cand:
+        return False
     if target == "*":
         return True
     if target.startswith("regex:"):
-        pattern = target[len("regex:"):]
+        pattern = target[len("regex:"):].strip()
+        if not pattern:
+            return False
+        if cand.startswith("regex:"):
+            return pattern == cand[len("regex:"):].strip()
         try:
-            # フルライン一致またはトークン単位一致の両方をチェック
-            if re.fullmatch(pattern, candidate_prefix):
+            if re.fullmatch(pattern, cand):
                 return True
-            rule_toks = pattern.split()
-            cand_toks = candidate_prefix.split()
-            if len(rule_toks) <= len(cand_toks):
-                if all(re.fullmatch(rt, ct) for rt, ct in zip(rule_toks, cand_toks)):
-                    return True
+            rule_toks = _split_regex_top_level_tokens(pattern)
+            cand_toks = cand.split()
+            if not rule_toks or len(rule_toks) > len(cand_toks):
+                return False
+            if all(re.fullmatch(rt, ct) for rt, ct in zip(rule_toks, cand_toks)):
+                return True
+            # 先頭プレフィックスが正規表現全体に一致するか（例: regex:(gh pr|git push) vs "gh pr view"）
+            if len(rule_toks) == 1:
+                for k in range(1, len(cand_toks) + 1):
+                    if re.fullmatch(pattern, " ".join(cand_toks[:k])):
+                        return True
         except re.error:
             return False
         return False
 
+    if cand.startswith("regex:"):
+        return False
+
     rule_toks = target.split()
-    cand_toks = candidate_prefix.split()
+    cand_toks = cand.split()
     if not rule_toks or len(rule_toks) > len(cand_toks):
         return False
     return cand_toks[: len(rule_toks)] == rule_toks
@@ -772,22 +987,61 @@ def command_rule_matches_prefix(rule_target: str, candidate_prefix: str) -> bool
 
 def mcp_rule_matches(rule_target: str, mcp_target: str) -> bool:
     target = rule_target.strip()
-    if target == "*":
+    cand = mcp_target.strip()
+    if not target or not cand:
+        return False
+    if target in ("*", "*/*"):
         return True
-    if target == mcp_target:
+    if target == cand:
         return True
     if target.endswith("/*"):
         server = target[:-2]
-        return mcp_target.startswith(server + "/")
+        return cand.startswith(server + "/")
     return False
 
 
 def url_rule_matches(rule_target: str, domain: str) -> bool:
     target = rule_target.strip().lower()
     dom = domain.strip().lower()
+    if not target or not dom:
+        return False
     if target == "*":
         return True
     return dom == target or dom.endswith("." + target)
+
+
+def _normalize_rule_path(path: str) -> str:
+    norm = path.strip().replace("\\", "/")
+    while norm.startswith("./"):
+        norm = norm[2:]
+    if len(norm) > 1 and norm.endswith("/"):
+        norm = norm.rstrip("/")
+    return norm
+
+
+def file_rule_matches(rule_target: str, candidate_path: str) -> bool:
+    target = _normalize_rule_path(rule_target)
+    cand = _normalize_rule_path(candidate_path)
+    if not target or not cand:
+        return False
+    if target == "*":
+        return True
+    if cand == target:
+        return True
+    return cand.startswith(target + "/")
+
+
+def is_sensitive_path(path: str) -> bool:
+    """相対パス・絶対パス・チルダ表記を問わず機密ファイル・ディレクトリを検出する。"""
+    norm = path.strip().replace("\\", "/").lower()
+    while norm.startswith("./"):
+        norm = norm[2:]
+    if norm.startswith("~/"):
+        norm = norm[2:]
+    anchored = "/" + norm.lstrip("/")
+    if any(pat in anchored for pat in SENSITIVE_PATH_SEGMENT_PATTERNS):
+        return True
+    return any(pat in norm for pat in SENSITIVE_PATH_SUBSTR_PATTERNS)
 
 
 def check_rule_status(
@@ -805,42 +1059,115 @@ def check_rule_status(
             if not parsed:
                 continue
             r_action, r_target = parsed
+            # Antigravity 暗黙ルール: deny read_file は write_file もブロック、allow write_file は read_file も許可
+            if action in ("read_file", "write_file"):
+                matches_action = (
+                    r_action == action
+                    or (bucket == "deny" and action == "write_file" and r_action == "read_file")
+                    or (bucket == "allow" and action == "read_file" and r_action == "write_file")
+                )
+                if matches_action and file_rule_matches(r_target, target):
+                    return bucket
+                continue
             if r_action != action:
                 continue
             if action == "command" and command_rule_matches_prefix(r_target, target):
                 return bucket
             if action == "mcp" and mcp_rule_matches(r_target, target):
                 return bucket
-            if action == "read_url" and url_rule_matches(r_target, target):
+            if action in ("read_url", "execute_url", "download_url") and url_rule_matches(r_target, target):
                 return bucket
     return "none"
 
 
-def load_permissions(settings_path: str) -> dict[str, list[str]]:
-    if not os.path.isfile(settings_path):
-        return {"allow": [], "ask": [], "deny": []}
-    with open(settings_path, encoding="utf-8") as fh:
-        data = json.load(fh)
-    perms = data.get("permissions") or {}
-    return {
-        "allow": list(perms.get("allow") or []),
-        "ask": list(perms.get("ask") or []),
-        "deny": list(perms.get("deny") or []),
-    }
+def _read_settings_json(settings_path: str) -> tuple[dict[str, Any], str]:
+    """settings.json を読み込み (data, resolved_real_path) を返す。
+
+    ファイルが本当に存在しない場合（FileNotFoundError）のみ空 dict を返す。
+    壊れた symlink・PermissionError・破損 JSON・非 dict ルートは明示的に例外を送出する。
+    """
+    if os.path.islink(settings_path) and not os.path.exists(settings_path):
+        raise ValueError(f"settings path is a broken symlink: {settings_path}")
+    real_path = os.path.realpath(settings_path)
+    try:
+        with open(real_path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except FileNotFoundError:
+        return {}, real_path
+    if not isinstance(data, dict):
+        raise ValueError(f"settings file root must be a JSON object: {settings_path}")
+    return data, real_path
 
 
-def detect_rtk_hook_enabled(hooks_path: str) -> bool:
-    if not shutil.which("rtk") or not os.path.isfile(hooks_path):
-        return False
+def _extract_validated_permissions(
+    data: dict[str, Any],
+    settings_path: str,
+) -> tuple[dict[str, list[str]], list[str]]:
+    """settings dict から型検証済みの permissions と既存ルール構文警告を返す。"""
+    perms_raw = data.get("permissions")
+    if perms_raw is None:
+        return {"allow": [], "ask": [], "deny": []}, []
+    if not isinstance(perms_raw, dict):
+        raise ValueError(f"settings.permissions must be a JSON object: {settings_path}")
+
+    permissions: dict[str, list[str]] = {}
+    warnings: list[str] = []
+    for bucket in ("allow", "ask", "deny"):
+        raw_list = perms_raw.get(bucket)
+        if raw_list is None:
+            permissions[bucket] = []
+            continue
+        if not isinstance(raw_list, list) or not all(isinstance(x, str) for x in raw_list):
+            raise ValueError(
+                f"settings.permissions.{bucket} must be a list of strings: {settings_path}"
+            )
+        permissions[bucket] = list(raw_list)
+        for rule in raw_list:
+            parsed = parse_rule(rule)
+            if not parsed:
+                warnings.append(f"existing permissions.{bucket} contains invalid rule syntax: {rule!r}")
+                continue
+            r_action, r_target = parsed
+            if r_action == "command" and r_target.strip().startswith("regex:"):
+                pattern = r_target.strip()[len("regex:"):].strip()
+                if not pattern:
+                    warnings.append(f"existing permissions.{bucket} contains empty regex rule: {rule!r}")
+                else:
+                    try:
+                        re.compile(pattern)
+                    except re.error as exc:
+                        warnings.append(
+                            f"existing permissions.{bucket} contains invalid regex {rule!r}: {exc}"
+                        )
+    return permissions, warnings
+
+
+def load_permissions(settings_path: str) -> tuple[dict[str, list[str]], list[str]]:
+    data, _ = _read_settings_json(settings_path)
+    return _extract_validated_permissions(data, settings_path)
+
+
+def detect_rtk_hook_enabled(hooks_path: str) -> tuple[bool, list[str]]:
+    """RTK PreToolUse フックが有効か判定する。FileNotFoundError 以外の OSError は警告を返す。"""
+    warnings: list[str] = []
+    if not shutil.which("rtk"):
+        return False, warnings
     try:
         with open(hooks_path, encoding="utf-8") as fh:
             raw = fh.read()
-        return "rtk hook antigravity" in raw
-    except OSError:
-        return False
+    except FileNotFoundError:
+        return False, warnings
+    except OSError as exc:
+        warnings.append(f"could not read hooks config ({hooks_path}): {exc}")
+        return False, warnings
+    return ("rtk hook antigravity" in raw), warnings
 
 
-def _build_rtk_probe_commands(prefix: str, sample_cmd: str | None = None) -> list[str]:
+def _build_rtk_probe_commands(
+    prefix: str,
+    sample_cmd: str | None = None,
+    only_pipe_downstream: bool = False,
+) -> list[str]:
     """rtk rewrite へ渡す検証コマンド候補を順に返す（フラグ途中で切らない）。"""
     probes: list[str] = []
     if sample_cmd:
@@ -848,25 +1175,26 @@ def _build_rtk_probe_commands(prefix: str, sample_cmd: str | None = None) -> lis
         if segs:
             toks, _, _ = unwrap_tokens(tokenize_segment(segs[0]))
             if toks and " ".join(toks).startswith(prefix) and len(toks) <= 12:
-                # フラグと引数の組を壊さないよう、完全な単一セグメントをそのまま試す
                 probes.append(shlex.join(toks))
+    if only_pipe_downstream:
+        return probes
     if prefix not in probes:
         probes.append(prefix)
-    if " " not in prefix:
-        if prefix in ("grep", "egrep", "fgrep", "rg"):
-            probes.append(f"{prefix} pattern file")
-        elif prefix in ("cat", "head", "tail", "wc", "stat", "file"):
-            probes.append(f"{prefix} file")
-    else:
+    if " " in prefix:
         probes.append(f"{prefix} 1")
     return probes
 
 
-def compute_rtk_prefix(prefix: str, sample_cmd: str | None = None) -> str | None:
-    """rtk rewrite を実行して、書き換え後の command(rtk ...) プレフィックスを返す。"""
+def compute_rtk_prefix(
+    prefix: str,
+    sample_cmd: str | None = None,
+    only_pipe_downstream: bool = False,
+    warnings_out: list[str] | None = None,
+) -> str | None:
+    """rtk rewrite を実行し、安全分類を再適用した command(rtk ...) プレフィックスを返す。"""
     if prefix.startswith("rtk "):
         return prefix
-    for test_cmd in _build_rtk_probe_commands(prefix, sample_cmd):
+    for test_cmd in _build_rtk_probe_commands(prefix, sample_cmd, only_pipe_downstream):
         try:
             res = subprocess.run(
                 ["rtk", "rewrite", test_cmd],
@@ -875,30 +1203,44 @@ def compute_rtk_prefix(prefix: str, sample_cmd: str | None = None) -> str | None
                 timeout=2,
                 check=False,
             )
-        except (OSError, subprocess.SubprocessError):
+        except (OSError, subprocess.SubprocessError) as exc:
+            if warnings_out is not None:
+                warnings_out.append(f"rtk rewrite failed for {prefix!r}: {exc}")
+            return None
+        # rtk rewrite の正常終了コードは 0(allow書換), 1(未書換), 2(deny), 3(ask書換)
+        if res.returncode not in (0, 1, 2, 3):
+            if warnings_out is not None:
+                warnings_out.append(
+                    f"rtk rewrite exited with unexpected code {res.returncode} for {prefix!r}"
+                )
             return None
         rewritten = (res.stdout or "").strip()
         if not rewritten or not rewritten.startswith("rtk "):
             continue
-        rw_toks = rewritten.split()
-        orig_toks = prefix.split()
-        if len(rw_toks) >= 1 + len(orig_toks) and rw_toks[1 : 1 + len(orig_toks)] == orig_toks:
-            return " ".join(rw_toks[: 1 + len(orig_toks)])
-        if len(rw_toks) >= 2:
-            return " ".join(rw_toks[:2])
+        rw_toks = tokenize_segment(rewritten)
+        if len(rw_toks) < 2 or rw_toks[0] != "rtk":
+            continue
+        # rtk 固有の危険サブコマンド（rtk read / rtk grep / rtk run 等）は提案しない
+        if f"rtk {rw_toks[1]}" in UNSAFE_SUBCOMMAND_PREFIXES:
+            return None
+        # 書き換え後の実コマンドを classify_command_tokens で再分類し、--check / --noEmit 等の安全フラグを保持する
+        inner_prefix, inner_reason = classify_command_tokens(rw_toks[1:])
+        if inner_prefix is None or inner_reason is not None:
+            return None
+        return f"rtk {inner_prefix}"
     return None
 
 
 def find_antigravity_transcripts(antigravity_dir: str, limit: int) -> list[tuple[str, str]]:
-    """直近 limit 件の (conversation_id, transcript_path) を新しい順に返す。"""
+    """直近 limit 件の (conversation_id, transcript_path) を新しい順に返す。
+
+    brain/ の不存在や PermissionError は握り潰さず OSError を送出する。
+    """
+    if limit <= 0:
+        raise ValueError("limit must be a positive integer")
     brain_dir = os.path.join(antigravity_dir, "brain")
-    if not os.path.isdir(brain_dir):
-        return []
+    entries = os.listdir(brain_dir)
     found: list[tuple[float, str, str]] = []
-    try:
-        entries = os.listdir(brain_dir)
-    except OSError:
-        return []
     for entry in entries:
         if not UUID_RE.match(entry):
             continue
@@ -923,7 +1265,6 @@ def normalize_mcp_tool_name(tool_name: str) -> str:
     """MCP ツール名を Antigravity の server/tool 形式へ可能な範囲で正規化する。"""
     if "/" in tool_name:
         return tool_name
-    # mcp__server__tool (Claude 系) や mcp_server_tool 形式
     if tool_name.startswith("mcp__"):
         parts = tool_name[len("mcp__"):].split("__", 1)
         if len(parts) == 2:
@@ -949,9 +1290,25 @@ def scan_transcripts(
     min_count: int = 2,
     check_rtk: bool | None = None,
 ) -> dict[str, Any]:
+    if limit <= 0:
+        raise ValueError("limit must be a positive integer")
+    if min_count <= 0:
+        raise ValueError("min_count must be a positive integer")
+
+    warnings: list[str] = []
     transcripts = find_antigravity_transcripts(antigravity_dir, limit)
-    permissions = load_permissions(settings_path)
-    rtk_enabled = detect_rtk_hook_enabled(hooks_path) if check_rtk is None else check_rtk
+    permissions, perm_warnings = load_permissions(settings_path)
+    warnings.extend(perm_warnings)
+
+    if check_rtk is None:
+        rtk_enabled, rtk_warnings = detect_rtk_hook_enabled(hooks_path)
+        warnings.extend(rtk_warnings)
+    elif check_rtk:
+        if not shutil.which("rtk"):
+            raise ValueError("rtk binary not found in PATH (--check-rtk)")
+        rtk_enabled = True
+    else:
+        rtk_enabled = False
 
     cmd_stats: dict[str, CommandStat] = {}
     excluded_cmds: dict[str, tuple[CommandStat, str]] = {}
@@ -961,22 +1318,46 @@ def scan_transcripts(
 
     total_run_commands = 0
     total_bypass_commands = 0
+    sessions_scanned = 0
+    unreadable_files = 0
+    malformed_lines = 0
 
     for conv_id, path in transcripts:
         try:
             fh = open(path, encoding="utf-8", errors="ignore")
-        except OSError:
+        except OSError as exc:
+            unreadable_files += 1
+            warnings.append(f"could not open transcript for session {conv_id}: {exc}")
             continue
+        file_has_valid_json = False
+        file_line_count = 0
         with fh:
             for line in fh:
+                if not line.strip():
+                    continue
+                file_line_count += 1
+                # tool_calls を含まない巨大なツール出力行は json.loads 前にスキップ
+                if '"tool_calls"' not in line:
+                    file_has_valid_json = True
+                    continue
                 try:
                     obj = json.loads(line)
                 except json.JSONDecodeError:
+                    malformed_lines += 1
                     continue
-                for tc in obj.get("tool_calls") or []:
-                    name = tc.get("name") or ""
-                    args = tc.get("args") or {}
-                    if not isinstance(args, dict):
+                if not isinstance(obj, dict):
+                    malformed_lines += 1
+                    continue
+                file_has_valid_json = True
+                tool_calls = obj.get("tool_calls")
+                if not isinstance(tool_calls, list):
+                    continue
+                for tc in tool_calls:
+                    if not isinstance(tc, dict):
+                        continue
+                    name = tc.get("name")
+                    args = tc.get("args")
+                    if not isinstance(name, str) or not isinstance(args, dict):
                         continue
 
                     if name == "run_command":
@@ -989,9 +1370,9 @@ def scan_transcripts(
                             total_bypass_commands += 1
                         exact_only = has_exact_match_only_construct(raw_cmd)
 
-                        for seg in split_shell_segments(raw_cmd):
+                        for seg, is_pipe_downstream in split_shell_segments_with_meta(raw_cmd):
                             toks = tokenize_segment(seg)
-                            unwrapped, had_env, was_rtk = unwrap_tokens(toks)
+                            unwrapped, had_env, _ = unwrap_tokens(toks)
                             prefix, exclude_reason = classify_command_tokens(unwrapped)
                             if not prefix:
                                 continue
@@ -1009,16 +1390,19 @@ def scan_transcripts(
                             st.sessions.add(conv_id)
                             if exact_only:
                                 st.exact_match_only_count += 1
-                            if was_rtk:
-                                st.seen_as_rtk = True
                             if had_env:
                                 st.has_env_prefix_count += 1
+                            if not is_pipe_downstream:
+                                st.non_pipe_downstream_count += 1
                             st.add_sample(seg)
 
                     elif name == "read_url_content":
                         raw_url = _decode_arg_value(args.get("Url") or args.get("url") or "")
                         if isinstance(raw_url, str) and raw_url.startswith(("http://", "https://")):
-                            host = (urllib.parse.urlparse(raw_url).hostname or "").lower()
+                            try:
+                                host = (urllib.parse.urlparse(raw_url).hostname or "").lower()
+                            except ValueError:
+                                continue
                             if host and host not in ("localhost", "127.0.0.1", "::1"):
                                 st = url_stats.setdefault(host, SimpleStat(key=host))
                                 st.total_count += 1
@@ -1036,22 +1420,43 @@ def scan_transcripts(
                         st.total_count += 1
                         st.sessions.add(conv_id)
                         st.add_sample(name)
+        if file_line_count == 0 or file_has_valid_json:
+            sessions_scanned += 1
+        else:
+            warnings.append(f"transcript for session {conv_id} contained no valid JSONL lines")
 
-    # 候補のフィルタリング・優先順位付け
+    if malformed_lines > 0:
+        warnings.append(f"skipped {malformed_lines} malformed JSONL line(s) across transcripts")
+
+    # RTK リライト判定を並列実行（min_count 通過後のユニークプレフィックスのみ）
+    eligible_cmds = [(p, st) for p, st in cmd_stats.items() if st.total_count >= min_count]
+    rtk_map: dict[str, str | None] = {}
+    if rtk_enabled and eligible_cmds:
+        def _probe_one(item: tuple[str, CommandStat]) -> tuple[str, str | None, list[str]]:
+            p, st = item
+            local_warn: list[str] = []
+            res = compute_rtk_prefix(
+                p,
+                st.samples[0] if st.samples else None,
+                only_pipe_downstream=(st.non_pipe_downstream_count == 0),
+                warnings_out=local_warn,
+            )
+            return p, res, local_warn
+
+        max_workers = min(8, len(eligible_cmds))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
+            for p, rtk_p, local_warn in pool.map(_probe_one, eligible_cmds):
+                rtk_map[p] = rtk_p
+                warnings.extend(local_warn)
+
     candidates: list[dict[str, Any]] = []
     already_allowed: list[dict[str, Any]] = []
     conflicts: list[dict[str, Any]] = []
 
-    for prefix, st in cmd_stats.items():
-        if st.total_count < min_count:
-            continue
+    for prefix, st in eligible_cmds:
         status = check_rule_status("command", prefix, permissions)
-        rtk_prefix: str | None = None
-        rtk_status: str = "n/a"
-        if rtk_enabled:
-            rtk_prefix = compute_rtk_prefix(prefix, st.samples[0] if st.samples else None)
-            if rtk_prefix:
-                rtk_status = check_rule_status("command", rtk_prefix, permissions)
+        rtk_prefix = rtk_map.get(prefix)
+        rtk_status = check_rule_status("command", rtk_prefix, permissions) if rtk_prefix else "n/a"
 
         suggested_rules: list[str] = []
         if status == "none":
@@ -1083,63 +1488,36 @@ def scan_transcripts(
         else:
             candidates.append(item)
 
-    # MCP 候補
-    for norm, st in mcp_stats.items():
-        if st.total_count < min_count:
-            continue
-        status = check_rule_status("mcp", norm, permissions)
-        item = {
-            "kind": "mcp",
-            "prefix": norm,
-            "rule": f"mcp({norm})",
-            "rtk_rule": None,
-            "suggested_rules": [f"mcp({norm})"] if status == "none" else [],
-            "status": status,
-            "rtk_status": "n/a",
-            "total_count": st.total_count,
-            "bypass_count": st.total_count,  # MCP はデフォルト Ask のため高優先
-            "session_count": len(st.sessions),
-            "exact_match_only_count": 0,
-            "has_env_prefix_count": 0,
-            "is_known_safe": True,
-            "samples": st.samples,
-        }
-        if status in ("deny", "ask"):
-            conflicts.append(item)
-        elif status == "allow":
-            already_allowed.append(item)
-        else:
-            candidates.append(item)
+    # MCP・read_url 候補（いずれも既定 Ask のため高優先）
+    for kind, stats_map in (("mcp", mcp_stats), ("read_url", url_stats)):
+        for key, st in stats_map.items():
+            if st.total_count < min_count:
+                continue
+            status = check_rule_status(kind, key, permissions)
+            rule_str = f"{kind}({key})"
+            item = {
+                "kind": kind,
+                "prefix": key,
+                "rule": rule_str,
+                "rtk_rule": None,
+                "suggested_rules": [rule_str] if status == "none" else [],
+                "status": status,
+                "rtk_status": "n/a",
+                "total_count": st.total_count,
+                "bypass_count": st.total_count,
+                "session_count": len(st.sessions),
+                "exact_match_only_count": 0,
+                "has_env_prefix_count": 0,
+                "is_known_safe": True,
+                "samples": st.samples,
+            }
+            if status in ("deny", "ask"):
+                conflicts.append(item)
+            elif status == "allow":
+                already_allowed.append(item)
+            else:
+                candidates.append(item)
 
-    # read_url 候補
-    for host, st in url_stats.items():
-        if st.total_count < min_count:
-            continue
-        status = check_rule_status("read_url", host, permissions)
-        item = {
-            "kind": "read_url",
-            "prefix": host,
-            "rule": f"read_url({host})",
-            "rtk_rule": None,
-            "suggested_rules": [f"read_url({host})"] if status == "none" else [],
-            "status": status,
-            "rtk_status": "n/a",
-            "total_count": st.total_count,
-            "bypass_count": st.total_count,  # read_url もデフォルト Ask
-            "session_count": len(st.sessions),
-            "exact_match_only_count": 0,
-            "has_env_prefix_count": 0,
-            "is_known_safe": True,
-            "samples": st.samples,
-        }
-        if status in ("deny", "ask"):
-            conflicts.append(item)
-        elif status == "allow":
-            already_allowed.append(item)
-        else:
-            candidates.append(item)
-
-    # 優先順位: BypassSandbox/Ask回数 > セッション数 > 既知の安全 > 総回数
     candidates.sort(
         key=lambda x: (
             x["bypass_count"],
@@ -1179,7 +1557,10 @@ def scan_transcripts(
 
     return {
         "summary": {
-            "sessions_scanned": len(transcripts),
+            "sessions_scanned": sessions_scanned,
+            "sessions_found": len(transcripts),
+            "unreadable_files": unreadable_files,
+            "malformed_lines": malformed_lines,
             "total_run_commands": total_run_commands,
             "total_bypass_commands": total_bypass_commands,
             "settings_path": settings_path,
@@ -1188,6 +1569,7 @@ def scan_transcripts(
             "existing_deny_count": len(permissions["deny"]),
             "rtk_hook_detected": rtk_enabled,
         },
+        "warnings": warnings,
         "candidates": candidates,
         "already_allowed": already_allowed,
         "conflicts": conflicts,
@@ -1196,6 +1578,8 @@ def scan_transcripts(
 
 
 def render_markdown(report: dict[str, Any], max_candidates: int = 30) -> str:
+    if max_candidates <= 0:
+        raise ValueError("max_candidates must be a positive integer")
     s = report["summary"]
     lines: list[str] = [
         "# Antigravity Permission Allowlist Analysis",
@@ -1205,9 +1589,15 @@ def render_markdown(report: dict[str, Any], max_candidates: int = 30) -> str:
         f"- Settings: `{s['settings_path']}` (allow: {s['existing_allow_count']}, ask: {s['existing_ask_count']}, deny: {s['existing_deny_count']})",
         f"- RTK hook active: **{'yes' if s['rtk_hook_detected'] else 'no'}**",
         "",
-        "## Candidates (Prioritized)",
-        "",
     ]
+
+    if report.get("warnings"):
+        lines.extend(["## Warnings", ""])
+        for w in report["warnings"]:
+            lines.append(f"- {w}")
+        lines.append("")
+
+    lines.extend(["## Candidates (Prioritized)", ""])
 
     candidates = report["candidates"]
     if not candidates:
@@ -1274,18 +1664,42 @@ def validate_rule_for_apply(rule: str) -> str | None:
     target_stripped = target.strip()
     if not target_stripped:
         return f"empty rule target: {rule}"
+    if target != target_stripped:
+        return f"rule target must not have leading or trailing whitespace: {rule}"
     if target_stripped == "*":
         return f"refusing global wildcard rule for safety: {rule}"
+
     if action in ("read_file", "write_file"):
-        lower_t = target_stripped.lower()
-        if any(pat in lower_t for pat in SENSITIVE_PATH_PATTERNS):
+        if is_sensitive_path(target_stripped):
             return f"refusing sensitive path rule: {rule}"
-    if action == "command" and not target_stripped.startswith("regex:"):
-        toks = target_stripped.split()
+        return None
+
+    if action == "mcp":
+        if target_stripped == "*/*" or target_stripped.startswith("*/"):
+            return f"refusing cross-server wildcard MCP rule: {rule}"
+        if is_mcp_mutating(target_stripped):
+            return f"refusing mutating/write-like MCP rule: {rule}"
+        return None
+
+    if action == "command":
+        if target_stripped.startswith("regex:"):
+            return (
+                "refusing command(regex:...) in apply for safety "
+                f"(configure regex rules manually via /permissions): {rule}"
+            )
+        if SHELL_META_IN_RULE_RE.search(target_stripped):
+            return f"refusing command rule containing quotes or shell metacharacters: {rule}"
+        try:
+            toks = shlex.split(target_stripped, posix=True)
+        except ValueError:
+            return f"invalid command tokenization in rule: {rule}"
         unwrapped, _, _ = unwrap_tokens(toks)
-        _, reason = classify_command_tokens(unwrapped)
-        if reason is not None:
-            return f"refusing unsafe or overly broad command rule ({reason}): {rule}"
+        if not unwrapped:
+            return f"refusing wrapper-only or empty command rule: {rule}"
+        prefix, reason = classify_command_tokens(unwrapped)
+        if prefix is None or reason is not None:
+            detail = reason or "unrecognized or builtin command"
+            return f"refusing unsafe or overly broad command rule ({detail}): {rule}"
     return None
 
 
@@ -1302,29 +1716,13 @@ def apply_rules(
         if err:
             raise ValueError(err)
 
-    if os.path.isfile(settings_path):
-        with open(settings_path, encoding="utf-8") as fh:
-            data = json.load(fh)
-    else:
-        data = {}
-
-    if not isinstance(data, dict):
-        raise ValueError(f"settings file root must be a JSON object: {settings_path}")
-
-    perms = data.setdefault("permissions", {})
-    if not isinstance(perms, dict):
-        raise ValueError("settings.permissions must be a JSON object")
-
-    allow_list: list[str] = list(perms.get("allow") or [])
-    existing_perms = {
-        "allow": allow_list,
-        "ask": list(perms.get("ask") or []),
-        "deny": list(perms.get("deny") or []),
-    }
+    data, real_path = _read_settings_json(settings_path)
+    existing_perms, perm_warnings = _extract_validated_permissions(data, settings_path)
+    allow_list = list(existing_perms["allow"])
 
     added: list[str] = []
     skipped_existing: list[str] = []
-    warnings: list[str] = []
+    warnings: list[str] = list(perm_warnings)
 
     for rule in rules:
         rule = rule.strip()
@@ -1342,10 +1740,10 @@ def apply_rules(
         allow_list.append(rule)
         added.append(rule)
 
-    perms["allow"] = allow_list
-
     if not dry_run and added:
-        parent = os.path.dirname(os.path.abspath(settings_path))
+        perms = data.setdefault("permissions", {})
+        perms["allow"] = allow_list
+        parent = os.path.dirname(real_path)
         os.makedirs(parent, exist_ok=True)
         fd, tmp_path = tempfile.mkstemp(prefix=".settings-", suffix=".json.tmp", dir=parent)
         try:
@@ -1353,7 +1751,7 @@ def apply_rules(
             with os.fdopen(fd, "w", encoding="utf-8") as out:
                 json.dump(data, out, indent=2, ensure_ascii=False)
                 out.write("\n")
-            os.replace(tmp_path, settings_path)
+            os.replace(tmp_path, real_path)
         except Exception:
             try:
                 os.unlink(tmp_path)
@@ -1371,6 +1769,16 @@ def apply_rules(
     }
 
 
+def _positive_int(raw: str) -> int:
+    try:
+        val = int(raw)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"must be an integer: {raw}") from exc
+    if val <= 0:
+        raise argparse.ArgumentTypeError(f"must be a positive integer: {raw}")
+    return val
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__)
     sub = ap.add_subparsers(dest="subcommand")
@@ -1381,13 +1789,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_scan.add_argument("--antigravity-dir", default=default_agy_dir)
     p_scan.add_argument("--settings", default=None, help="settings.json パス（既定: <antigravity-dir>/settings.json）")
     p_scan.add_argument("--hooks", default=DEFAULT_HOOKS_PATH, help="hooks.json パス")
-    p_scan.add_argument("--limit", type=int, default=50, help="スキャンする最新セッション数（既定: 50）")
-    p_scan.add_argument("--min-count", type=int, default=2, help="候補に含める最小出現回数（既定: 2）")
+    p_scan.add_argument("--limit", type=_positive_int, default=50, help="スキャンする最新セッション数（既定: 50）")
+    p_scan.add_argument("--min-count", type=_positive_int, default=2, help="候補に含める最小出現回数（既定: 2）")
     rtk_grp = p_scan.add_mutually_exclusive_group()
     rtk_grp.add_argument("--check-rtk", dest="check_rtk", action="store_true", default=None)
     rtk_grp.add_argument("--no-check-rtk", dest="check_rtk", action="store_false")
     p_scan.add_argument("--format", choices=("markdown", "json"), default="markdown")
-    p_scan.add_argument("--max-candidates", type=int, default=30, help="Markdown 表示する最大候補数（既定: 30）")
+    p_scan.add_argument("--max-candidates", type=_positive_int, default=30, help="Markdown 表示する最大候補数（既定: 30）")
 
     p_apply = sub.add_parser("apply", help="選択したルールを settings.json の permissions.allow に安全に追加する")
     p_apply.add_argument(
@@ -1415,14 +1823,21 @@ def main(argv: list[str] | None = None) -> int:
             os.path.expanduser(args.settings or os.path.join(agy_dir, "settings.json"))
         )
         hooks_path = os.path.abspath(os.path.expanduser(args.hooks))
-        report = scan_transcripts(
-            antigravity_dir=agy_dir,
-            settings_path=settings_path,
-            hooks_path=hooks_path,
-            limit=args.limit,
-            min_count=args.min_count,
-            check_rtk=args.check_rtk,
-        )
+        try:
+            report = scan_transcripts(
+                antigravity_dir=agy_dir,
+                settings_path=settings_path,
+                hooks_path=hooks_path,
+                limit=args.limit,
+                min_count=args.min_count,
+                check_rtk=args.check_rtk,
+            )
+        except PermissionError as exc:
+            print(f"error: {exc} (Antigravity sandbox では BypassSandbox: true で再実行してください)", file=sys.stderr)
+            return 2
+        except (OSError, ValueError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
         if args.format == "json":
             print(json.dumps(report, indent=2, ensure_ascii=False))
         else:
@@ -1433,7 +1848,7 @@ def main(argv: list[str] | None = None) -> int:
         settings_path = os.path.abspath(os.path.expanduser(args.settings))
         try:
             result = apply_rules(settings_path, args.add, dry_run=args.dry_run)
-        except ValueError as exc:
+        except (OSError, ValueError) as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
         print(json.dumps(result, indent=2, ensure_ascii=False))
