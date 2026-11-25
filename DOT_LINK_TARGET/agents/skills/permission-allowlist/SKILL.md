@@ -23,7 +23,7 @@ Antigravity CLI の直近セッションのトランスクリプトを分析し�
   - コマンド: `command(<prefix>)`（単語単位の前方一致。Claude Code の `Bash(<prefix> *)` と違い末尾 `*` は付けない。`command(regex:<pattern>)` は安全検証が難しいため `apply` では拒否し `/permissions` TUI で手動管理する）
   - MCP: `mcp(<server>/<tool>)` または `mcp(<server>/*)`
   - URL 読み取り: `read_url(<domain>)`（Terminal Sandbox の外部通信 allowlist にも反映される）
-- Terminal Sandbox: Default / Auto モードではサンドボックス内コマンドは自動許可されるため、承認プロンプトの主な発生源は **`BypassSandbox: true` のコマンド**、**MCP ツール**、**`read_url`** になる
+- Terminal Sandbox: `auto` モード（または `enableTerminalSandbox: true` かつ `toolPermission: "proceed-in-sandbox"`）ではサンドボックス内コマンドは自動許可されるため、承認プロンプトの主な発生源は **`BypassSandbox: true` のコマンド**、**MCP ツール**、**`read_url`** になる
 - RTK フック: `~/.gemini/config/hooks.json` で `rtk hook antigravity` が有効な場合、PreToolUse でコマンドが `rtk ...` に書き換えられてから許可ルールと照合されるため、書き換え対象コマンドには `command(rtk <prefix>)` も併せて必要になる
 
 ## 手順
@@ -50,7 +50,7 @@ python3 ~/.agents/skills/permission-allowlist/scripts/analyze_permissions.py sca
   - 書き込み・破壊・広すぎるコマンド（`rm` / `git commit` / `git push` / `git -C` / `gh pr merge` / `gh api` / `gh -R` / 書き込み系 MCP 等）
 - 推奨してよい基準: **読み取り専用・副作用なし**（またはテスト/lint/型チェック等の検証用途で安全に再実行できるもの）
 - **RTK 書き換えの考慮**: スクリプトが `command(rtk ...)` を併記している場合、通常の `command(...)` とペアで提案する（`rtk` 経由でも直接実行でも止まらないようにするため）
-- **サンドボックス専用（`Bypass/Ask = 0` かつ `sandbox-only`）**: Default / Auto モードでは既に自動許可されているため、優先度「低（任意）」として分ける
+- **サンドボックス専用（`Bypass/Ask = 0` かつ `sandbox-only`）**: `auto` モード（または `enableTerminalSandbox: true` かつ `toolPermission: "proceed-in-sandbox"`）では既に自動許可されているため、優先度「低（任意）」として分ける
 - **`exact-match-only` が多いコマンド**: `$(...)` や `{a,b}` 等を含む呼び出しでは Antigravity がプレフィックス一致を無効化するため、ルール追加だけでは消えない場合がある旨を補足する
 - **機密情報の配慮**: `~/.gemini/antigravity-cli/settings.json` はマシンローカルだが、提案出力にトークンや社内機密パスをそのまま転記しない
 
@@ -62,7 +62,7 @@ python3 ~/.agents/skills/permission-allowlist/scripts/analyze_permissions.py sca
 
 1. **推奨（高優先）**: `BypassSandbox: true` の回数やセッション数が多い安全な読み取りコマンド・MCP・`read_url`
 2. **検討（中優先）**: 出現頻度は中程度、またはリポジトリの `package.json` 等に依存する検証コマンド（例: `npm run ...`）
-3. **任意（低優先）**: `sandbox-only` のコマンド（`request-review` モードでない限り追加不要）
+3. **任意（低優先）**: `sandbox-only` のコマンド（`default` / `request-review` モードでない限り追加不要）
 4. **補足（該当がある場合のみ）**: `Warnings` の内容、`deny`/`ask` との競合、自動除外された高頻度コマンドの理由（例: `gh api`・`git -C`・`cat`/`grep` を外した理由）
 
 番号付きで一覧を出し、追加する番号（または「高優先をすべて」など）をユーザーに選んでもらう。
