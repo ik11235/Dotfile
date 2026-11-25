@@ -1,4 +1,5 @@
 # 指定したファイル以外はすべて不許可
 *
 
+!agent-config-sync
 !lockcorner
