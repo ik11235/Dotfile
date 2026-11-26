@@ -374,6 +374,13 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "git remote add": "mutates git config",
     "git remote remove": "mutates git config",
     "git remote set-url": "mutates git config",
+    "git submodule foreach": "executes arbitrary shell command in submodules",
+    "git submodule add": "mutates submodules / clones repository",
+    "git submodule update": "mutates submodules / working tree",
+    "git submodule init": "mutates git config",
+    "git submodule deinit": "mutates submodules / working tree",
+    "git submodule sync": "mutates git config",
+    "git submodule set-url": "mutates git config",
     # gh 書き込み・任意 API
     "gh api": "prefix allows POST/PUT/PATCH/DELETE mutations (use with care or regex)",
     "gh pr create": "creates PR",
@@ -426,6 +433,11 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "gh codespace cp": "copies files to/from codespace",
     "gh codespace stop": "stops codespace",
     "gh codespace rebuild": "rebuilds codespace",
+    "gh extension install": "installs arbitrary third-party executable extension",
+    "gh extension exec": "executes arbitrary gh extension",
+    "gh extension create": "creates extension repository/files",
+    "gh extension remove": "removes gh extension",
+    "gh extension upgrade": "upgrades gh extensions",
     # パッケージマネージャ・ランナー・コンテナ・クラスタ・IaC 変更系
     "uv run": "executes arbitrary command/script",
     "uv sync": "installs packages / executes build hooks",
@@ -1340,6 +1352,9 @@ def file_rule_matches(rule_target: str, candidate_path: str) -> bool:
     cand = _normalize_rule_path(candidate_path)
     if not target or not cand:
         return False
+    if sys.platform in ("darwin", "win32"):
+        target = target.lower()
+        cand = cand.lower()
     if target == "/":
         return cand.startswith("/")
     if target == ".":

@@ -208,6 +208,10 @@ class ClassificationTests(unittest.TestCase):
             ["gh", "gpg-key"],
             ["gh", "codespace"],
             ["gh", "codespace", "ssh"],
+            ["gh", "extension", "install", "owner/evil"],
+            ["gh", "extension", "exec", "evil"],
+            ["git", "submodule", "foreach", "rm -rf ."],
+            ["git", "submodule", "update", "--init"],
             ["python3", "-c", "print(1)"],
             ["python3.12", "-c", "print(1)"],
             ["pip", "install", "evil-pkg"],
@@ -391,6 +395,9 @@ class RuleMatchingTests(unittest.TestCase):
         self.assertTrue(ap.file_rule_matches("/etc/hosts", "/tmp/../etc/hosts"))
         self.assertTrue(ap.file_rule_matches("/etc/hosts", "/etc//hosts"))
         self.assertTrue(ap.file_rule_matches("~/docs", os.path.expanduser("~/docs/a.md")))
+        with mock.patch.object(ap.sys, "platform", "darwin"):
+            self.assertTrue(ap.file_rule_matches("~/private", os.path.expanduser("~/private").lower()))
+            self.assertTrue(ap.file_rule_matches("/Users/Me/Secret", "/users/me/secret/a.txt"))
         self.assertTrue(ap.file_rule_matches("./src/", "src\\sub\\a.py"))
         self.assertFalse(ap.file_rule_matches("/workspace/src", "/workspace/src-secret/a.py"))
         self.assertFalse(ap.file_rule_matches("/", "relative/path"))
@@ -987,6 +994,9 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "command(gh alias)",
                 "command(gh config)",
                 "command(gh codespace)",
+                "command(gh extension install)",
+                "command(gh extension exec)",
+                "command(git submodule foreach)",
                 "command(git -C)",
                 "command(gh api)",
                 "command(git push>/dev/null)",
