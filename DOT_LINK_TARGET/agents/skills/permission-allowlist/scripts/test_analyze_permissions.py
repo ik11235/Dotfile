@@ -67,13 +67,21 @@ class ShellParsingTests(unittest.TestCase):
         self.assertEqual(ap.unwrap_tokens(["command", "-V", "git"])[0], [])
         self.assertEqual(ap.unwrap_tokens(["command", "-pv", "git"])[0], [])
 
-        # Combined short value flags (-iu, -iC) must consume their argument
+        # Combined short value flags (-iu, -iC) and attached value forms (-uCC, -uPATH)
         self.assertEqual(
             ap.unwrap_tokens(ap.tokenize_segment("env -iu PATH rm -rf /tmp/foo"))[0],
             ["rm", "-rf", "/tmp/foo"],
         )
         self.assertEqual(
             ap.unwrap_tokens(ap.tokenize_segment("env -iC /tmp git status"))[0],
+            ["git", "status"],
+        )
+        self.assertEqual(
+            ap.unwrap_tokens(ap.tokenize_segment("env -uCC git push"))[0],
+            ["git", "push"],
+        )
+        self.assertEqual(
+            ap.unwrap_tokens(ap.tokenize_segment("env -uPATH git status"))[0],
             ["git", "status"],
         )
 
@@ -192,6 +200,9 @@ class ClassificationTests(unittest.TestCase):
             ["gh", "-R", "a/b", "pr", "view", "1"],
             ["gh", "auth", "token"],
             ["python3", "-c", "print(1)"],
+            ["python3.12", "-c", "print(1)"],
+            ["pip", "install", "evil-pkg"],
+            ["pip3", "install", "evil-pkg"],
             ["node", "-e", "1+1"],
             ["bun", "run", "lint"],
             ["rm", "-rf", "tmp"],
@@ -216,12 +227,21 @@ class ClassificationTests(unittest.TestCase):
             ["tar", "--list", "-f", "a.tar"],
             ["tar", "--overwrite", "-xf", "a.tar"],
             ["uv", "run", "python"],
+            ["uv", "tool"],
+            ["uv", "tool", "run", "ruff"],
+            ["uv", "pip"],
+            ["uv", "pip", "install", "evil"],
             ["uvx", "ruff"],
             ["npm", "exec", "evil"],
+            ["npm", "run-script"],
             ["pnpm", "dlx", "evil"],
             ["pnpm", "exec", "evil"],
             ["yarn", "dlx", "evil"],
             ["yarn", "exec", "evil"],
+            ["wrangler", "d1"],
+            ["wrangler", "d1", "execute", "db"],
+            ["wrangler", "kv", "key", "put"],
+            ["wrangler", "r2", "object", "put"],
             ["mise", "exec", "--", "sh"],
             ["mise", "x", "--", "sh"],
             ["cargo", "run"],
@@ -246,6 +266,8 @@ class ClassificationTests(unittest.TestCase):
             ["rtk", "smart", "a.py"],
             ["rtk", "ast-grep", "foo"],
             ["rtk", "plugins"],
+            ["rtk", "pipeline", "add", "foo"],
+            ["rtk", "learn", "--write-rules"],
             ["rtk", "llm-proxy"],
             ["rtk", "telemetry"],
             ["rtk", "env"],
@@ -424,6 +446,7 @@ class RtkIntegrationTests(unittest.TestCase):
                 "wc -l": (3, "rtk wc -l"),
                 "wc": (3, "rtk wc"),
                 "cat a.txt": (3, "rtk read a.txt"),
+                "jq . a.json": (3, "rtk json a.json"),
                 "npx prettier --bad": (3, "rtk prettier ."),
             }
             rc, out = mapping.get(cmd, (1, ""))
@@ -447,8 +470,9 @@ class RtkIntegrationTests(unittest.TestCase):
             called.clear()
             self.assertIsNone(ap.compute_rtk_prefix("wc", "wc -l", only_pipe_downstream=True))
             self.assertEqual(called, [])
-            # rtk read is unsafe and must not be suggested
+            # rtk read / rtk json are unsafe and must not be suggested (rtk json exercises UNSAFE_SUBCOMMAND_PREFIXES directly)
             self.assertIsNone(ap.compute_rtk_prefix("cat", "cat a.txt"))
+            self.assertIsNone(ap.compute_rtk_prefix("jq", "jq . a.json"))
             # Re-classification guard rejects rewritten command that drops required safety flag
             self.assertIsNone(ap.compute_rtk_prefix("npx prettier --bad", "npx prettier --bad"))
 
@@ -857,7 +881,15 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "command(rtk read)",
                 "command(rtk grep)",
                 "command(rtk init)",
+                "command(rtk pipeline)",
+                "command(rtk learn)",
                 "command(rtk env)",
+                "command(python3.12)",
+                "command(pip)",
+                "command(uv tool)",
+                "command(npm run-script)",
+                "command(wrangler d1)",
+                "command(wrangler kv)",
                 "command(rtk gh pr merge)",
                 "command(env -u PATH rm -rf)",
                 "command(/usr/bin/env rm -rf)",
@@ -921,6 +953,8 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "read_file(~/.ssh)",
                 "read_file(~/.config)",
                 "read_file(~/.config//gcloud)",
+                "write_file(~/.gemini/antigravity-cli/settings.json)",
+                "write_file(~/.gemini/config/hooks.json)",
                 "read_file(.env)",
                 "read_file(/workspace/server.key)",
                 "write_file(.ssh/authorized_keys)",

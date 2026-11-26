@@ -38,6 +38,7 @@ UUID_RE = re.compile(
 ENV_ASSIGN_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:\[[^\]]*\])?\+?=.*$")
 VALID_CMD_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]*$")
 VALID_SUBCMD_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+:-]*$")
+VERSIONED_INTERPRETER_RE = re.compile(r"^(?:python|ruby|perl|php|lua|pip)\d+(?:\.\d+)*$")
 HEREDOC_START_RE = re.compile(r"<<-?\s*(?:'([^']+)'|\"([^\"]+)\"|\\?([^\s;&|<>()]+))")
 RULE_RE = re.compile(
     r"^(command|mcp|read_url|read_file|write_file|execute_url|download_url)\((.+)\)$"
@@ -106,6 +107,8 @@ UNSAFE_COMMANDS: dict[str, str] = {
     "rtk": "bare rtk wrapper matches arbitrary subcommands",
     "python": "arbitrary code execution (interpreter)",
     "python3": "arbitrary code execution (interpreter)",
+    "pip": "installs packages / executes setup scripts",
+    "pip3": "installs packages / executes setup scripts",
     "node": "arbitrary code execution (interpreter)",
     "deno": "arbitrary code execution (interpreter)",
     "bun": "arbitrary code execution (interpreter)",
@@ -227,8 +230,14 @@ THREE_LEVEL_GROUPS: set[tuple[str, str]] = {
     ("git", "notes"),
     ("kubectl", "config"),
     ("npm", "run"),
+    ("npm", "run-script"),
     ("pnpm", "run"),
+    ("pnpm", "run-script"),
     ("yarn", "run"),
+    ("yarn", "run-script"),
+    ("uv", "tool"),
+    ("uv", "pip"),
+    ("wrangler", "d1"),
 }
 
 # 安全とみなすサブコマンド（known-safe ラベル付け用）
@@ -286,8 +295,8 @@ SAFE_READONLY_PREFIXES = frozenset({
 # RTK 自身の安全なネイティブサブコマンド（unwrap_tokens で rtk を剥がさない）
 RTK_NATIVE_SAFE_SUBCOMMANDS = frozenset({
     "gain", "discover", "session", "verify", "hook-audit",
-    "cc-economics", "help", "methods", "tasks", "pipeline",
-    "deps", "learn", "recall",
+    "cc-economics", "help", "methods", "tasks",
+    "deps", "recall",
 })
 
 # 安全な読み取り専用実行に必須フラグを要求するツール（直接呼び出し・npx 経由で共有）
@@ -318,6 +327,8 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "rtk smart": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
     "rtk ast-grep": "reads arbitrary files (can bypass read_file deny / sandbox protection)",
     "rtk plugins": "executes/manages arbitrary plugins",
+    "rtk pipeline": "can install/promote pipelines",
+    "rtk learn": "can write rule files (-w/--write-rules)",
     "rtk llm-proxy": "runs proxy / network service",
     "rtk telemetry": "modifies telemetry / network settings",
     "rtk env": "exposes environment variables / secrets",
@@ -392,6 +403,13 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "gh auth token": "prints authentication token",
     # パッケージマネージャ・ランナー・コンテナ・クラスタ・IaC 変更系
     "uv run": "executes arbitrary command/script",
+    "uv tool run": "executes arbitrary package (uvx equivalent)",
+    "uv tool install": "installs packages",
+    "uv tool uninstall": "uninstalls packages",
+    "uv tool upgrade": "upgrades packages",
+    "uv pip install": "installs packages",
+    "uv pip uninstall": "uninstalls packages",
+    "uv pip sync": "mutates installed packages",
     "mise exec": "executes arbitrary command",
     "mise x": "executes arbitrary command",
     "cargo run": "compiles and executes arbitrary binary",
@@ -445,6 +463,12 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "wrangler delete": "deletes worker from Cloudflare",
     "wrangler secret": "mutates Cloudflare secrets",
     "wrangler rollback": "mutates worker deployment",
+    "wrangler d1 execute": "executes SQL against D1 database",
+    "wrangler d1 delete": "deletes D1 database",
+    "wrangler d1 create": "creates D1 database",
+    "wrangler d1 migrations": "mutates D1 database schema",
+    "wrangler kv": "can mutate/delete KV namespaces and keys",
+    "wrangler r2": "can mutate/delete R2 buckets and objects",
     "vercel deploy": "deploys to Vercel",
     "fly deploy": "deploys to Fly.io",
     "flyctl deploy": "deploys to Fly.io",
@@ -466,7 +490,7 @@ MCP_MUTATING_KEYWORDS = (
 # 機密パス（先頭 / 付きの境界一致パターンと部分一致パターン）
 SENSITIVE_PATH_SEGMENT_PATTERNS = (
     "/.ssh", "/.aws", "/.gnupg", "/.kube", "/.config/gcloud",
-    "/.netrc", "/secrets", "/.env",
+    "/.netrc", "/secrets", "/.env", "/.gemini",
 )
 SENSITIVE_PATH_SUBSTR_PATTERNS = (
     "credentials", ".pem", ".key", ".p12", ".pfx",
@@ -875,20 +899,26 @@ def unwrap_tokens(tokens: list[str]) -> tuple[list[str], bool, bool]:
                     had_env = True
                     idx += 1
                     continue
-                if (
-                    cur in ENV_UNSAFE_FLAGS
-                    or cur.startswith("--split-string=")
-                    or cur.startswith("-S")
-                    or cur.startswith("-P")
-                    or (cur.startswith("-") and not cur.startswith("--") and ("S" in cur[1:] or "P" in cur[1:]))
-                ):
+                if cur in ENV_UNSAFE_FLAGS or cur.startswith("--split-string="):
                     unsafe_env = True
                     break
-                if (
-                    cur in ENV_VALUE_FLAGS
-                    or (cur.startswith("-") and not cur.startswith("--") and len(cur) > 1 and cur[-1] in ("u", "C"))
-                ) and idx + 1 < n:
+                if cur in ENV_VALUE_FLAGS and idx + 1 < n:
                     idx += 2
+                    continue
+                if cur.startswith("-") and not cur.startswith("--") and len(cur) > 1:
+                    flags = cur[1:]
+                    consumed_next = False
+                    for fi, fch in enumerate(flags):
+                        if fch in ("S", "P"):
+                            unsafe_env = True
+                            break
+                        if fch in ("u", "C"):
+                            if fi == len(flags) - 1 and idx + 1 < n:
+                                consumed_next = True
+                            break
+                    if unsafe_env:
+                        break
+                    idx += 2 if consumed_next else 1
                     continue
                 if cur.startswith("-"):
                     idx += 1
@@ -987,6 +1017,9 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
     if cmd in UNSAFE_COMMANDS:
         prefix = f"{cmd} {tokens[1]}" if len(tokens) >= 2 and tokens[1].startswith("-") else cmd
         return prefix, UNSAFE_COMMANDS[cmd]
+    if VERSIONED_INTERPRETER_RE.match(cmd):
+        prefix = f"{cmd} {tokens[1]}" if len(tokens) >= 2 and tokens[1].startswith("-") else cmd
+        return prefix, "arbitrary code execution (versioned interpreter/package manager)"
 
     if not VALID_CMD_RE.match(cmd):
         return None, None
@@ -1031,6 +1064,7 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
                 return f"{cmd} {pkg}", "invalid package name in package runner"
         if (
             base_pkg in UNSAFE_COMMANDS
+            or VERSIONED_INTERPRETER_RE.match(base_pkg)
             or base_pkg in WRAPPER_BINARIES
             or base_pkg in SHELL_BUILTINS
             or base_pkg in ("npx", "pnpx", "bunx")
@@ -1041,7 +1075,7 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
             if req_flag in rest[1:]:
                 return f"{cmd} {base_pkg} {req_flag}", None
             return f"{cmd} {base_pkg}", req_reason
-        if base_pkg in TWO_LEVEL_CLIS or base_pkg in ("unzip", "rtk"):
+        if base_pkg in TWO_LEVEL_CLIS or base_pkg == "unzip":
             inner_prefix, inner_reason = classify_command_tokens([base_pkg, *rest[1:]])
             if inner_prefix is None or inner_reason is not None:
                 return f"{cmd} {inner_prefix or base_pkg}", inner_reason or "unrecognized subcommand in package runner"
@@ -1092,9 +1126,12 @@ def parse_rule(rule: str) -> tuple[str, str] | None:
     return m.group(1), m.group(2)
 
 
-def _split_regex_top_level_tokens(pattern: str) -> list[str]:
-    """括弧 (...)・文字クラス [...] 内の空白では割らず、トップレベル空白のみで分割する。"""
-    tokens: list[str] = []
+def _split_regex_top_level(pattern: str, *, delimiter: str | None = None) -> list[str]:
+    """括弧 (...)・文字クラス [...] 外のトップレベルでパターンを分割する。
+
+    delimiter=None のときは空白で分割し空要素を除去、それ以外は指定文字で分割し空要素を保持する。
+    """
+    parts: list[str] = []
     buf: list[str] = []
     paren_depth = 0
     in_bracket = False
@@ -1125,15 +1162,28 @@ def _split_regex_top_level_tokens(pattern: str) -> list[str]:
             paren_depth = max(0, paren_depth - 1)
             buf.append(ch)
             continue
-        if ch.isspace() and paren_depth == 0:
-            if buf:
-                tokens.append("".join(buf))
+        if paren_depth == 0:
+            if delimiter is None and ch.isspace():
+                if buf:
+                    parts.append("".join(buf))
+                    buf.clear()
+                continue
+            if delimiter is not None and ch == delimiter:
+                parts.append("".join(buf))
                 buf.clear()
-            continue
+                continue
         buf.append(ch)
-    if buf:
-        tokens.append("".join(buf))
-    return tokens
+    if delimiter is None:
+        if buf:
+            parts.append("".join(buf))
+    else:
+        parts.append("".join(buf))
+    return parts
+
+
+def _split_regex_top_level_tokens(pattern: str) -> list[str]:
+    """括弧 (...)・文字クラス [...] 内の空白では割らず、トップレベル空白のみで分割する。"""
+    return _split_regex_top_level(pattern, delimiter=None)
 
 
 def _ends_with_unescaped_dollar(pattern: str) -> bool:
@@ -1149,44 +1199,7 @@ def _ends_with_unescaped_dollar(pattern: str) -> bool:
 
 def _split_top_level_alternation(pattern: str) -> list[str]:
     """括弧 (...)・文字クラス [...] 外のトップレベル `|` でパターンを分割する。"""
-    branches: list[str] = []
-    buf: list[str] = []
-    paren_depth = 0
-    in_bracket = False
-    escaped = False
-    for ch in pattern:
-        if escaped:
-            buf.append(ch)
-            escaped = False
-            continue
-        if ch == "\\":
-            buf.append(ch)
-            escaped = True
-            continue
-        if in_bracket:
-            buf.append(ch)
-            if ch == "]":
-                in_bracket = False
-            continue
-        if ch == "[":
-            in_bracket = True
-            buf.append(ch)
-            continue
-        if ch == "(":
-            paren_depth += 1
-            buf.append(ch)
-            continue
-        if ch == ")":
-            paren_depth = max(0, paren_depth - 1)
-            buf.append(ch)
-            continue
-        if ch == "|" and paren_depth == 0:
-            branches.append("".join(buf))
-            buf.clear()
-            continue
-        buf.append(ch)
-    branches.append("".join(buf))
-    return branches
+    return _split_regex_top_level(pattern, delimiter="|")
 
 
 def command_rule_matches_prefix(rule_target: str, candidate_prefix: str) -> bool:
