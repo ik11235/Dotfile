@@ -180,9 +180,12 @@ UNSAFE_COMMANDS: dict[str, str] = {
     "sqlite3": "database client (can mutate data)",
     "mongosh": "database client (can mutate data)",
     "redis-cli": "database client (can mutate data)",
-    # その他危険なラッパー
+    # その他危険なラッパー・多階層クラウド CLI
     "uvx": "arbitrary package execution runner",
     "pipx": "arbitrary package execution runner / installs packages",
+    "aws": "multi-level cloud CLI (service-level prefix would cover destructive actions)",
+    "gcloud": "multi-level cloud CLI (service-level prefix would cover destructive actions)",
+    "az": "multi-level cloud CLI (service-level prefix would cover destructive actions)",
     "open": "opens arbitrary files/URLs/apps",
     "pbcopy": "mutates clipboard",
 }
@@ -192,7 +195,7 @@ TWO_LEVEL_CLIS = frozenset({
     "git", "gh", "nix", "docker", "npm", "pnpm", "yarn",
     "brew", "cargo", "go", "mise", "uv", "home-manager",
     "kubectl", "helm", "terraform", "tofu", "pulumi", "wrangler",
-    "gcloud", "aws", "az", "stripe", "flyctl", "fly", "supabase",
+    "stripe", "flyctl", "fly", "supabase",
     "vercel", "netlify", "ghq", "tmux", "defaults", "diskutil",
     "pkgutil", "codesign", "xcodebuild", "swift", "make", "just",
 })
@@ -1072,9 +1075,9 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
                 return f"{cmd} {pkg}", "invalid scoped package name in package runner"
             base_pkg = pkg.split("/", 1)[1].split("@", 1)[0]
         else:
-            base_pkg = pkg.split("@", 1)[0]
-            if not VALID_CMD_RE.match(base_pkg):
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*(?:@[A-Za-z0-9._+-]+)?", pkg):
                 return f"{cmd} {pkg}", "invalid package name in package runner"
+            base_pkg = pkg.split("@", 1)[0]
         if (
             base_pkg in UNSAFE_COMMANDS
             or VERSIONED_INTERPRETER_RE.match(base_pkg)
@@ -2092,6 +2095,8 @@ def validate_rule_for_apply(rule: str) -> str | None:
         if len(labels) < 2:
             if not (target_stripped.lower() == "localhost" and action in ("execute_url", "download_url")):
                 return f"refusing overly broad single-label/TLD URL rule: {rule}"
+        if labels[-1].isdigit():
+            return f"refusing IP literal or numeric-TLD URL rule: {rule}"
         if not all(re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?", lbl) for lbl in labels):
             return f"refusing invalid domain label in URL rule: {rule}"
         return None

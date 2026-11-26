@@ -300,8 +300,12 @@ class ClassificationTests(unittest.TestCase):
             ["npx", "wrangler", "deploy"],
             ["npx", "git", "push"],
             ["npx", "unzip", "a.zip"],
+            ["npx", "eslint@>=8.0.0"],
             ["npx", "./evil.js"],
             ["npx", "/usr/bin/id"],
+            ["aws", "s3", "ls"],
+            ["gcloud", "compute", "instances", "list"],
+            ["az", "vm", "list"],
             ["unzip", "archive.zip"],
         ):
             _, reason = ap.classify_command_tokens(toks)
@@ -871,6 +875,21 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 saved = json.load(fh)
             self.assertEqual(saved["$schema"], "https://antigravity.google/schemas/v1/settings.json")
             self.assertEqual(saved["trustedWorkspaces"], ["/tmp/demo"])
+            self.assertEqual(
+                saved["permissions"]["allow"],
+                ["command(git status)", "command(gh pr view)", "command(rtk gh pr view)"],
+            )
+            self.assertEqual(saved["permissions"]["ask"], ["command(gh pr checks)"])
+            self.assertEqual(
+                saved["permissions"]["deny"],
+                [
+                    "command(git log)",
+                    "command(regex:git diff --stat)",
+                    "mcp(todoist/*)",
+                    "read_file(/etc/hosts)",
+                    "download_url(evil.example)",
+                ],
+            )
 
             # Comprehensive validate_rule_for_apply safety rejections (tested directly so deny rules cannot mask guards)
             for bad in (
@@ -921,6 +940,10 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "command(uv python)",
                 "command(wrangler pages)",
                 "command(wrangler d1 time-travel)",
+                "command(aws s3)",
+                "command(gcloud compute)",
+                "command(az vm)",
+                "command(npx eslint@>=8.0.0)",
                 "command(.)",
                 "command(cat)",
                 "command(grep)",
@@ -955,6 +978,9 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "read_url(example.com:8080)",
                 "read_url(-evil.com)",
                 "read_url(localhost)",
+                "read_url(127.0.0.1)",
+                "read_url(169.254.169.254)",
+                "read_url(0.0.0.0)",
                 "mcp(*)",
                 "mcp(*/*)",
                 "mcp( github/list-prs )",
