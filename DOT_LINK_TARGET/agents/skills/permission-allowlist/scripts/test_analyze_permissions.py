@@ -199,6 +199,15 @@ class ClassificationTests(unittest.TestCase):
             ["gh", "api", "repos/a/b"],
             ["gh", "-R", "a/b", "pr", "view", "1"],
             ["gh", "auth", "token"],
+            ["gh", "alias"],
+            ["gh", "alias", "set", "--shell", "pwn", "id"],
+            ["gh", "config"],
+            ["gh", "config", "set", "editor", "sh"],
+            ["gh", "ssh-key"],
+            ["gh", "ssh-key", "add", "k.pub"],
+            ["gh", "gpg-key"],
+            ["gh", "codespace"],
+            ["gh", "codespace", "ssh"],
             ["python3", "-c", "print(1)"],
             ["python3.12", "-c", "print(1)"],
             ["pip", "install", "evil-pkg"],
@@ -315,6 +324,13 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(ap.classify_command_tokens(["git", "remote", "-v"]), ("git remote -v", None))
         self.assertEqual(ap.classify_command_tokens(["npx", "tsc", "--noEmit"]), ("npx tsc --noEmit", None))
         self.assertEqual(ap.classify_command_tokens(["npx", "prettier", "--check", "."]), ("npx prettier --check", None))
+        self.assertEqual(ap.classify_command_tokens(["npx", "prettier@3", "--check", "."]), ("npx prettier@3 --check", None))
+        self.assertEqual(ap.classify_command_tokens(["npx", "wrangler@3", "whoami"]), ("npx wrangler@3 whoami", None))
+        self.assertEqual(
+            ap.classify_command_tokens(["npx", "@cloudflare/wrangler", "whoami"]),
+            ("npx @cloudflare/wrangler whoami", None),
+        )
+        self.assertEqual(ap.classify_command_tokens(["gh", "alias", "list"]), ("gh alias list", None))
         self.assertEqual(ap.classify_command_tokens(["npx", "git", "status"]), ("npx git status", None))
         self.assertEqual(ap.classify_command_tokens(["npx", "@biomejs/biome", "check"]), ("npx @biomejs/biome", None))
         self.assertEqual(ap.classify_command_tokens(["tsc", "--noEmit"]), ("tsc --noEmit", None))
@@ -968,6 +984,9 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "command(npx ./evil.js)",
                 "command(uv run)",
                 "command(gh pr merge)",
+                "command(gh alias)",
+                "command(gh config)",
+                "command(gh codespace)",
                 "command(git -C)",
                 "command(gh api)",
                 "command(git push>/dev/null)",
@@ -979,7 +998,9 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "read_url(-evil.com)",
                 "read_url(localhost)",
                 "read_url(127.0.0.1)",
+                "read_url(127.0.0.0x1)",
                 "read_url(169.254.169.254)",
+                "read_url(169.254.169.0xfe)",
                 "read_url(0.0.0.0)",
                 "mcp(*)",
                 "mcp(*/*)",
@@ -996,10 +1017,12 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "write_file(~)",
                 "write_file(~/.)",
                 f"write_file({os.path.expanduser('~')})",
+                f"write_file({os.path.expanduser('~').lower()})",
                 "write_file(~/..)",
                 "write_file(~/sub/..)",
                 "write_file(~root)",
                 f"write_file({os.path.dirname(os.path.expanduser('~'))})",
+                f"write_file({os.path.dirname(os.path.expanduser('~')).lower()})",
                 "read_file(/workspace/a/../b)",
                 "write_file(.)",
                 "write_file(..)",

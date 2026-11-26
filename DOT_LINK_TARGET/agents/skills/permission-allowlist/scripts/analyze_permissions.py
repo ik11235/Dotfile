@@ -217,6 +217,11 @@ THREE_LEVEL_GROUPS: set[tuple[str, str]] = {
     ("gh", "ruleset"),
     ("gh", "project"),
     ("gh", "gist"),
+    ("gh", "alias"),
+    ("gh", "config"),
+    ("gh", "ssh-key"),
+    ("gh", "gpg-key"),
+    ("gh", "codespace"),
     ("nix", "flake"),
     ("nix", "profile"),
     ("nix", "store"),
@@ -406,6 +411,21 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "gh auth login": "mutates auth state",
     "gh auth logout": "mutates auth state",
     "gh auth token": "prints authentication token",
+    "gh alias set": "creates shell/CLI alias (can execute arbitrary commands)",
+    "gh alias delete": "deletes CLI alias",
+    "gh alias import": "imports shell/CLI aliases",
+    "gh config set": "mutates gh configuration",
+    "gh ssh-key add": "adds SSH key to GitHub account",
+    "gh ssh-key delete": "deletes SSH key from GitHub account",
+    "gh gpg-key add": "adds GPG key to GitHub account",
+    "gh gpg-key delete": "deletes GPG key from GitHub account",
+    "gh codespace create": "creates codespace",
+    "gh codespace delete": "deletes codespace",
+    "gh codespace edit": "edits codespace",
+    "gh codespace ssh": "executes remote shell in codespace",
+    "gh codespace cp": "copies files to/from codespace",
+    "gh codespace stop": "stops codespace",
+    "gh codespace rebuild": "rebuilds codespace",
     # パッケージマネージャ・ランナー・コンテナ・クラスタ・IaC 変更系
     "uv run": "executes arbitrary command/script",
     "uv sync": "installs packages / executes build hooks",
@@ -1089,12 +1109,18 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
         if base_pkg in REQUIRED_SAFE_FLAGS:
             req_flag, req_reason = REQUIRED_SAFE_FLAGS[base_pkg]
             if req_flag in rest[1:]:
-                return f"{cmd} {base_pkg} {req_flag}", None
-            return f"{cmd} {base_pkg}", req_reason
+                return f"{cmd} {pkg} {req_flag}", None
+            return f"{cmd} {pkg}", req_reason
         if base_pkg in TWO_LEVEL_CLIS or base_pkg == "unzip":
             inner_prefix, inner_reason = classify_command_tokens([base_pkg, *rest[1:]])
             if inner_prefix is None or inner_reason is not None:
-                return f"{cmd} {inner_prefix or base_pkg}", inner_reason or "unrecognized subcommand in package runner"
+                if inner_prefix and inner_prefix.startswith(base_pkg):
+                    err_prefix = f"{cmd} {pkg}{inner_prefix[len(base_pkg):]}"
+                else:
+                    err_prefix = f"{cmd} {inner_prefix or pkg}"
+                return err_prefix, inner_reason or "unrecognized subcommand in package runner"
+            if inner_prefix.startswith(base_pkg):
+                return f"{cmd} {pkg}{inner_prefix[len(base_pkg):]}", None
             return f"{cmd} {inner_prefix}", None
         return f"{cmd} {pkg}", None
 
@@ -1357,9 +1383,11 @@ def _is_overly_broad_file_path(path: str) -> bool:
         return True
     norm = _normalize_rule_path(raw)
     home = _normalize_rule_path("~")
-    if norm in ("", "/", ".", "..", home):
+    norm_lower = norm.lower()
+    home_lower = home.lower()
+    if norm_lower in ("", "/", ".", "..", home_lower):
         return True
-    if home.startswith(norm + "/"):
+    if home_lower.startswith(norm_lower + "/"):
         return True
     if ".." in norm.split("/"):
         return True
@@ -2095,8 +2123,8 @@ def validate_rule_for_apply(rule: str) -> str | None:
         if len(labels) < 2:
             if not (target_stripped.lower() == "localhost" and action in ("execute_url", "download_url")):
                 return f"refusing overly broad single-label/TLD URL rule: {rule}"
-        if labels[-1].isdigit():
-            return f"refusing IP literal or numeric-TLD URL rule: {rule}"
+        elif not re.fullmatch(r"(?:[A-Za-z]{2,}|xn--[A-Za-z0-9-]+)", labels[-1]):
+            return f"refusing IP literal or invalid TLD URL rule: {rule}"
         if not all(re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?", lbl) for lbl in labels):
             return f"refusing invalid domain label in URL rule: {rule}"
         return None
