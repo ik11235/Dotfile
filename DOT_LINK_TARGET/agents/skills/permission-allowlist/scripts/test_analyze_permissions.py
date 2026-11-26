@@ -227,11 +227,18 @@ class ClassificationTests(unittest.TestCase):
             ["tar", "--list", "-f", "a.tar"],
             ["tar", "--overwrite", "-xf", "a.tar"],
             ["uv", "run", "python"],
+            ["uv", "sync"],
+            ["uv", "add", "requests"],
+            ["uv", "remove", "requests"],
+            ["uv", "publish"],
+            ["uv", "python"],
+            ["uv", "python", "install", "3.12"],
             ["uv", "tool"],
             ["uv", "tool", "run", "ruff"],
             ["uv", "pip"],
             ["uv", "pip", "install", "evil"],
             ["uvx", "ruff"],
+            ["pipx", "run", "cowsay"],
             ["npm", "exec", "evil"],
             ["npm", "run-script"],
             ["pnpm", "dlx", "evil"],
@@ -240,8 +247,13 @@ class ClassificationTests(unittest.TestCase):
             ["yarn", "exec", "evil"],
             ["wrangler", "d1"],
             ["wrangler", "d1", "execute", "db"],
+            ["wrangler", "d1", "time-travel", "info", "db"],
             ["wrangler", "kv", "key", "put"],
             ["wrangler", "r2", "object", "put"],
+            ["wrangler", "pages", "deployment", "list"],
+            ["wrangler", "queues", "list"],
+            ["wrangler", "vectorize", "list"],
+            ["wrangler", "hyperdrive", "list"],
             ["mise", "exec", "--", "sh"],
             ["mise", "x", "--", "sh"],
             ["cargo", "run"],
@@ -589,6 +601,8 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                         {"name": "mcp__todoist__find-tasks", "args": {"query": "today"}},
                         {"name": "mcp__todoist__create-task", "args": {"content": "x"}},
                         {"name": "read_url_content", "args": {"Url": "https://antigravity.google/docs/permissions"}},
+                        {"name": "read_url_content", "args": {"Url": "http://intranet:8080/docs"}},  # single-label -> filtered out
+                        {"name": "read_url_content", "args": {"Url": "https://example.com./docs"}},  # trailing dot -> filtered out
                         {"name": "read_url_content", "args": {"Url": "https://[invalid/path"}},  # must not crash
                     ],
                 },
@@ -618,6 +632,8 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                             {"name": "mcp__todoist__find-tasks", "args": {"query": "tomorrow"}},
                             {"name": "mcp__todoist__create-task", "args": {"content": "y"}},
                             {"name": "read_url_content", "args": {"Url": '"https://antigravity.google/docs/sandbox"'}},
+                            {"name": "read_url_content", "args": {"Url": '"http://intranet:8080/guide"'}},
+                            {"name": "read_url_content", "args": {"Url": '"https://example.com./guide"'}},
                         ],
                     }
                 ],
@@ -679,6 +695,8 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
             self.assertEqual(cand_map["mcp(todoist/find-tasks)"]["total_count"], 2)
             self.assertIn("read_url(antigravity.google)", cand_map)
             self.assertEqual(cand_map["read_url(antigravity.google)"]["total_count"], 2)
+            self.assertNotIn("read_url(intranet)", cand_map)
+            self.assertNotIn("read_url(example.com.)", cand_map)
 
             # No double counting on Session 1
             self.assertEqual(cand_map["command(gh pr view)"]["total_count"], 2)
@@ -894,6 +912,15 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "command(env -u PATH rm -rf)",
                 "command(/usr/bin/env rm -rf)",
                 "command('rm')",
+                "command('git' status)",
+                "command(git status && rm -rf /)",
+                "command(git status; id)",
+                "command(git status $(whoami))",
+                "command(pipx)",
+                "command(uv sync)",
+                "command(uv python)",
+                "command(wrangler pages)",
+                "command(wrangler d1 time-travel)",
                 "command(.)",
                 "command(cat)",
                 "command(grep)",
@@ -955,6 +982,10 @@ class ScanAndApplyIntegrationTests(unittest.TestCase):
                 "read_file(~/.config//gcloud)",
                 "write_file(~/.gemini/antigravity-cli/settings.json)",
                 "write_file(~/.gemini/config/hooks.json)",
+                "write_file(~/.agents/hooks/remind-lessons.sh)",
+                "write_file(~/.agents)",
+                "read_file(~/.claude)",
+                "write_file(~/.claude/settings.json)",
                 "read_file(.env)",
                 "read_file(/workspace/server.key)",
                 "write_file(.ssh/authorized_keys)",

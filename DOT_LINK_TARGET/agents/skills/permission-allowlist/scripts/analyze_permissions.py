@@ -182,6 +182,7 @@ UNSAFE_COMMANDS: dict[str, str] = {
     "redis-cli": "database client (can mutate data)",
     # その他危険なラッパー
     "uvx": "arbitrary package execution runner",
+    "pipx": "arbitrary package execution runner / installs packages",
     "open": "opens arbitrary files/URLs/apps",
     "pbcopy": "mutates clipboard",
 }
@@ -237,6 +238,7 @@ THREE_LEVEL_GROUPS: set[tuple[str, str]] = {
     ("yarn", "run-script"),
     ("uv", "tool"),
     ("uv", "pip"),
+    ("uv", "python"),
     ("wrangler", "d1"),
 }
 
@@ -403,6 +405,10 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "gh auth token": "prints authentication token",
     # パッケージマネージャ・ランナー・コンテナ・クラスタ・IaC 変更系
     "uv run": "executes arbitrary command/script",
+    "uv sync": "installs packages / executes build hooks",
+    "uv add": "mutates dependencies / installs packages",
+    "uv remove": "mutates dependencies",
+    "uv publish": "publishes package",
     "uv tool run": "executes arbitrary package (uvx equivalent)",
     "uv tool install": "installs packages",
     "uv tool uninstall": "uninstalls packages",
@@ -410,6 +416,8 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "uv pip install": "installs packages",
     "uv pip uninstall": "uninstalls packages",
     "uv pip sync": "mutates installed packages",
+    "uv python install": "installs Python runtimes",
+    "uv python uninstall": "uninstalls Python runtimes",
     "mise exec": "executes arbitrary command",
     "mise x": "executes arbitrary command",
     "cargo run": "compiles and executes arbitrary binary",
@@ -467,8 +475,13 @@ UNSAFE_SUBCOMMAND_PREFIXES: dict[str, str] = {
     "wrangler d1 delete": "deletes D1 database",
     "wrangler d1 create": "creates D1 database",
     "wrangler d1 migrations": "mutates D1 database schema",
+    "wrangler d1 time-travel": "can restore/overwrite D1 database",
     "wrangler kv": "can mutate/delete KV namespaces and keys",
     "wrangler r2": "can mutate/delete R2 buckets and objects",
+    "wrangler pages": "can deploy/delete Cloudflare Pages projects and secrets",
+    "wrangler queues": "can mutate/delete Cloudflare Queues",
+    "wrangler vectorize": "can mutate/delete Cloudflare Vectorize indexes",
+    "wrangler hyperdrive": "can mutate/delete Cloudflare Hyperdrive configs",
     "vercel deploy": "deploys to Vercel",
     "fly deploy": "deploys to Fly.io",
     "flyctl deploy": "deploys to Fly.io",
@@ -490,7 +503,7 @@ MCP_MUTATING_KEYWORDS = (
 # 機密パス（先頭 / 付きの境界一致パターンと部分一致パターン）
 SENSITIVE_PATH_SEGMENT_PATTERNS = (
     "/.ssh", "/.aws", "/.gnupg", "/.kube", "/.config/gcloud",
-    "/.netrc", "/secrets", "/.env", "/.gemini",
+    "/.netrc", "/secrets", "/.env", "/.gemini", "/.agents/hooks", "/.claude",
 )
 SENSITIVE_PATH_SUBSTR_PATTERNS = (
     "credentials", ".pem", ".key", ".p12", ".pfx",
@@ -1774,7 +1787,11 @@ def scan_transcripts(
                                 host = (urllib.parse.urlparse(raw_url).hostname or "").lower()
                             except ValueError:
                                 continue
-                            if host and host not in ("localhost", "127.0.0.1", "::1"):
+                            if (
+                                host
+                                and host not in ("localhost", "127.0.0.1", "::1")
+                                and validate_rule_for_apply(f"read_url({host})") is None
+                            ):
                                 st = url_stats.setdefault(host, SimpleStat(key=host))
                                 st.total_count += 1
                                 st.sessions.add(conv_id)
