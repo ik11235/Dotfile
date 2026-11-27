@@ -912,8 +912,8 @@ def tokenize_segment(segment: str) -> list[str]:
 
 
 def normalize_binary(tok: str) -> str:
-    """フルパス指定（/usr/bin/python3 等）をコマンド名へ正規化する。"""
-    if "/" in tok and not tok.startswith("./") and not tok.startswith("../"):
+    """絶対パス指定（/usr/bin/python3 等）をコマンド名へ正規化する。"""
+    if tok.startswith("/"):
         return os.path.basename(tok)
     return tok
 
@@ -1046,7 +1046,7 @@ def classify_command_tokens(tokens: list[str]) -> tuple[str | None, str | None]:
     cmd = normalize_binary(tokens[0])
     if not cmd or cmd in SHELL_BUILTINS:
         return None, None
-    if cmd.startswith(("./", "../", "$")):
+    if cmd.startswith(("./", "../", "~", "$")) or "/" in cmd:
         return cmd, "relative or variable executable path"
 
     # rtk 単独・フラグ付き・危険サブコマンドを明示的に除外し、安全なネイティブサブコマンドのみ許可

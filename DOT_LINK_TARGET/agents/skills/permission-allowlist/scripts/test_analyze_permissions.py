@@ -116,6 +116,9 @@ class ShellParsingTests(unittest.TestCase):
             ("env -iP /bin rm -rf", "env"),
             ("timeout -- rm ls", "timeout"),
             ("nice -n rm ls", "nice"),
+            ("$HOME/bin/env ls", "$HOME/bin/env"),
+            ("~/bin/env ls", "~/bin/env"),
+            ("scripts/env ls", "scripts/env"),
         ):
             unwrapped, _, _ = ap.unwrap_tokens(ap.tokenize_segment(raw))
             self.assertEqual(unwrapped[0], expected0, f"should not unwrap {raw}")
@@ -314,6 +317,12 @@ class ClassificationTests(unittest.TestCase):
             ["npx", "git", "push"],
             ["npx", "unzip", "a.zip"],
             ["npx", "eslint@>=8.0.0"],
+            ["./evil.sh"],
+            ["../evil.sh"],
+            ["scripts/ls"],
+            ["~/bin/ls"],
+            ["$HOME/bin/ls"],
+            ["$HOME/bin/env", "ls"],
             ["npx", "./evil.js"],
             ["npx", "/usr/bin/id"],
             ["aws", "s3", "ls"],
